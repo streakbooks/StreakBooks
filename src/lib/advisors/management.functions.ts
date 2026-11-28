@@ -58,7 +58,7 @@ export const getAdvisorsOverview = createServerFn({ method: "GET" })
 
 export const listAdvisorsInquiries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listFiltersSchema.parse(input ?? {}))
+  .validator((input: unknown) => listFiltersSchema.parse(input ?? {}))
   .handler(async ({ data, context }): Promise<AdvisorsInquiry[]> => {
     const raw = await callRpc(context.supabase, "platform_advisors_list_inquiries", {
       _status: data.status || null,
@@ -70,7 +70,7 @@ export const listAdvisorsInquiries = createServerFn({ method: "GET" })
 
 export const updateAdvisorsInquiry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         inquiryId: z.string().uuid(),
@@ -98,7 +98,7 @@ export const updateAdvisorsInquiry = createServerFn({ method: "POST" })
 
 export const promoteAdvisorsInquiry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         inquiryId: z.string().uuid(),
@@ -118,7 +118,7 @@ export const promoteAdvisorsInquiry = createServerFn({ method: "POST" })
 
 export const listAdvisorsConversations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listFiltersSchema.parse(input ?? {}))
+  .validator((input: unknown) => listFiltersSchema.parse(input ?? {}))
   .handler(async ({ data, context }): Promise<AdvisorsConversationSummary[]> => {
     const raw = await callRpc(context.supabase, "platform_advisors_list_conversations", {
       _status: data.status || null,
@@ -130,7 +130,7 @@ export const listAdvisorsConversations = createServerFn({ method: "GET" })
 
 export const getAdvisorsConversation = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ conversationId: z.string().uuid() }).strict().parse(input),
   )
   .handler(async ({ data, context }): Promise<AdvisorsConversationDetail> => {
@@ -143,7 +143,7 @@ export const getAdvisorsConversation = createServerFn({ method: "GET" })
 
 export const updateAdvisorsConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         conversationId: z.string().uuid(),
@@ -171,7 +171,7 @@ export const updateAdvisorsConversation = createServerFn({ method: "POST" })
 
 export const listAdvisorsClients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listFiltersSchema.parse(input ?? {}))
+  .validator((input: unknown) => listFiltersSchema.parse(input ?? {}))
   .handler(async ({ data, context }): Promise<AdvisorsClient[]> => {
     const raw = await callRpc(context.supabase, "platform_advisors_list_clients", {
       _status: data.status || null,
@@ -183,7 +183,7 @@ export const listAdvisorsClients = createServerFn({ method: "GET" })
 
 export const upsertAdvisorsClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         id: z.string().uuid().optional(),
@@ -228,7 +228,7 @@ export const listAdvisorsStaff = createServerFn({ method: "GET" })
 
 export const upsertAdvisorsStaff = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         id: z.string().uuid().optional(),

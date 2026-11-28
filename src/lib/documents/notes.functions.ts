@@ -66,7 +66,7 @@ function missingMigration(error: { code?: string; message?: string } | null): bo
 
 export const listDocumentNotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(entityInput)
+  .validator(entityInput)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertEntityAccess(supabase, data.companyId, data.entityType, "view");
@@ -99,14 +99,12 @@ export const listDocumentNotes = createServerFn({ method: "GET" })
 
 export const addDocumentNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; entityType: string; entityId: string; body: string }) => {
-      const base = entityInput(input);
-      const note = normaliseInternalNote(input.body ?? "");
-      if (!note.ok) throw new Error(note.error);
-      return { ...base, body: note.body };
-    },
-  )
+  .validator((input: { companyId: string; entityType: string; entityId: string; body: string }) => {
+    const base = entityInput(input);
+    const note = normaliseInternalNote(input.body ?? "");
+    if (!note.ok) throw new Error(note.error);
+    return { ...base, body: note.body };
+  })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertEntityAccess(supabase, data.companyId, data.entityType, "manage");
@@ -146,7 +144,7 @@ export const addDocumentNote = createServerFn({ method: "POST" })
 
 export const listDocumentActivity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(entityInput)
+  .validator(entityInput)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertEntityAccess(supabase, data.companyId, data.entityType, "view");

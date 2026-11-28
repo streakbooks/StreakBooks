@@ -48,7 +48,7 @@ async function countNeq(
 
 export const getAccountantChecklist = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; asOf?: string }) => ({
+  .validator((input: { companyId: string; asOf?: string }) => ({
     companyId: assertUuid(input.companyId),
     asOf: isoDate.parse(input.asOf ?? new Date().toISOString().slice(0, 10)),
   }))

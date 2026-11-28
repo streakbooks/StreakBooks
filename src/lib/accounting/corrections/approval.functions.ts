@@ -48,7 +48,7 @@ export type CorrectionApprovalEvent = {
 
 export const getCorrectionApprovalSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => company.parse(input))
+  .validator((input: unknown) => company.parse(input))
   .handler(async ({ data, context }) => {
     const { data: settings, error } = await context.supabase.rpc(
       "get_correction_approval_settings" as never,
@@ -60,7 +60,7 @@ export const getCorrectionApprovalSettings = createServerFn({ method: "GET" })
 
 export const listCorrectionApprovalRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     company.extend({ page: z.number().int().min(0).max(100000).default(0) }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -85,9 +85,7 @@ export const listCorrectionApprovalRequests = createServerFn({ method: "GET" })
 
 export const listCorrectionApprovalEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    company.extend({ approvalId: z.string().uuid() }).parse(input),
-  )
+  .validator((input: unknown) => company.extend({ approvalId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: records, error } = await context.supabase
@@ -106,7 +104,7 @@ export const listCorrectionApprovalEvents = createServerFn({ method: "GET" })
 
 export const submitCorrectionApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         input: correctionInput,
@@ -136,7 +134,7 @@ export const submitCorrectionApproval = createServerFn({ method: "POST" })
 
 export const decideCorrectionApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     company
       .extend({
         approvalId: z.string().uuid(),
@@ -164,9 +162,7 @@ export const decideCorrectionApproval = createServerFn({ method: "POST" })
 
 export const setCorrectionApprovalPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    company.extend({ required: z.boolean() }).strict().parse(input),
-  )
+  .validator((input: unknown) => company.extend({ required: z.boolean() }).strict().parse(input))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc(
       "set_correction_approval_policy" as never,

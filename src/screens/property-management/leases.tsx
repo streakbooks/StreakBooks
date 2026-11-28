@@ -163,99 +163,102 @@ export function PmLeasesPage() {
                 title="Could not load lease create options"
               />
             ) : (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle>New lease</CardTitle>
-                <CardDescription>Amounts are entered in major currency units.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                {properties.isSuccess && tenants.isSuccess ? (
-                  <>
-                <div className="grid gap-2">
-                  <Label>Property</Label>
-                  <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select property" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(properties.data ?? []).map((property) => (
-                        <SelectItem key={property.id} value={property.id}>
-                          {property.code} — {property.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
-                </div>
-                <div className="grid gap-2">
-                  <Label>Tenant</Label>
-                  <RecordLookupSelect value={tenantId} onValueChange={setTenantId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select tenant" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(tenants.data ?? []).map((tenant) => (
-                        <SelectItem key={tenant.id} value={tenant.id}>
-                          {tenant.displayName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
-                </div>
-                  </>
-                ) : (
-                  <div className="sm:col-span-2">
-                    <LoadingState />
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>New lease</CardTitle>
+                  <CardDescription>Amounts are entered in major currency units.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  {properties.isSuccess && tenants.isSuccess ? (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Property</Label>
+                        <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select property" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(properties.data ?? []).map((property) => (
+                              <SelectItem key={property.id} value={property.id}>
+                                {property.code} — {property.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </RecordLookupSelect>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Tenant</Label>
+                        <RecordLookupSelect value={tenantId} onValueChange={setTenantId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select tenant" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(tenants.data ?? []).map((tenant) => (
+                              <SelectItem key={tenant.id} value={tenant.id}>
+                                {tenant.displayName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </RecordLookupSelect>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sm:col-span-2">
+                      <LoadingState />
+                    </div>
+                  )}
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-rent">Monthly rent</Label>
+                    <Input
+                      id="pm-rent"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={rentMajor}
+                      onChange={(e) => setRentMajor(e.target.value)}
+                    />
                   </div>
-                )}
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-rent">Monthly rent</Label>
-                  <Input
-                    id="pm-rent"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={rentMajor}
-                    onChange={(e) => setRentMajor(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-lease-start">Start date</Label>
-                  <Input
-                    id="pm-lease-start"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Status</Label>
-                  <Select value={status} onValueChange={(v) => setStatus(v as "draft" | "active")}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    disabled={
-                      !propertyId ||
-                      !tenantId ||
-                      mutation.isPending ||
-                      !properties.isSuccess ||
-                      !tenants.isSuccess
-                    }
-                    onClick={() => mutation.mutate()}
-                  >
-                    {mutation.isPending ? "Saving…" : "Save lease"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-lease-start">Start date</Label>
+                    <Input
+                      id="pm-lease-start"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Status</Label>
+                    <Select
+                      value={status}
+                      onValueChange={(v) => setStatus(v as "draft" | "active")}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      disabled={
+                        !propertyId ||
+                        !tenantId ||
+                        mutation.isPending ||
+                        !properties.isSuccess ||
+                        !tenants.isSuccess
+                      }
+                      onClick={() => mutation.mutate()}
+                    >
+                      {mutation.isPending ? "Saving…" : "Save lease"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )
           ) : null}
           {leases.isLoading ? <LoadingState /> : null}

@@ -167,7 +167,7 @@ const reason = z.string().trim().min(3).max(500);
 // ---------------------------------------------------------------- customers
 export const getReferralStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ companyId: uuid }).strict().parse(input))
+  .validator((input: unknown) => z.object({ companyId: uuid }).strict().parse(input))
   .handler(
     async ({ data, context }) =>
       (await callRpc(context.supabase, "billing_referral_status", {
@@ -177,7 +177,7 @@ export const getReferralStatus = createServerFn({ method: "GET" })
 
 export const recordReferral = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         companyId: uuid,
@@ -208,7 +208,7 @@ export const getPartnerPortal = createServerFn({ method: "GET" })
 
 export const applyAsPartner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         firmId: uuid,
@@ -235,7 +235,7 @@ export const applyAsPartner = createServerFn({ method: "POST" })
 
 export const createReferralCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ partnerId: uuid }).strict().parse(input))
+  .validator((input: unknown) => z.object({ partnerId: uuid }).strict().parse(input))
   .handler(
     async ({ data, context }) =>
       (await callRpc(context.supabase, "billing_partner_create_code", {
@@ -245,7 +245,7 @@ export const createReferralCode = createServerFn({ method: "POST" })
 
 export const disableReferralCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ codeId: uuid }).strict().parse(input))
+  .validator((input: unknown) => z.object({ codeId: uuid }).strict().parse(input))
   .handler(async ({ data, context }) => {
     await callRpc(context.supabase, "billing_partner_disable_code", { _code_id: data.codeId });
     return { ok: true };
@@ -267,7 +267,7 @@ export const getPartnerProgramAdmin = createServerFn({ method: "GET" })
 
 export const reviewPartner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         partnerId: uuid,
@@ -290,7 +290,7 @@ export const reviewPartner = createServerFn({ method: "POST" })
 
 export const addPartnerUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         partnerId: uuid,
@@ -337,7 +337,7 @@ const ruleInput = z
 
 export const saveCommissionRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => ruleInput.parse(input))
+  .validator((input: unknown) => ruleInput.parse(input))
   .handler(async ({ data, context }) => {
     const { reason: why, ...rule } = data;
     return (await callRpc(context.supabase, "platform_save_commission_rule", {
@@ -348,7 +348,7 @@ export const saveCommissionRule = createServerFn({ method: "POST" })
 
 export const decideCommissionRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         ruleId: uuid,
@@ -377,7 +377,7 @@ export const decideCommissionRule = createServerFn({ method: "POST" })
 
 export const requestProgramChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         change: z
@@ -404,7 +404,7 @@ export const requestProgramChange = createServerFn({ method: "POST" })
 
 export const decideProgramChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ changeId: uuid, approve: z.boolean(), reason }).strict().parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -424,7 +424,7 @@ function requirePayoutSwitch() {
 
 export const requestPartnerPayout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ partnerId: uuid, currency: z.string().regex(/^[A-Z]{3}$/), reason })
       .strict()
@@ -441,7 +441,7 @@ export const requestPartnerPayout = createServerFn({ method: "POST" })
 
 export const decidePartnerPayout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         payoutId: uuid,
@@ -465,7 +465,7 @@ export const decidePartnerPayout = createServerFn({ method: "POST" })
 
 export const adjustPartnerCommission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         partnerId: uuid,

@@ -133,11 +133,7 @@ export function ManagementWorkspace({
           />
           <Button
             disabled={
-              saving.isPending ||
-              !widgets.length ||
-              !name.trim() ||
-              !q.isSuccess ||
-              q.isError
+              saving.isPending || !widgets.length || !name.trim() || !q.isSuccess || q.isError
             }
             onClick={() => saving.mutate()}
           >

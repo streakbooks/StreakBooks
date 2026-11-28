@@ -26,7 +26,7 @@ async function command(client: Client, name: string, args: Record<string, unknow
 }
 export const getPosWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "pos.view");
     return posWorkspaceSchema.parse(
@@ -35,7 +35,7 @@ export const getPosWorkspace = createServerFn({ method: "GET" })
   });
 export const createPosRegister = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: PosCreateRegisterInput) => parseCreatePosRegister(input))
+  .validator((input: PosCreateRegisterInput) => parseCreatePosRegister(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "pos.settings.manage");
     return {
@@ -54,7 +54,7 @@ export const createPosRegister = createServerFn({ method: "POST" })
   });
 export const setPosLocationAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: PosLocationAccessInput) => parsePosLocationAccess(input))
+  .validator((input: PosLocationAccessInput) => parsePosLocationAccess(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "pos.settings.manage");
     await command(context.supabase, "pos_set_location_access", {
@@ -67,7 +67,7 @@ export const setPosLocationAccess = createServerFn({ method: "POST" })
   });
 export const openPosSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: PosSessionCommand) => parsePosSessionCommand(input))
+  .validator((input: PosSessionCommand) => parsePosSessionCommand(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "pos.register.open");
     return {
@@ -84,7 +84,7 @@ export const openPosSession = createServerFn({ method: "POST" })
   });
 export const closePosSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: PosSessionCommand) => parsePosSessionCommand(input))
+  .validator((input: PosSessionCommand) => parsePosSessionCommand(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "pos.register.close");
     await assertCompanyPermission(context.supabase, data.companyId, "pos.cash.count");

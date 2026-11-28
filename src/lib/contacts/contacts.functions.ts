@@ -63,7 +63,7 @@ async function loadOpenDocs(supabase: OpenDocClient, companyId: string, contactI
 
 export const listContacts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       kind?: string;
@@ -167,7 +167,7 @@ export const listContacts = createServerFn({ method: "GET" })
 /** Exact count for the same server-side directory filters; never infer total from a full page. */
 export const countContacts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       kind?: string;
@@ -256,7 +256,7 @@ export const countContacts = createServerFn({ method: "GET" })
 
 export const getContactsDirectorySummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -295,7 +295,7 @@ export const getContactsDirectorySummary = createServerFn({ method: "GET" })
 
 export const getContact = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; contactId: string }) => ({
+  .validator((input: { companyId: string; contactId: string }) => ({
     companyId: assertUuid(input.companyId),
     contactId: assertUuid(input.contactId),
   }))
@@ -342,7 +342,7 @@ export const getContact = createServerFn({ method: "GET" })
 
 export const upsertContact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -569,7 +569,7 @@ export const upsertContact = createServerFn({ method: "POST" })
 
 export const archiveContact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; contactId: string; restore?: boolean }) => ({
+  .validator((input: { companyId: string; contactId: string; restore?: boolean }) => ({
     companyId: assertUuid(input.companyId),
     contactId: assertUuid(input.contactId),
     restore: Boolean(input.restore),
@@ -604,7 +604,7 @@ export const archiveContact = createServerFn({ method: "POST" })
 
 export const getContactBalances = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactId: string;
@@ -691,7 +691,7 @@ export const getContactBalances = createServerFn({ method: "GET" })
 /* ── People ── */
 export const upsertContactPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactId: string;
@@ -757,7 +757,7 @@ export const upsertContactPerson = createServerFn({ method: "POST" })
 
 export const deleteContactPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; personId: string }) => ({
+  .validator((input: { companyId: string; personId: string }) => ({
     companyId: assertUuid(input.companyId),
     personId: assertUuid(input.personId),
   }))
@@ -775,7 +775,7 @@ export const deleteContactPerson = createServerFn({ method: "POST" })
 /* ── Groups & tags ── */
 export const listContactGroups = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase
@@ -789,7 +789,7 @@ export const listContactGroups = createServerFn({ method: "GET" })
 
 export const upsertContactGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -843,7 +843,7 @@ export const upsertContactGroup = createServerFn({ method: "POST" })
 
 export const setContactGroups = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; contactId: string; groupIds: string[] }) => ({
+  .validator((input: { companyId: string; contactId: string; groupIds: string[] }) => ({
     companyId: assertUuid(input.companyId),
     contactId: assertUuid(input.contactId),
     groupIds: (input.groupIds ?? []).map((g) => assertUuid(g)).slice(0, 50),
@@ -870,7 +870,7 @@ export const setContactGroups = createServerFn({ method: "POST" })
 
 export const listContactTags = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase
@@ -884,7 +884,7 @@ export const listContactTags = createServerFn({ method: "GET" })
 
 export const upsertContactTag = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; id?: string; name: string; isActive?: boolean }) => {
+  .validator((input: { companyId: string; id?: string; name: string; isActive?: boolean }) => {
     const name = (input.name ?? "").trim().toLowerCase();
     if (!name) throw new Error("Tag name required");
     return {
@@ -916,7 +916,7 @@ export const upsertContactTag = createServerFn({ method: "POST" })
 
 export const setContactTags = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; contactId: string; tagIds: string[] }) => ({
+  .validator((input: { companyId: string; contactId: string; tagIds: string[] }) => ({
     companyId: assertUuid(input.companyId),
     contactId: assertUuid(input.contactId),
     tagIds: (input.tagIds ?? []).map((t) => assertUuid(t)).slice(0, 50),
@@ -948,7 +948,7 @@ export const setContactTags = createServerFn({ method: "POST" })
  */
 export const bulkAddContactLabel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactIds: string[];
@@ -1030,7 +1030,7 @@ export const bulkAddContactLabel = createServerFn({ method: "POST" })
  */
 export const bulkRemoveContactLabel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactIds: string[];
@@ -1102,7 +1102,7 @@ export const bulkRemoveContactLabel = createServerFn({ method: "POST" })
 /* ── Settings ── */
 export const getContactSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: row, error } = await context.supabase
@@ -1124,7 +1124,7 @@ export const getContactSettings = createServerFn({ method: "GET" })
 
 export const saveContactSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       defaultKind?: string;
@@ -1173,7 +1173,7 @@ export const saveContactSettings = createServerFn({ method: "POST" })
 /* ── CSV export / import ── */
 export const exportContactsCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       kind?: string;
@@ -1292,7 +1292,7 @@ export const getContactImportTemplate = createServerFn({ method: "GET" })
 
 export const importContactsCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; csvText: string; skipDuplicates?: boolean }) => ({
+  .validator((input: { companyId: string; csvText: string; skipDuplicates?: boolean }) => ({
     companyId: assertUuid(input.companyId),
     csvText: String(input.csvText ?? "").slice(0, 2_000_000),
     skipDuplicates: input.skipDuplicates !== false,
@@ -1375,7 +1375,7 @@ export const importContactsCsv = createServerFn({ method: "POST" })
 /* ── Duplicates & merge ── */
 export const findPotentialDuplicates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     // Set-based finder in SQL: no 2,000-contact cap and no O(n^2) loop in the server.
@@ -1455,7 +1455,7 @@ export const findPotentialDuplicates = createServerFn({ method: "GET" })
 
 export const mergeContacts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; survivorId: string; mergeId: string; confirm: boolean }) => {
       if (!input.confirm) throw new Error("Merge requires explicit confirmation");
       const survivorId = assertUuid(input.survivorId);

@@ -42,7 +42,7 @@ export type ProjectOption = { id: string; code: string; name: string; status: st
 /** Projects that can still be tagged (not archived/completed). Read-only. */
 export const listProjectOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }): Promise<ProjectOption[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase
@@ -59,7 +59,7 @@ export const listProjectOptions = createServerFn({ method: "GET" })
 /** Current tag of a document: one project, mixed lines, or none. `available:false` before the migration. */
 export const getDocumentProject = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; kind: string; documentId: string }) => ({
+  .validator((input: { companyId: string; kind: string; documentId: string }) => ({
     companyId: assertUuid(input.companyId),
     kind: assertKind(input.kind),
     documentId: assertUuid(input.documentId, "document"),
@@ -96,7 +96,7 @@ export const getDocumentProject = createServerFn({ method: "GET" })
 
 export const setDocumentProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; kind: string; documentId: string; projectId: string | null }) => ({
       companyId: assertUuid(input.companyId),
       kind: assertKind(input.kind),
@@ -123,7 +123,7 @@ export const setDocumentProject = createServerFn({ method: "POST" })
 
 export const getProjectProfitability = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       from?: string | null;

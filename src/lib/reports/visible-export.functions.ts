@@ -53,7 +53,7 @@ export type VisibleReportExportRequest = z.input<typeof requestSchema>;
  */
 export const exportVisibleReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => requestSchema.parse(input))
+  .validator((input: unknown) => requestSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     await assertCompanyPermission(context.supabase, data.companyId, "reports.export");

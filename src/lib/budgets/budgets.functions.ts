@@ -166,7 +166,7 @@ async function monthlyActivity(
 
 export const listBudgets = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase
@@ -186,7 +186,7 @@ export const listBudgets = createServerFn({ method: "GET" })
 /** A budget with its lines and the accounts it can use, for the editor grid. */
 export const getBudget = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; budgetId: string }) => ({
+  .validator((input: { companyId: string; budgetId: string }) => ({
     companyId: companyIdOf(input),
     budgetId: assertUuid(input?.budgetId, "budget"),
   }))
@@ -214,7 +214,7 @@ export const getBudget = createServerFn({ method: "GET" })
  */
 export const compareBudgetScenarios = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; baselineId: string; scenarioId: string }) => {
+  .validator((input: { companyId: string; baselineId: string; scenarioId: string }) => {
     const baselineId = assertUuid(input?.baselineId, "baseline budget");
     const scenarioId = assertUuid(input?.scenarioId, "comparison budget");
     if (baselineId === scenarioId) throw new Error("Choose two different budgets.");
@@ -278,7 +278,7 @@ export type BudgetGovernanceResult = {
 /** Governance status is optional until its migration is deployed; existing editor stays functional. */
 export const getBudgetGovernance = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; budgetId: string }) => ({
+  .validator((input: { companyId: string; budgetId: string }) => ({
     companyId: companyIdOf(input),
     budgetId: assertUuid(input?.budgetId, "budget"),
   }))
@@ -342,7 +342,7 @@ export const getBudgetGovernance = createServerFn({ method: "GET" })
 /** Read a single historical snapshot; never permit reconstruction of another tenant's budgets. */
 export const getBudgetRevision = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; budgetId: string; revisionId: string }) => ({
+  .validator((input: { companyId: string; budgetId: string; revisionId: string }) => ({
     companyId: companyIdOf(input),
     budgetId: assertUuid(input?.budgetId, "budget"),
     revisionId: assertUuid(input?.revisionId, "revision"),
@@ -384,16 +384,14 @@ export const getBudgetRevision = createServerFn({ method: "GET" })
 /** Lock or unlock a plan; the database enforces it across all present and future write paths. */
 export const setBudgetLock = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; budgetId: string; locked: boolean; reason: string }) => {
-      const command = validateBudgetLockCommand(input);
-      return {
-        companyId: companyIdOf(input),
-        budgetId: assertUuid(input.budgetId, "budget"),
-        ...command,
-      };
-    },
-  )
+  .validator((input: { companyId: string; budgetId: string; locked: boolean; reason: string }) => {
+    const command = validateBudgetLockCommand(input);
+    return {
+      companyId: companyIdOf(input),
+      budgetId: assertUuid(input.budgetId, "budget"),
+      ...command,
+    };
+  })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounts.manage");
     const locked = await callRpc<boolean>(
@@ -435,7 +433,7 @@ export type BudgetApprovalDetails = {
 /** Read an organisation-scoped approval state and immutable approval timeline. */
 export const getBudgetApproval = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; budgetId: string }) => ({
+  .validator((input: { companyId: string; budgetId: string }) => ({
     companyId: companyIdOf(input),
     budgetId: assertUuid(input?.budgetId, "budget"),
   }))
@@ -501,13 +499,11 @@ export const getBudgetApproval = createServerFn({ method: "GET" })
 /** All state changes and authorisation are revalidated inside the database RPC. */
 export const transitionBudgetApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; budgetId: string; action: string; note: string }) => ({
-      companyId: companyIdOf(input),
-      budgetId: assertUuid(input?.budgetId, "budget"),
-      ...validateBudgetApprovalAction(input),
-    }),
-  )
+  .validator((input: { companyId: string; budgetId: string; action: string; note: string }) => ({
+    companyId: companyIdOf(input),
+    budgetId: assertUuid(input?.budgetId, "budget"),
+    ...validateBudgetApprovalAction(input),
+  }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounts.manage");
     const status = await callRpc<BudgetApprovalStatus>(
@@ -526,7 +522,7 @@ export const transitionBudgetApproval = createServerFn({ method: "POST" })
 
 export const saveBudget = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       budgetId?: string | null;
@@ -565,7 +561,7 @@ export const saveBudget = createServerFn({ method: "POST" })
  */
 export const duplicateBudget = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       sourceBudgetId: string;
@@ -613,7 +609,7 @@ export const duplicateBudget = createServerFn({ method: "POST" })
  */
 export const saveBudgetDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       budgetId: string;
@@ -677,7 +673,7 @@ export const saveBudgetDocument = createServerFn({ method: "POST" })
 
 export const saveBudgetLines = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       budgetId: string;
@@ -814,7 +810,7 @@ export const importBudgetLinesCsv = createServerFn({ method: "POST" })
 
 export const deleteBudget = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; budgetId: string }) => ({
+  .validator((input: { companyId: string; budgetId: string }) => ({
     companyId: companyIdOf(input),
     budgetId: assertUuid(input?.budgetId, "budget"),
   }))
@@ -835,13 +831,11 @@ export const deleteBudget = createServerFn({ method: "POST" })
  */
 export const getYearActuals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; fiscalYearStart: string; basis?: AccountingBasis }) => ({
-      companyId: companyIdOf(input),
-      fiscalYearStart: isoDate(input.fiscalYearStart, "Fiscal year start"),
-      basis: parseAccountingBasis(input.basis),
-    }),
-  )
+  .validator((input: { companyId: string; fiscalYearStart: string; basis?: AccountingBasis }) => ({
+    companyId: companyIdOf(input),
+    fiscalYearStart: isoDate(input.fiscalYearStart, "Fiscal year start"),
+    basis: parseAccountingBasis(input.basis),
+  }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const sb = context.supabase as unknown as Sb;
@@ -885,7 +879,7 @@ const VIEWS: ReportView[] = ["month", "quarter", "ytd"];
 
 export const getBudgetVsActual = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       budgetId: string;
@@ -1001,7 +995,7 @@ export type ForecastSourceData = {
 /** Finished-month accrual forecast inputs; never treats partial current month as completed. */
 export const getBudgetForecastData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; budgetId: string; completedIndex?: number }) => {
+  .validator((input: { companyId: string; budgetId: string; completedIndex?: number }) => {
     if (
       input.completedIndex !== undefined &&
       (!Number.isInteger(input.completedIndex) ||
@@ -1186,7 +1180,7 @@ function validateForecastScenarioDraft(input: {
 
 export const saveBudgetForecastScenario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       budgetId: string;
@@ -1240,7 +1234,7 @@ export const saveBudgetForecastScenario = createServerFn({ method: "POST" })
 
 export const deleteBudgetForecastScenario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       budgetId: string;

@@ -48,7 +48,7 @@ const saveInput = z.object({
  * synthetic retained-earnings presentation. This matches the sign-off RPC. */
 export const listWorkpaperLedger = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listInput.parse(input))
+  .validator((input: unknown) => listInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const [accounts, balances] = await Promise.all([
@@ -107,7 +107,7 @@ export const listWorkpaperLedger = createServerFn({ method: "GET" })
 
 export const listAccountWorkpapers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listInput.parse(input))
+  .validator((input: unknown) => listInput.parse(input))
   .handler(async ({ data, context }): Promise<AccountWorkpaper[]> => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: records, error } = await context.supabase
@@ -130,7 +130,7 @@ export const listAccountWorkpapers = createServerFn({ method: "GET" })
 
 export const saveAccountWorkpaper = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => saveInput.parse(input))
+  .validator((input: unknown) => saveInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.post");
     const { data: record, error } = await context.supabase.rpc(

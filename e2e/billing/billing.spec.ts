@@ -22,7 +22,9 @@ test.describe("customer referral", () => {
   });
 
   test("prefills a code captured from a partner link", async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem("streakbooks.referralCode", "AB12CD34EF56"));
+    await page.addInitScript(() =>
+      localStorage.setItem("streakbooks.referralCode", "AB12CD34EF56"),
+    );
     await page.goto("/?view=referral");
     await expect(page.getByLabel("Referral code from your accountant")).toHaveValue("AB12CD34EF56");
   });

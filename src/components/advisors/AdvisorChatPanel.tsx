@@ -105,8 +105,8 @@ export function AdvisorChatPanel({ serviceCode, enabled }: Props) {
             onCheckedChange={(value) => setConsent(value === true)}
           />
           <Label htmlFor={consentId} className="text-sm leading-snug font-normal">
-            I agree that StreakBooks may collect and retain this chat to qualify my enquiry and follow
-            up about Advisors services.
+            I agree that StreakBooks may collect and retain this chat to qualify my enquiry and
+            follow up about Advisors services.
           </Label>
         </div>
         {error ? (

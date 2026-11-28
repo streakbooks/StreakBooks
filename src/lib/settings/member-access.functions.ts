@@ -20,7 +20,7 @@ function claimEmail(claims: unknown): string {
 
 export const listMemberAdjustments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(
     async ({
       data,
@@ -47,7 +47,7 @@ export const listMemberAdjustments = createServerFn({ method: "GET" })
 
 export const saveMemberAdjustments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       userId: string;
@@ -80,18 +80,16 @@ export const saveMemberAdjustments = createServerFn({ method: "POST" })
 
 export const setMemberStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; userId: string; status: "active" | "suspended" }) => {
-      if (input.status !== "active" && input.status !== "suspended") {
-        throw new Error("Choose active or suspended");
-      }
-      return {
-        companyId: assertUuid(input.companyId),
-        userId: assertUuid(input.userId, "user"),
-        status: input.status,
-      };
-    },
-  )
+  .validator((input: { companyId: string; userId: string; status: "active" | "suspended" }) => {
+    if (input.status !== "active" && input.status !== "suspended") {
+      throw new Error("Choose active or suspended");
+    }
+    return {
+      companyId: assertUuid(input.companyId),
+      userId: assertUuid(input.userId, "user"),
+      status: input.status,
+    };
+  })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "members.manage");
     if (data.userId === context.userId) throw new Error("You cannot change your own status");
@@ -120,7 +118,7 @@ export const setMemberStatus = createServerFn({ method: "POST" })
 
 export const removeCompanyMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; userId: string }) => ({
+  .validator((input: { companyId: string; userId: string }) => ({
     companyId: assertUuid(input.companyId),
     userId: assertUuid(input.userId, "user"),
   }))
@@ -152,7 +150,7 @@ export const removeCompanyMember = createServerFn({ method: "POST" })
 
 export const previewCompanyInvitation = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { token: string }) => {
+  .validator((input: { token: string }) => {
     const token = (input.token ?? "").trim().toLowerCase();
     if (!/^[0-9a-f]{64}$/.test(token)) throw new Error("This invitation link is not valid");
     return { token };
@@ -201,7 +199,7 @@ export const previewCompanyInvitation = createServerFn({ method: "GET" })
 
 export const acceptCompanyInvitation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { token: string }) => {
+  .validator((input: { token: string }) => {
     const token = (input.token ?? "").trim().toLowerCase();
     if (!/^[0-9a-f]{64}$/.test(token)) throw new Error("This invitation link is not valid");
     return { token };

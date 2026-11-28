@@ -18,13 +18,25 @@ const input = {
 
 describe("legacy accounting preferences save", () => {
   it("preserves account code padding from the canonical configuration", () => {
-    const baseline = { ...defaultDocumentFor("accounting"), account_code_padding: 7 };
+    const baseline = {
+      ...defaultDocumentFor("accounting"),
+      account_code_padding: 7,
+      warn_duplicate_document_numbers: false,
+      warn_post_to_control_account: true,
+      warn_bank_direct_posting: true,
+      warn_backdated_days: 45,
+      auto_apply_credits: true,
+    };
     const result = prepareAccountingPreferences(baseline, input);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.document["account_code_padding"]).toBe(7);
       expect(result.document["reporting_basis"]).toBe("cash");
+      expect(result.document["warn_duplicate_document_numbers"]).toBe(false);
+      expect(result.document["warn_post_to_control_account"]).toBe(true);
+      expect(result.document["warn_bank_direct_posting"]).toBe(true);
       expect(result.document["warn_backdated_days"]).toBe(45);
+      expect(result.document["auto_apply_credits"]).toBe(true);
     }
   });
 

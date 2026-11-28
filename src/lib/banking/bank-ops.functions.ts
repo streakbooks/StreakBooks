@@ -18,7 +18,7 @@ export type BankAccountDetailsMasked = {
 /** Masked identifiers only. The full values never leave the database through this call. */
 export const listBankAccountDetails = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }): Promise<BankAccountDetailsMasked[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await (context.supabase as unknown as RpcClient).rpc(
@@ -46,7 +46,7 @@ export const listBankAccountDetails = createServerFn({ method: "GET" })
 
 export const saveBankAccountDetails = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       bankAccountId: string;
@@ -106,7 +106,7 @@ export type BankIntegrityFinding = {
 /** Read-only check of bank data. `available: false` means the database function is not installed. */
 export const getBankIntegrity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(
     async ({
       data,

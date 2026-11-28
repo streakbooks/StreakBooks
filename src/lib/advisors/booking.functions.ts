@@ -52,7 +52,7 @@ export type AvailableSlot = {
 };
 
 export const listAdvisorAvailableSlots = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => listSlotsSchema.parse(input))
+  .validator((input: unknown) => listSlotsSchema.parse(input))
   .handler(async ({ data }) => {
     setResponseHeader("Cache-Control", "private, no-store");
     const timezone = data.customerTimezone || detectCustomerTimeZone();
@@ -99,7 +99,7 @@ export const listAdvisorAvailableSlots = createServerFn({ method: "GET" })
   });
 
 export const bookAdvisorAppointment = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => bookSchema.parse(input))
+  .validator((input: unknown) => bookSchema.parse(input))
   .handler(async ({ data }) => {
     setResponseHeader("Cache-Control", "private, no-store");
     const client = await publicClient();
@@ -160,7 +160,7 @@ function asAppointmentView(raw: unknown): AdvisorAppointmentView {
 }
 
 export const getAdvisorAppointment = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ manageToken: z.string().min(16).max(128) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -178,7 +178,7 @@ export const getAdvisorAppointment = createServerFn({ method: "GET" })
   });
 
 export const cancelAdvisorAppointment = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         manageToken: z.string().min(16).max(128),
@@ -201,7 +201,7 @@ export const cancelAdvisorAppointment = createServerFn({ method: "POST" })
   });
 
 export const rescheduleAdvisorAppointment = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         manageToken: z.string().min(16).max(128),

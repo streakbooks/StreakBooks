@@ -156,9 +156,7 @@ export function ContactSettingsContent({
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (settingsQ.isPending) return <LoadingState />;
   if (settingsQ.isError) {
-    return (
-      <QueryErrorState queries={[settingsQ]} title="Could not load settings" />
-    );
+    return <QueryErrorState queries={[settingsQ]} title="Could not load settings" />;
   }
 
   const workspace = (

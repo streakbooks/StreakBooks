@@ -29,7 +29,7 @@ async function assertFirmMember(
 
 export const getFirmDirectoryPreferences = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { firmId: string }) => ({
+  .validator((input: { firmId: string }) => ({
     firmId: assertUuid(input.firmId),
   }))
   .handler(async ({ data, context }) => {
@@ -48,18 +48,16 @@ export const getFirmDirectoryPreferences = createServerFn({ method: "GET" })
 
 export const saveFirmDirectoryPreference = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { firmId: string; kind: FirmDirectoryPreferenceKind; value: unknown }) => {
-      if (input.kind !== "columns" && input.kind !== "views") {
-        throw new Error("Unsupported firm preference");
-      }
-      return {
-        firmId: assertUuid(input.firmId),
-        kind: input.kind,
-        value: normalizeFirmDirectoryPreference(input.kind, input.value),
-      };
-    },
-  )
+  .validator((input: { firmId: string; kind: FirmDirectoryPreferenceKind; value: unknown }) => {
+    if (input.kind !== "columns" && input.kind !== "views") {
+      throw new Error("Unsupported firm preference");
+    }
+    return {
+      firmId: assertUuid(input.firmId),
+      kind: input.kind,
+      value: normalizeFirmDirectoryPreference(input.kind, input.value),
+    };
+  })
   .handler(async ({ data, context }) => {
     await assertFirmMember(context.supabase, data.firmId, context.userId);
     const { error } = await context.supabase.from("firm_ui_preferences" as never).upsert(

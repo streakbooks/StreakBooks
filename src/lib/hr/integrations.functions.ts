@@ -51,7 +51,7 @@ export type HrPayrollOffboardingHandoff = {
 
 export const listHrPayrollHandoffs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.employees.manage");
@@ -103,7 +103,7 @@ export const listHrPayrollHandoffs = createServerFn({ method: "GET" })
 
 export const applyHrCompensationHandoff = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; changeId: string; componentTypeId: string }) => ({
+  .validator((input: { companyId: string; changeId: string; componentTypeId: string }) => ({
     companyId: companyIdOf(input),
     changeId: input.changeId,
     componentTypeId: input.componentTypeId,
@@ -131,7 +131,7 @@ export const applyHrCompensationHandoff = createServerFn({ method: "POST" })
 
 export const applyHrOffboardingHandoff = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; caseId: string }) => ({
+  .validator((input: { companyId: string; caseId: string }) => ({
     companyId: companyIdOf(input),
     caseId: input.caseId,
   }))

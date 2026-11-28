@@ -23,7 +23,10 @@ export const Route = createFileRoute("/auth_/sso")({
   head: () => ({
     meta: [
       { title: "Single sign-on — StreakBooks" },
-      { name: "description", content: "Sign in to StreakBooks with your company identity provider." },
+      {
+        name: "description",
+        content: "Sign in to StreakBooks with your company identity provider.",
+      },
     ],
   }),
   component: SsoPage,

@@ -448,11 +448,7 @@ function BankingAccounts() {
         <Button
           size="sm"
           disabled={
-            createM.isPending ||
-            !name.trim() ||
-            !glAccountId ||
-            !glQ.isSuccess ||
-            glQ.isError
+            createM.isPending || !name.trim() || !glAccountId || !glQ.isSuccess || glQ.isError
           }
           onClick={() => createM.mutate()}
         >

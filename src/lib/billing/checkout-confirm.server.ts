@@ -40,26 +40,32 @@ async function rpcApplyCheckout(
   const subscriptionId = str(session["subscription"]) ?? str(subscription["id"]);
   if (!subscriptionId) return { status: "skipped", reason: "Missing subscription id." };
   const eventId = `confirm_${str(session["id"]) ?? checkoutId}`;
-  const { data, error } = await supabaseAdmin.rpc("billing_apply_provider_event" as never, {
-    _provider: "stripe",
-    _event_id: eventId,
-    _kind: "checkout_completed",
-    _data: {
-      checkoutId,
-      subscriptionId,
-      customerId: str(session["customer"]),
-      status: state.status,
-      periodEnd: state.periodEnd,
-      cancelAtPeriodEnd: state.cancelAtPeriodEnd,
-      occurredAt: new Date().toISOString(),
-    },
-  } as never);
+  const { data, error } = await supabaseAdmin.rpc(
+    "billing_apply_provider_event" as never,
+    {
+      _provider: "stripe",
+      _event_id: eventId,
+      _kind: "checkout_completed",
+      _data: {
+        checkoutId,
+        subscriptionId,
+        customerId: str(session["customer"]),
+        status: state.status,
+        periodEnd: state.periodEnd,
+        cancelAtPeriodEnd: state.cancelAtPeriodEnd,
+        occurredAt: new Date().toISOString(),
+      },
+    } as never,
+  );
   if (error) throw new Error(error.message);
   const result = data as { result?: string; reason?: string };
   if (result.result === "applied") {
-    const { error: redeemError } = await supabaseAdmin.rpc("billing_redeem_coupon" as never, {
-      _checkout_id: checkoutId,
-    } as never);
+    const { error: redeemError } = await supabaseAdmin.rpc(
+      "billing_redeem_coupon" as never,
+      {
+        _checkout_id: checkoutId,
+      } as never,
+    );
     if (redeemError) throw new Error(redeemError.message);
     return {
       status: "applied",
@@ -145,7 +151,10 @@ export async function expireStaleOpenCheckouts(companyId: string, maxAgeHours = 
 }
 
 /** Block a second checkout while a recent one is still open (unless it was expired above). */
-export async function assertNoRecentOpenCheckout(supabase: Client, companyId: string): Promise<void> {
+export async function assertNoRecentOpenCheckout(
+  supabase: Client,
+  companyId: string,
+): Promise<void> {
   const { data, error } = await supabase
     .from("billing_checkouts" as never)
     .select("id, created_at" as never)

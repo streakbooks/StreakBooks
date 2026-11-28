@@ -125,7 +125,13 @@ describe("Fixed Assets local non-CI release gate", () => {
 
   it("refuses the old repository without running npm", () =>
     caseWithRepo((f) => {
-      git(f.repo, "remote", "set-url", "origin", "https://github.com/linkbusinessadvisory/LinkBooks.git");
+      git(
+        f.repo,
+        "remote",
+        "set-url",
+        "origin",
+        "https://github.com/linkbusinessadvisory/LinkBooks.git",
+      );
       const x = execute(f);
       assert.equal(x.status, 2);
       assert.match(x.output, /not streakbooks\/StreakBooks/i);
@@ -134,7 +140,13 @@ describe("Fixed Assets local non-CI release gate", () => {
 
   it("never prints a credential-bearing remote URL", () =>
     caseWithRepo((f) => {
-      git(f.repo, "remote", "set-url", "origin", "https://secret-value@example.com/StreakBooks.git");
+      git(
+        f.repo,
+        "remote",
+        "set-url",
+        "origin",
+        "https://secret-value@example.com/StreakBooks.git",
+      );
       const x = execute(f);
       assert.equal(x.status, 2);
       assert.ok(!x.output.includes("secret-value"));

@@ -59,7 +59,7 @@ type DbEvidencePage = {
  */
 export const getAiWorkpaperEvidence = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => workpaperEvidenceInput.parse(input))
+  .validator((input: unknown) => workpaperEvidenceInput.parse(input))
   .handler(async ({ data, context }): Promise<AiWorkpaperEvidenceResponse> => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     await assertCompanyPermission(context.supabase, data.companyId, "ai.use");

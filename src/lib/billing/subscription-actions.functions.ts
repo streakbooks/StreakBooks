@@ -111,7 +111,7 @@ async function preparePlanChange(
 
 export const openBillingPortal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; origin: string }) => ({
+  .validator((input: { companyId: string; origin: string }) => ({
     companyId: assertUuid(input?.companyId),
     origin: input?.origin ?? "",
   }))
@@ -765,5 +765,5 @@ export const syncOrganisationSubscription = createServerFn({ method: "POST" })
 
 export const changeOrganisationPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parsePlanChange)
+  .validator(parsePlanChange)
   .handler(({ data, context }) => changePlanFor(context, data));

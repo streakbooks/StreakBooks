@@ -25,7 +25,7 @@ export type TrackedDocumentRequest = {
 
 export const listFirmTrackedRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmScope.parse(input))
+  .validator((input: unknown) => firmScope.parse(input))
   .handler(async ({ data, context }): Promise<TrackedDocumentRequest[]> => {
     await assertFirmScope(context.supabase, context.userId, data.firmId, data.companyId, false);
     // Existing document-request RLS restricts visibility to sender or recipient.
@@ -52,7 +52,7 @@ export const listFirmTrackedRequests = createServerFn({ method: "GET" })
 
 export const listFirmRequestRecipients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmScope.parse(input))
+  .validator((input: unknown) => firmScope.parse(input))
   .handler(async ({ data, context }) => {
     await assertFirmScope(context.supabase, context.userId, data.firmId, data.companyId, true);
     const sb = context.supabase;
@@ -98,7 +98,7 @@ export const listFirmRequestRecipients = createServerFn({ method: "GET" })
 
 export const createFirmTrackedRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     firmScope
       .extend({
         requestedFrom: z.string().uuid(),
@@ -128,9 +128,7 @@ export const createFirmTrackedRequest = createServerFn({ method: "POST" })
 
 export const cancelFirmTrackedRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    firmScope.extend({ requestId: z.string().uuid() }).parse(input),
-  )
+  .validator((input: unknown) => firmScope.extend({ requestId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertFirmScope(context.supabase, context.userId, data.firmId, data.companyId, true);
     const { data: row, error: fetchError } = await context.supabase
@@ -153,9 +151,7 @@ export const cancelFirmTrackedRequest = createServerFn({ method: "POST" })
 
 export const listFirmEligibleAttachments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    firmScope.extend({ requestId: z.string().uuid() }).parse(input),
-  )
+  .validator((input: unknown) => firmScope.extend({ requestId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertFirmScope(context.supabase, context.userId, data.firmId, data.companyId, false);
     const sb = context.supabase;
@@ -191,7 +187,7 @@ export const listFirmEligibleAttachments = createServerFn({ method: "GET" })
 
 export const completeFirmTrackedRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     firmScope
       .extend({
         requestId: z.string().uuid(),
@@ -314,7 +310,7 @@ const fields =
 
 export const listFirmClientRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => scope.parse(input))
+  .validator((input: unknown) => scope.parse(input))
   .handler(async ({ data, context }): Promise<FirmClientRequest[]> => {
     await checkFirmClient(context, data.firmId, data.companyId, false);
     const { data: rows, error } = await context.supabase
@@ -335,7 +331,7 @@ export const listFirmClientRequests = createServerFn({ method: "GET" })
 
 export const saveFirmClientRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => requestInput.parse(input))
+  .validator((input: unknown) => requestInput.parse(input))
   .handler(async ({ data, context }): Promise<FirmClientRequest> => {
     await checkFirmClient(context, data.firmId, data.companyId, true);
     if (data.assigned_to) {

@@ -56,7 +56,7 @@ async function audit(
 
 export const saveMoneyDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       kind: MoneyKind;
@@ -149,7 +149,7 @@ const MONEY_DOC_MIGRATION = "20261025300100_ops_money_documents_rpcs.sql";
 
 export const listUndepositedReceipts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "banking.view");
     const { data: rows, error } = await context.supabase
@@ -164,7 +164,7 @@ export const listUndepositedReceipts = createServerFn({ method: "GET" })
 
 export const createProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       code: string;
@@ -227,7 +227,7 @@ export const createProject = createServerFn({ method: "POST" })
 
 export const uploadInboxDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       fileName: string;
@@ -296,7 +296,7 @@ export const uploadInboxDocument = createServerFn({ method: "POST" })
 
 export const saveRecurringJournalTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       name: string;
@@ -380,7 +380,7 @@ export const saveRecurringJournalTemplate = createServerFn({ method: "POST" })
 
 export const generateRecurringJournal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; templateId: string }) => ({
+  .validator((input: { companyId: string; templateId: string }) => ({
     companyId: assertUuid(input.companyId),
     templateId: assertUuid(input.templateId, "template"),
   }))
@@ -401,7 +401,7 @@ const RECURRING_JOURNAL_MIGRATION = "20261025300300_ops_recurring_journals.sql";
 
 export const listMoneyDocuments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; kind?: string; limit?: number }) => ({
+  .validator((input: { companyId: string; kind?: string; limit?: number }) => ({
     companyId: assertUuid(input.companyId),
     kind: input.kind && (KINDS as readonly string[]).includes(input.kind) ? input.kind : null,
     limit: Math.min(500, Math.max(1, Math.floor(input.limit ?? 200))),
@@ -425,7 +425,7 @@ export const listMoneyDocuments = createServerFn({ method: "GET" })
 
 export const voidMoneyDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; documentId: string; reason: string; voidDate?: string }) => {
       const reason = (input.reason ?? "").trim().slice(0, 300);
       if (!reason) throw new Error("A reason is required to void a document");

@@ -51,9 +51,7 @@ export type BillingDocumentList = {
 
 export const listBillingDocuments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ companyId: z.string().uuid() }).strict().parse(input),
-  )
+  .validator((input: unknown) => z.object({ companyId: z.string().uuid() }).strict().parse(input))
   .handler(
     async ({ data, context }) =>
       (await callRpc(context.supabase, "billing_documents", {
@@ -107,7 +105,8 @@ export const listProviderInvoices = createServerFn({ method: "GET" })
     );
     const rows = Array.isArray(listed["data"]) ? (listed["data"] as Record<string, unknown>[]) : [];
     const invoices: ProviderInvoice[] = rows.map((invoice) => {
-      const lines = (invoice["lines"] as { data?: Record<string, unknown>[] } | undefined)?.data ?? [];
+      const lines =
+        (invoice["lines"] as { data?: Record<string, unknown>[] } | undefined)?.data ?? [];
       const proration = lines.some((line) => line["proration"] === true);
       const created = Number(invoice["created"] ?? 0);
       const due = Number(invoice["due_date"] ?? 0);
@@ -173,12 +172,12 @@ export const documentDownloadFor = createServerOnlyFn(
 
 export const downloadBillingDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => documentRequest.parse(input))
+  .validator((input: unknown) => documentRequest.parse(input))
   .handler(({ data, context }) => documentDownloadFor(context, data));
 
 export const setBillingTaxId = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         accountId: z.string().uuid(),

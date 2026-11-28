@@ -128,8 +128,7 @@ export function LookupSelect({
     () => dispatch({ type: "activate" }),
   );
   const query = controlledSearch ?? ui.query;
-  const showCreate =
-    !error && canOfferCreate(canCreate, Boolean(onCreate || renderCreate));
+  const showCreate = !error && canOfferCreate(canCreate, Boolean(onCreate || renderCreate));
 
   const prepared = useMemo(() => {
     const pinnedId = ui.pinnedId;
@@ -313,11 +312,7 @@ export function LookupSelect({
             style={{ maxHeight: popupHeight }}
           >
             <p className="sr-only" aria-live="polite">
-              {error
-                ? error
-                : loading
-                  ? "Loading records"
-                  : `${flat.length} results`}
+              {error ? error : loading ? "Loading records" : `${flat.length} results`}
             </p>
             {showCreate ? (
               <div

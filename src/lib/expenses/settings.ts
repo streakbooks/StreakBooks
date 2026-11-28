@@ -44,6 +44,64 @@ function asDistanceUnit(value: string | undefined | null): ExpenseDistanceUnit {
   return value === "mi" ? "mi" : "km";
 }
 
+export function expenseClaimCurrencyOptions(
+  baseCurrency: string | null | undefined,
+  enabledCurrencies: readonly string[] = [],
+): string[] {
+  return [
+    ...new Set([baseCurrency ?? "", ...enabledCurrencies].map((code) => code.trim().toUpperCase())),
+  ]
+    .filter((code) => /^[A-Z]{3}$/.test(code))
+    .sort((a, b) =>
+      a === baseCurrency?.toUpperCase()
+        ? -1
+        : b === baseCurrency?.toUpperCase()
+          ? 1
+          : a.localeCompare(b),
+    );
+}
+
+export function resolveExpenseClaimCurrency(input: {
+  baseCurrency: string | null | undefined;
+  defaultCurrency: string | null | undefined;
+  allowMultiCurrencyClaims: boolean | null | undefined;
+  enabledCurrencies: readonly string[];
+}): string {
+  const base = input.baseCurrency?.trim().toUpperCase() || "USD";
+  const selected = input.defaultCurrency?.trim().toUpperCase();
+  if (!selected || !input.allowMultiCurrencyClaims) return base;
+  return expenseClaimCurrencyOptions(base, input.enabledCurrencies).includes(selected)
+    ? selected
+    : base;
+}
+
+export function resolveExpenseMultiCurrencyClaimsPolicy(
+  requested: boolean | null | undefined,
+  current: boolean | null | undefined,
+): boolean {
+  return requested ?? current ?? true;
+}
+
+export function validateExpenseClaimCurrency(input: {
+  baseCurrency: string | null | undefined;
+  defaultCurrency: string | null | undefined;
+  allowMultiCurrencyClaims?: boolean;
+  enabledCurrencies: readonly string[];
+}): string | null {
+  const base = input.baseCurrency?.trim().toUpperCase() || "USD";
+  const selected = input.defaultCurrency?.trim().toUpperCase();
+  if (!selected) return null;
+  if (!expenseClaimCurrencyOptions(base, input.enabledCurrencies).includes(selected)) {
+    throw new Error(
+      "Default claim currency must be the base currency or an enabled company currency.",
+    );
+  }
+  if (input.allowMultiCurrencyClaims === false && selected !== base) {
+    throw new Error("Enable multi-currency claims before choosing a non-base default currency.");
+  }
+  return selected;
+}
+
 export function mapExpenseManagementSettings(
   row: SettingsRow | null | undefined,
   companyId: string,

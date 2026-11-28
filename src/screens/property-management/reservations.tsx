@@ -155,135 +155,135 @@ export function PmReservationsPage() {
             properties.isError ? (
               <QueryErrorState queries={[properties]} title="Could not load properties" />
             ) : (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle>New reservation</CardTitle>
-                <CardDescription>Enter amounts in major currency units.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label>Property</Label>
-                  {properties.isSuccess ? (
-                    <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>New reservation</CardTitle>
+                  <CardDescription>Enter amounts in major currency units.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label>Property</Label>
+                    {properties.isSuccess ? (
+                      <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select property" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(properties.data ?? []).map((property) => (
+                            <SelectItem key={property.id} value={property.id}>
+                              {property.code} — {property.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </RecordLookupSelect>
+                    ) : (
+                      <LoadingState />
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Source</Label>
+                    <Select value={source} onValueChange={setSource}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select property" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {(properties.data ?? []).map((property) => (
-                          <SelectItem key={property.id} value={property.id}>
-                            {property.code} — {property.name}
+                        {/* lookup-fixed-enum: Reservation source codes. */}
+                        {[
+                          "manual",
+                          "direct",
+                          "airbnb",
+                          "vrbo",
+                          "booking_com",
+                          "hostaway",
+                          "guesty",
+                          "ownerrez",
+                          "hostfully",
+                          "lodgify",
+                        ].map((value) => (
+                          <SelectItem key={value} value={value}>
+                            {value.replaceAll("_", " ")}
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </RecordLookupSelect>
-                  ) : (
-                    <LoadingState />
-                  )}
-                </div>
-                <div className="grid gap-2">
-                  <Label>Source</Label>
-                  <Select value={source} onValueChange={setSource}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {/* lookup-fixed-enum: Reservation source codes. */}
-                      {[
-                        "manual",
-                        "direct",
-                        "airbnb",
-                        "vrbo",
-                        "booking_com",
-                        "hostaway",
-                        "guesty",
-                        "ownerrez",
-                        "hostfully",
-                        "lodgify",
-                      ].map((value) => (
-                        <SelectItem key={value} value={value}>
-                          {value.replaceAll("_", " ")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2 sm:col-span-2">
-                  <Label htmlFor="pm-guest">Guest name</Label>
-                  <Input
-                    id="pm-guest"
-                    value={guestName}
-                    onChange={(e) => setGuestName(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-check-in">Check-in</Label>
-                  <Input
-                    id="pm-check-in"
-                    type="date"
-                    value={checkIn}
-                    onChange={(e) => setCheckIn(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-check-out">Check-out</Label>
-                  <Input
-                    id="pm-check-out"
-                    type="date"
-                    value={checkOut}
-                    onChange={(e) => setCheckOut(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-base">Base accommodation</Label>
-                  <Input
-                    id="pm-base"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={baseMajor}
-                    onChange={(e) => setBaseMajor(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-cleaning">Cleaning fee</Label>
-                  <Input
-                    id="pm-cleaning"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={cleaningMajor}
-                    onChange={(e) => setCleaningMajor(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-channel">Channel fee</Label>
-                  <Input
-                    id="pm-channel"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={channelMajor}
-                    onChange={(e) => setChannelMajor(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    disabled={
-                      !propertyId ||
-                      !guestName ||
-                      !checkIn ||
-                      !checkOut ||
-                      mutation.isPending ||
-                      !properties.isSuccess
-                    }
-                    onClick={() => mutation.mutate()}
-                  >
-                    {mutation.isPending ? "Saving…" : "Save reservation"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2 sm:col-span-2">
+                    <Label htmlFor="pm-guest">Guest name</Label>
+                    <Input
+                      id="pm-guest"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-check-in">Check-in</Label>
+                    <Input
+                      id="pm-check-in"
+                      type="date"
+                      value={checkIn}
+                      onChange={(e) => setCheckIn(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-check-out">Check-out</Label>
+                    <Input
+                      id="pm-check-out"
+                      type="date"
+                      value={checkOut}
+                      onChange={(e) => setCheckOut(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-base">Base accommodation</Label>
+                    <Input
+                      id="pm-base"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={baseMajor}
+                      onChange={(e) => setBaseMajor(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-cleaning">Cleaning fee</Label>
+                    <Input
+                      id="pm-cleaning"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={cleaningMajor}
+                      onChange={(e) => setCleaningMajor(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-channel">Channel fee</Label>
+                    <Input
+                      id="pm-channel"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={channelMajor}
+                      onChange={(e) => setChannelMajor(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      disabled={
+                        !propertyId ||
+                        !guestName ||
+                        !checkIn ||
+                        !checkOut ||
+                        mutation.isPending ||
+                        !properties.isSuccess
+                      }
+                      onClick={() => mutation.mutate()}
+                    >
+                      {mutation.isPending ? "Saving…" : "Save reservation"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )
           ) : null}
           {reservations.isLoading ? <LoadingState /> : null}

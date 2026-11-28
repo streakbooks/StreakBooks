@@ -51,7 +51,7 @@ export type FirmAssignment = {
 
 export const listAssignableFirmMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmScope.parse(input))
+  .validator((input: unknown) => firmScope.parse(input))
   .handler(async ({ data, context }) => {
     await assertFirmScope(context.supabase, context.userId, data.firmId, data.companyId, false);
     const sb = context.supabase;
@@ -98,7 +98,7 @@ export const listAssignableFirmMembers = createServerFn({ method: "GET" })
 
 export const listFirmClientAssignments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmScope.parse(input))
+  .validator((input: unknown) => firmScope.parse(input))
   .handler(async ({ data, context }): Promise<FirmAssignment[]> => {
     await assertFirmScope(context.supabase, context.userId, data.firmId, data.companyId, false);
     const { data: rows, error } = await context.supabase
@@ -115,7 +115,7 @@ export const listFirmClientAssignments = createServerFn({ method: "GET" })
 
 export const saveFirmAssignment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     firmScope
       .extend({
         userId: z.string().uuid(),
@@ -146,7 +146,7 @@ export const saveFirmAssignment = createServerFn({ method: "POST" })
 
 export const removeFirmAssignment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmScope.extend({ userId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => firmScope.extend({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
     await assertFirmScope(sb, context.userId, data.firmId, data.companyId, true);
@@ -166,7 +166,7 @@ export const removeFirmAssignment = createServerFn({ method: "POST" })
 // one linked company. This deliberately does not email invitations or grant company access.
 export const addExistingFirmColleague = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmScope.extend({ userId: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => firmScope.extend({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
     await assertFirmScope(sb, context.userId, data.firmId, data.companyId, true);
@@ -194,7 +194,7 @@ export const addExistingFirmColleague = createServerFn({ method: "POST" })
 
 export const listCandidateFirmColleagues = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmScope.parse(input))
+  .validator((input: unknown) => firmScope.parse(input))
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
     await assertFirmScope(sb, context.userId, data.firmId, data.companyId, true);
@@ -230,7 +230,7 @@ export const listCandidateFirmColleagues = createServerFn({ method: "GET" })
 
 export const listFirmAssignmentsAcrossClients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
+  .validator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
     const { data: member, error } = await sb

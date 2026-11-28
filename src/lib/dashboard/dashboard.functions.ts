@@ -101,7 +101,7 @@ async function openDocs(
  */
 export const getDashboardSnapshot = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; asOf?: string; basis?: AccountingBasis }) => {
+  .validator((input: { companyId: string; asOf?: string; basis?: AccountingBasis }) => {
     if (input.asOf !== undefined && !ISO.test(input.asOf))
       throw new Error("asOf must be YYYY-MM-DD");
     return {

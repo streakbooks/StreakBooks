@@ -83,7 +83,7 @@ export function CheckoutForm({
     company: companyName,
     country: defaultCountry,
   }));
-  const [method, setMethod] = useState<PayMethodId>("card");
+  const [requestedMethod, setMethod] = useState<PayMethodId | null>(null);
   const [error, setError] = useState("");
   const currency = priceCurrency ?? checkoutCurrencyForCountry(defaultCountry);
   const dueMinor = quote && quote.currency === currency ? quote.dueMinor : null;
@@ -92,7 +92,11 @@ export function CheckoutForm({
     providers,
     routedProviders,
   ).filter((item) => item.available);
-  const selectedMethod = available.find((item) => item.id === method);
+  const selectedMethod =
+    available.find((item) => item.id === requestedMethod) ??
+    available.find((item) => item.id === "upi") ??
+    available[0];
+  const method = selectedMethod?.id;
   const hostedProvider =
     selectedMethod?.provider === "razorpay"
       ? "Razorpay"
@@ -100,23 +104,10 @@ export function CheckoutForm({
         ? "Stripe"
         : "our payment partner";
 
-  const routedKey = (routedProviders ?? []).join(",");
-  const stripeAvailable = providers.stripe;
-  const razorpayAvailable = providers.razorpay;
-
   useEffect(() => {
     // Country comes from the server, not an editable country picker or browser locale.
     setBilling((current) => ({ ...current, country: defaultCountry }));
-    const choices = paymentMethodsForRoutedCountry(
-      defaultCountry,
-      { stripe: stripeAvailable, razorpay: razorpayAvailable },
-      routedProviders,
-    ).filter((item) => item.available);
-    setMethod((current) => {
-      if (choices.some((item) => item.id === current)) return current;
-      return choices.find((item) => item.id === "upi")?.id ?? choices[0]?.id ?? "card";
-    });
-  }, [defaultCountry, stripeAvailable, razorpayAvailable, routedKey, routedProviders]);
+  }, [defaultCountry]);
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => {
@@ -142,7 +133,7 @@ export function CheckoutForm({
       setError("The current country-specific price is not ready. Please review the order summary.");
       return;
     }
-    if (!available.some((item) => item.id === method)) {
+    if (!method) {
       setError("Choose a payment method.");
       return;
     }
@@ -267,7 +258,7 @@ export function CheckoutForm({
             </p>
             {currency ? (
               <RadioGroup
-                value={method}
+                value={method ?? ""}
                 onValueChange={(value) => {
                   if (available.some((item) => item.id === value)) setMethod(value as PayMethodId);
                 }}

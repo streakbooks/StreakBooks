@@ -12,6 +12,7 @@ import {
   saveFirmClientAccessGrant,
 } from "@/lib/firm/firm.functions";
 import { LookupSelect } from "@/components/lookup";
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -164,7 +165,7 @@ export function FirmClientAccessGrants({
               </div>
               <div className="space-y-2">
                 <Label>Firm staff member</Label>
-                <Select value={selectedUserId} onValueChange={setUserId}>
+                <RecordLookupSelect value={selectedUserId} onValueChange={setUserId}>
                   <SelectTrigger aria-label="Choose firm staff member">
                     <SelectValue placeholder="Choose staff" />
                   </SelectTrigger>
@@ -175,7 +176,7 @@ export function FirmClientAccessGrants({
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
               <div className="space-y-2">
                 <Label>Role for this client</Label>
@@ -183,6 +184,7 @@ export function FirmClientAccessGrants({
                   value={role}
                   onValueChange={(value) => setRole(value as (typeof roles)[number])}
                 >
+                  {/* lookup-fixed-enum: Client access roles are a fixed permission enumeration. */}
                   <SelectTrigger aria-label="Choose role for client">
                     <SelectValue />
                   </SelectTrigger>
@@ -245,6 +247,7 @@ export function FirmClientAccessGrants({
                     setPermissionKey(value as (typeof elevatedPermissions)[number])
                   }
                 >
+                  {/* lookup-fixed-enum: Client permission requests are a fixed permission enumeration. */}
                   <SelectTrigger aria-label="Choose elevated client permission">
                     <SelectValue />
                   </SelectTrigger>

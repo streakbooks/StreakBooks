@@ -32,7 +32,7 @@ async function command(client: Client, name: string, args: Record<string, unknow
 /** Retries must reuse the same operationId until the payload changes; see register session commands. */
 export const completePosCashSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: PosCompleteCashSaleInput) => parseCompletePosCashSale(input))
+  .validator((input: PosCompleteCashSaleInput) => parseCompletePosCashSale(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "pos.sale.create");
     return parsePosCashSaleResult(
@@ -51,7 +51,7 @@ export const completePosCashSale = createServerFn({ method: "POST" })
 
 export const recordPosCashMovement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: PosRecordCashMovementInput) => parsePosRecordCashMovement(input))
+  .validator((input: PosRecordCashMovementInput) => parsePosRecordCashMovement(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "pos.cash.adjust");
     return parsePosCashMovementResult(
@@ -68,7 +68,7 @@ export const recordPosCashMovement = createServerFn({ method: "POST" })
 
 export const refundPosCashSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: PosRefundCashSaleInput) => parseRefundPosCashSale(input))
+  .validator((input: PosRefundCashSaleInput) => parseRefundPosCashSale(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "pos.refund.create");
     return parsePosRefundResult(
@@ -89,7 +89,7 @@ export type PosRecentSale = {
 
 export const getPosRecentSales = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }): Promise<PosRecentSale[]> => {
     await assertCompanyPermission(context.supabase, data.companyId, "pos.view");
     const { data: rows, error } = await context.supabase

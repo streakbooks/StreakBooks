@@ -39,7 +39,7 @@ function allowed<T extends string>(value: unknown, options: readonly T[], name: 
 /** On-demand, capped operational queue, not a complete audit of source postings. */
 export const listReconciliationReviewCases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input?.companyId),
   }))
   .handler(
@@ -71,7 +71,7 @@ export const listReconciliationReviewCases = createServerFn({ method: "GET" })
 /** Exact, permissioned lookup keeps older cases reachable beyond the queue cap. */
 export const getReconciliationReviewCase = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; source: ExceptionFinding["source"]; fingerprint: string }) => {
       const source = allowed(input?.source, SOURCES, "reconciliation source");
       if (!/^f[0-9a-f]{32}$/.test(input?.fingerprint ?? "")) {
@@ -124,7 +124,7 @@ export type SaveCaseInput = {
  */
 export const saveReconciliationReviewCase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: SaveCaseInput) => {
+  .validator((input: SaveCaseInput) => {
     const action = allowed(input?.action, ACTIONS, "review action");
     const source = allowed(input?.source, SOURCES, "reconciliation source");
     if (!/^f[0-9a-f]{32}$/.test(input?.fingerprint ?? "")) {
@@ -213,7 +213,7 @@ export const saveReconciliationReviewCase = createServerFn({ method: "POST" })
  */
 export const listReconciliationReviewAssignees = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input?.companyId),
   }))
   .handler(

@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import {
   CUSTOM_PALETTE_STORAGE_KEY,
   CUSTOM_THEME_VARIABLES,
@@ -110,13 +110,15 @@ export function useTheme() {
   const palette = useSyncExternalStore(subscribe, readPalette, () => "classic" as const);
   const customRaw = useSyncExternalStore(subscribe, readCustomRaw, () => "");
   const systemDark = useSyncExternalStore(subscribe, systemPrefersDark, () => false);
-  let parsed: unknown = null;
-  try {
-    parsed = JSON.parse(customRaw);
-  } catch {
-    // Empty or malformed saved palette.
-  }
-  const customColors = validateCustomPalette(parsed);
+  const customColors = useMemo(() => {
+    let parsed: unknown = null;
+    try {
+      parsed = JSON.parse(customRaw);
+    } catch {
+      // Empty or malformed saved palette.
+    }
+    return validateCustomPalette(parsed);
+  }, [customRaw]);
 
   const setPreference = useCallback((next: ThemePreference) => {
     if (!isThemePreference(next)) return;

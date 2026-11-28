@@ -16,6 +16,7 @@ export type AccountRow = {
   code: string;
   name: string;
   account_type: string;
+  account_kind: string | null;
   subtype: string | null;
   normal_balance: string;
   is_system: boolean;
@@ -26,13 +27,13 @@ export type AccountRow = {
 
 export const listAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyIdInput)
+  .validator(companyIdInput)
   .handler(async ({ data, context }): Promise<AccountRow[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase
       .from("accounts" as never)
       .select(
-        "id, code, name, account_type, subtype, normal_balance, is_system, is_postable, is_control, is_active" as never,
+        "id, code, name, account_type, account_kind, subtype, normal_balance, is_system, is_postable, is_control, is_active" as never,
       )
       .eq("company_id" as never, data.companyId as never)
       .order("code" as never);
@@ -50,7 +51,7 @@ export type PeriodRow = {
 
 export const listPeriods = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyIdInput)
+  .validator(companyIdInput)
   .handler(async ({ data, context }): Promise<PeriodRow[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase
@@ -64,7 +65,7 @@ export const listPeriods = createServerFn({ method: "GET" })
 
 export const lockPeriod = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { periodId: string }) => ({
+  .validator((input: { periodId: string }) => ({
     periodId: assertUuid(input?.periodId, "period"),
   }))
   .handler(async ({ data, context }) => {
@@ -80,7 +81,7 @@ export const lockPeriod = createServerFn({ method: "POST" })
 
 export const unlockPeriod = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { periodId: string }) => ({
+  .validator((input: { periodId: string }) => ({
     periodId: assertUuid(input?.periodId, "period"),
   }))
   .handler(async ({ data, context }) => {
@@ -111,7 +112,7 @@ export type JournalListItem = {
 
 export const listJournals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       search?: string;
@@ -192,7 +193,7 @@ export type JournalDetail = {
 
 export const getJournalDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; journalId: string }) => ({
+  .validator((input: { companyId: string; journalId: string }) => ({
     companyId: assertUuid(input?.companyId),
     journalId: assertUuid(input?.journalId, "journal"),
   }))
@@ -238,7 +239,7 @@ export const getJournalDetail = createServerFn({ method: "GET" })
 
 export const postManualJournal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       journalDate: string;
@@ -306,7 +307,7 @@ const DIRECT_REVERSE_SOURCES = new Set(["manual", "opening_balance"]);
 
 export const reversePostedJournal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; journalId: string; idempotencyKey?: string }) => ({
+  .validator((input: { companyId: string; journalId: string; idempotencyKey?: string }) => ({
     companyId: assertUuid(input.companyId),
     journalId: assertUuid(input?.journalId, "journal"),
     idempotencyKey: (input.idempotencyKey ?? "").trim() || undefined,
@@ -334,7 +335,7 @@ export const reversePostedJournal = createServerFn({ method: "POST" })
 /** Ensure CoA + periods exist for companies created before the engine migration. */
 export const ensureLedgerMasters = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyIdInput)
+  .validator(companyIdInput)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounts.manage");
     const { error: a } = await context.supabase.rpc(

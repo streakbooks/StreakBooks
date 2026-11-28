@@ -180,7 +180,7 @@ function mapStatementLine(raw: unknown): PmOwnerStatementLine {
 
 export const listPmTenants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; search?: string | null }) => ({
+  .validator((input: { companyId: string; search?: string | null }) => ({
     companyId: companyIdOf(input),
     search: input.search?.trim() || null,
   }))
@@ -198,7 +198,7 @@ export const listPmTenants = createServerFn({ method: "GET" })
 
 export const upsertPmTenant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; draft: PmTenantDraft }) => ({
+  .validator((input: { companyId: string; draft: PmTenantDraft }) => ({
     companyId: companyIdOf(input),
     draft: input.draft,
   }))
@@ -226,7 +226,7 @@ export const upsertPmTenant = createServerFn({ method: "POST" })
 
 export const listPmLeases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; propertyId?: string | null }) => ({
+  .validator((input: { companyId: string; propertyId?: string | null }) => ({
     companyId: companyIdOf(input),
     propertyId: input.propertyId ?? null,
   }))
@@ -244,7 +244,7 @@ export const listPmLeases = createServerFn({ method: "GET" })
 
 export const upsertPmLease = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; draft: PmLeaseDraft }) => ({
+  .validator((input: { companyId: string; draft: PmLeaseDraft }) => ({
     companyId: companyIdOf(input),
     draft: input.draft,
   }))
@@ -280,7 +280,7 @@ export const upsertPmLease = createServerFn({ method: "POST" })
 
 export const listPmRentCharges = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; leaseId?: string | null }) => ({
+  .validator((input: { companyId: string; leaseId?: string | null }) => ({
     companyId: companyIdOf(input),
     leaseId: input.leaseId ?? null,
   }))
@@ -298,7 +298,7 @@ export const listPmRentCharges = createServerFn({ method: "GET" })
 
 export const generatePmRentCharge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       leaseId: string;
@@ -333,7 +333,7 @@ export const generatePmRentCharge = createServerFn({ method: "POST" })
 
 export const listPmReservations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; propertyId?: string | null }) => ({
+  .validator((input: { companyId: string; propertyId?: string | null }) => ({
     companyId: companyIdOf(input),
     propertyId: input.propertyId ?? null,
   }))
@@ -351,7 +351,7 @@ export const listPmReservations = createServerFn({ method: "GET" })
 
 export const upsertPmReservation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; draft: PmReservationDraft }) => ({
+  .validator((input: { companyId: string; draft: PmReservationDraft }) => ({
     companyId: companyIdOf(input),
     draft: input.draft,
   }))
@@ -388,7 +388,7 @@ export const upsertPmReservation = createServerFn({ method: "POST" })
 
 export const listPmOwnerStatements = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; ownerId?: string | null }) => ({
+  .validator((input: { companyId: string; ownerId?: string | null }) => ({
     companyId: companyIdOf(input),
     ownerId: input.ownerId ?? null,
   }))
@@ -406,7 +406,7 @@ export const listPmOwnerStatements = createServerFn({ method: "GET" })
 
 export const getPmOwnerStatement = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; statementId: string }) => ({
+  .validator((input: { companyId: string; statementId: string }) => ({
     companyId: companyIdOf(input),
     statementId: String(input.statementId),
   }))
@@ -435,7 +435,7 @@ export const getPmOwnerStatement = createServerFn({ method: "GET" })
 
 export const generatePmOwnerStatement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       ownerId: string;
@@ -474,7 +474,7 @@ export const generatePmOwnerStatement = createServerFn({ method: "POST" })
 
 export const approvePmOwnerStatement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; statementId: string }) => ({
+  .validator((input: { companyId: string; statementId: string }) => ({
     companyId: companyIdOf(input),
     statementId: String(input.statementId),
   }))
@@ -493,7 +493,7 @@ export const approvePmOwnerStatement = createServerFn({ method: "POST" })
 
 export const publishPmOwnerStatement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; statementId: string }) => ({
+  .validator((input: { companyId: string; statementId: string }) => ({
     companyId: companyIdOf(input),
     statementId: String(input.statementId),
   }))

@@ -133,9 +133,7 @@ export function AppStoreTrustPage() {
     );
   }
   if (catalogue.isError) {
-    return (
-      <QueryErrorState queries={[catalogue]} title="Could not load trust catalogue" />
-    );
+    return <QueryErrorState queries={[catalogue]} title="Could not load trust catalogue" />;
   }
   if (!catalogue.isSuccess) return null;
   const apps = catalogue.data?.apps ?? [];
@@ -154,10 +152,10 @@ export function AppStoreTrustPage() {
       <Alert className="mb-6">
         <AlertTitle>Certification is earned, not claimed</AlertTitle>
         <AlertDescription>
-          StreakBooks Certified requires formal security, accounting, API, performance, accessibility
-          and reliability reviews with periodic reassessment. Approving a security review never
-          enables real customer data by itself (fail closed). Native apps may show verified
-          publisher status before certification completes.
+          StreakBooks Certified requires formal security, accounting, API, performance,
+          accessibility and reliability reviews with periodic reassessment. Approving a security
+          review never enables real customer data by itself (fail closed). Native apps may show
+          verified publisher status before certification completes.
         </AlertDescription>
       </Alert>
 
@@ -229,10 +227,10 @@ export function AppStoreTrustPage() {
         <section className="mb-8 space-y-3">
           <h2 className="text-xl font-semibold tracking-tight">Security approval queue</h2>
           {reviews.isPending || reviews.isLoading ? (
-        <LoadingState />
-      ) : reviews.isError ? (
-        <QueryErrorState queries={[reviews]} title="Could not load security reviews" />
-      ) : reviews.isSuccess ? (
+            <LoadingState />
+          ) : reviews.isError ? (
+            <QueryErrorState queries={[reviews]} title="Could not load security reviews" />
+          ) : reviews.isSuccess ? (
             (reviews.data?.length ?? 0) === 0 ? (
               <EmptyState
                 title="No security reviews yet"

@@ -5,39 +5,26 @@ export const SETTINGS_NAV_GROUPS: ReadonlyArray<{
   label: string;
   ids: readonly SettingsCategory[];
 }> = [
-  { label: "Start", ids: ["overview", "features"] },
+  { label: "Start here", ids: ["overview", "features"] },
   {
-    label: "Organisation",
-    ids: ["organisation", "accounting", "currencies", "tax", "documents"],
+    label: "Company & preferences",
+    ids: ["organisation", "personal", "currencies", "documents"],
   },
   {
-    label: "Operations",
-    ids: [
-      "sales",
-      "purchases",
-      "banking",
-      "dimensions",
-      "products",
-      "contacts",
-      "expenses",
-      "reports",
-    ],
+    label: "Books & compliance",
+    ids: ["accounting", "tax", "reports", "audit", "import_migration"],
   },
   {
-    label: "Platform",
-    ids: [
-      "users",
-      "automation",
-      "integrations",
-      "notifications",
-      "audit",
-      "import_migration",
-      "portals",
-      "fixed_assets",
-      "payroll",
-    ],
+    label: "Sales, purchases & contacts",
+    ids: ["sales", "purchases", "contacts", "portals"],
   },
-  { label: "Firm & plan", ids: ["accountant", "subscription", "demo"] },
+  {
+    label: "Banking & operations",
+    ids: ["banking", "pos", "dimensions", "products", "expenses", "fixed_assets", "payroll"],
+  },
+  { label: "People & access", ids: ["users", "accountant"] },
+  { label: "Automation & connections", ids: ["automation", "notifications", "integrations"] },
+  { label: "Subscription & developer tools", ids: ["subscription", "demo"] },
 ] as const;
 
 const groupedIds = new Set(SETTINGS_NAV_GROUPS.flatMap((g) => g.ids));

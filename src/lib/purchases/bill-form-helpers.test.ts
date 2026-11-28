@@ -3,6 +3,8 @@ import {
   ATTACHMENT_ACCEPT_EXTENSIONS,
   CANCEL_UNSAVED_MESSAGE,
   calculateDueDate,
+  defaultPurchaseBillDueDate,
+  defaultPurchaseBillMemo,
   computeBillLine,
   computeBillTotals,
   endOfMonthIso,
@@ -67,6 +69,20 @@ describe("due date calculation", () => {
     expect(
       calculateDueDate("2026-02-10", { days: 10, calculation_method: "days_after_month_end" }),
     ).toBe("2026-03-10");
+  });
+
+  it("uses the organisation default for new bills and supplier terms take precedence", () => {
+    expect(defaultPurchaseBillDueDate("2026-11-01", undefined, 45)).toBe("2026-12-16");
+    expect(defaultPurchaseBillDueDate("2026-11-01", 14, 45)).toBe("2026-11-15");
+    expect(defaultPurchaseBillDueDate("2026-11-01")).toBe("2026-12-01");
+    expect(defaultPurchaseBillDueDate("2026-11-01", 0, 45)).toBe("2026-11-01");
+  });
+});
+
+describe("purchase bill memo default", () => {
+  it("applies saved notes to new bills and preserves an empty default", () => {
+    expect(defaultPurchaseBillMemo("Internal purchasing note")).toBe("Internal purchasing note");
+    expect(defaultPurchaseBillMemo(null)).toBe("");
   });
 });
 

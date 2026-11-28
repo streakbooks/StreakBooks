@@ -152,14 +152,13 @@ function ReportPage() {
   }
 
   if (companyBasis.isError)
-    return <QueryErrorState queries={[companyBasis]} title="Could not load accounting preferences" />;
+    return (
+      <QueryErrorState queries={[companyBasis]} title="Could not load accounting preferences" />
+    );
 
   const effectiveSearch =
     needsDefault && reportDefaults.data
-      ? applyOrganisationReportDefaults(search, {
-          default_basis: companyBasis.data ?? "accrual",
-          ...reportDefaults.data.document,
-        })
+      ? applyOrganisationReportDefaults(search, reportDefaults.data.document, companyBasis.data)
       : {
           ...search,
           ...(search.basis === undefined && search.settings === undefined && report.runner !== "tax"

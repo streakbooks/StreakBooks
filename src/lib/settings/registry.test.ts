@@ -25,6 +25,10 @@ describe("Settings Centre category routing and search", () => {
     expect(searchSettings("mfa").some((item) => item.id === "users")).toBe(true);
     expect(searchSettings("bank feeds").some((item) => item.id === "banking")).toBe(true);
     expect(searchSettings("not-a-real-category-keyword")).toHaveLength(0);
+    expect(searchSettings("late-fee grace period").some((item) => item.id === "sales")).toBe(true);
+    expect(searchSettings("account code padding").some((item) => item.id === "accounting")).toBe(
+      true,
+    );
   });
   it("provides real workspace destinations for import, fixed assets and payroll", () => {
     const importMeta = categoryMeta.find((item) => item.id === "import_migration");
@@ -46,6 +50,17 @@ describe("Settings Centre category routing and search", () => {
     expect(payrollMeta?.availability).toBe("partial");
   });
 
+  it("routes Point of Sale setup from its own Settings category", () => {
+    const posMeta = categoryMeta.find((item) => item.id === "pos");
+    expect(posMeta?.availability).toBe("partial");
+    expect(posMeta?.description).toContain("Tax and tender configuration are not available yet.");
+    expect(posMeta?.moduleLinks).toEqual([
+      { label: "Registers & sessions", to: "/pos/registers" },
+      { label: "Catalogue checkout", to: "/pos" },
+    ]);
+    expect(searchSettings("cash drawer").some((item) => item.id === "pos")).toBe(true);
+  });
+
   it("never strands users in categories without an editable Settings Centre schema", () => {
     for (const category of [
       "contacts",
@@ -55,6 +70,7 @@ describe("Settings Centre category routing and search", () => {
       "fixed_assets",
       "payroll",
       "tax",
+      "pos",
     ] as const) {
       const meta = categoryMeta.find((item) => item.id === category);
       expect(meta?.moduleLinks?.length, category).toBeGreaterThan(0);

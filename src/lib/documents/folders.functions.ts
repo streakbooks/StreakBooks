@@ -21,7 +21,7 @@ const manage = async (
 };
 export const listDocumentFolders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: { companyId: string }) => ({ companyId: assertUuid(v.companyId) }))
+  .validator((v: { companyId: string }) => ({ companyId: assertUuid(v.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const {
@@ -41,7 +41,7 @@ export const listDocumentFolders = createServerFn({ method: "GET" })
   });
 export const createDocumentFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: { companyId: string; name: string; parentId?: string | null }) => ({
+  .validator((v: { companyId: string; name: string; parentId?: string | null }) => ({
     companyId: assertUuid(v.companyId),
     name: validateFolderName(v.name),
     parentId: v.parentId ? assertUuid(v.parentId) : null,
@@ -63,7 +63,7 @@ export const createDocumentFolder = createServerFn({ method: "POST" })
   });
 export const updateDocumentFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (v: { companyId: string; folderId: string; name: string; parentId?: string | null }) => ({
       companyId: assertUuid(v.companyId),
       folderId: assertUuid(v.folderId),
@@ -90,7 +90,7 @@ export const updateDocumentFolder = createServerFn({ method: "POST" })
   });
 export const deleteDocumentFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: { companyId: string; folderId: string }) => ({
+  .validator((v: { companyId: string; folderId: string }) => ({
     companyId: assertUuid(v.companyId),
     folderId: assertUuid(v.folderId),
   }))
@@ -110,7 +110,7 @@ export const deleteDocumentFolder = createServerFn({ method: "POST" })
   });
 export const moveDocumentToFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: { companyId: string; attachmentId: string; folderId?: string | null }) => ({
+  .validator((v: { companyId: string; attachmentId: string; folderId?: string | null }) => ({
     companyId: assertUuid(v.companyId),
     attachmentId: assertUuid(v.attachmentId),
     folderId: v.folderId ? assertUuid(v.folderId) : null,

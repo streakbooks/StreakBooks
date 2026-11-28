@@ -86,7 +86,7 @@ function entityInput(input: { companyId: string; entityType: string; entityId: s
 
 export const listAttachments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(entityInput)
+  .validator(entityInput)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertEntityAccess(supabase, data.companyId, data.entityType, "view");
@@ -111,7 +111,7 @@ export const listAttachments = createServerFn({ method: "GET" })
  */
 export const registerAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       entityType: string;
@@ -209,7 +209,7 @@ export const registerAttachment = createServerFn({ method: "POST" })
 
 export const getAttachmentDownload = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+  .validator((input: { companyId: string; attachmentId: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
   }))
@@ -253,7 +253,7 @@ export const getAttachmentDownload = createServerFn({ method: "GET" })
 /** Short-lived, view-only URL for safe inline formats. No download disposition or public bucket. */
 export const getAttachmentPreview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+  .validator((input: { companyId: string; attachmentId: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
   }))
@@ -302,7 +302,7 @@ export const getAttachmentPreview = createServerFn({ method: "GET" })
  */
 export const deleteAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+  .validator((input: { companyId: string; attachmentId: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
   }))
@@ -372,7 +372,7 @@ export const deleteAttachment = createServerFn({ method: "POST" })
  */
 export const renameAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string; fileName: string }) => ({
+  .validator((input: { companyId: string; attachmentId: string; fileName: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
     fileName: input.fileName ?? "",
@@ -454,7 +454,7 @@ export type CompanyFileRow = AttachmentRow & {
 /** Resolve one file independently of pagination; RLS still gates record-level visibility. */
 export const getCompanyFile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+  .validator((input: { companyId: string; attachmentId: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
   }))
@@ -501,7 +501,7 @@ export const getCompanyFile = createServerFn({ method: "GET" })
  */
 export const checkPossibleFileDuplicates = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; candidates: Array<{ fileName: string; sizeBytes: number }> }) => {
       const companyId = assertUuid(input.companyId);
       if (
@@ -548,7 +548,7 @@ export const checkPossibleFileDuplicates = createServerFn({ method: "POST" })
 /** Organisation-wide Files list (RLS limits it to what the user may view). */
 export const listCompanyFiles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       search?: string;

@@ -68,7 +68,7 @@ async function loadRecurring(db: Db, billingCompanyId: string, recurringId: stri
 
 export const listFirmPracticeRecurringTemplates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value: unknown) =>
+  .validator((value: unknown) =>
     firmScope.extend({ billingCompanyId: z.string().uuid() }).parse(value),
   )
   .handler(async ({ data, context }): Promise<PracticeRecurringSchedule[]> => {
@@ -91,7 +91,7 @@ export const listFirmPracticeRecurringTemplates = createServerFn({ method: "GET"
 
 export const listFirmEngagementRecurringLinks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value: unknown) => scope.parse(value))
+  .validator((value: unknown) => scope.parse(value))
   .handler(async ({ data, context }): Promise<PracticeRecurringLink[]> => {
     await checkClientBilling(context.supabase, context.userId, data, false);
     await loadEngagement(context.supabase, data);
@@ -112,7 +112,7 @@ export const listFirmEngagementRecurringLinks = createServerFn({ method: "GET" }
 
 export const linkFirmEngagementRecurring = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value: unknown) => linkInput.parse(value))
+  .validator((value: unknown) => linkInput.parse(value))
   .handler(async ({ data, context }) => {
     const db = context.supabase;
     await checkClientBilling(db, context.userId, data, true);
@@ -140,7 +140,7 @@ export const linkFirmEngagementRecurring = createServerFn({ method: "POST" })
 
 export const unlinkFirmEngagementRecurring = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value: unknown) => linkInput.parse(value))
+  .validator((value: unknown) => linkInput.parse(value))
   .handler(async ({ data, context }) => {
     const db = context.supabase;
     await checkClientBilling(db, context.userId, data, true);
@@ -162,7 +162,7 @@ export const unlinkFirmEngagementRecurring = createServerFn({ method: "POST" })
  * posting permissions, idempotency and document numbering. */
 export const generateFirmEngagementDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value: unknown) => linkInput.parse(value))
+  .validator((value: unknown) => linkInput.parse(value))
   .handler(async ({ data, context }) => {
     const db = context.supabase;
     await checkClientBilling(db, context.userId, data, true);

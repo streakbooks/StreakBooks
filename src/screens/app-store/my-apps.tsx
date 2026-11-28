@@ -64,9 +64,7 @@ export function AppStoreMyAppsPage() {
     );
   }
   if (catalogue.isError) {
-    return (
-      <QueryErrorState queries={[catalogue]} title="Could not load My Apps" />
-    );
+    return <QueryErrorState queries={[catalogue]} title="Could not load My Apps" />;
   }
   if (!catalogue.isSuccess) return null;
   const rows = (catalogue.data?.apps ?? []).filter(

@@ -84,9 +84,7 @@ export function TransactionCorrections({ companyId }: { companyId: string }) {
   });
   if (setup.isPending || approvalSettings.isPending) return <LoadingState />;
   if (setup.isError)
-    return (
-      <QueryErrorState queries={[setup]} title="Transaction corrections unavailable" />
-    );
+    return <QueryErrorState queries={[setup]} title="Transaction corrections unavailable" />;
   if (approvalSettings.isError)
     return (
       <QueryErrorState

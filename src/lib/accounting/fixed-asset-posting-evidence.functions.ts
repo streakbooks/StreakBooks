@@ -115,7 +115,7 @@ async function readJournalEvidence(
  */
 export const auditAssetDepreciationPosting = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId: string }) => ({
+  .validator((input: { companyId: string; runId: string }) => ({
     companyId: assertUuid(input?.companyId),
     runId: assertUuid(input?.runId, "depreciation run"),
   }))
@@ -202,7 +202,7 @@ export const auditAssetDepreciationPosting = createServerFn({ method: "GET" })
  */
 export const auditAssetDisposalPosting = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; assetId: string }) => ({
+  .validator((input: { companyId: string; assetId: string }) => ({
     companyId: assertUuid(input?.companyId),
     assetId: assertUuid(input?.assetId, "fixed asset"),
   }))

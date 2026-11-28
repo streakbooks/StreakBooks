@@ -238,10 +238,7 @@ export function ExpenseManagementPettyCashPage() {
                 <Button
                   onClick={() => createMut.mutate()}
                   disabled={
-                    createMut.isPending ||
-                    !name.trim() ||
-                    !banksQ.isSuccess ||
-                    banksQ.isError
+                    createMut.isPending || !name.trim() || !banksQ.isSuccess || banksQ.isError
                   }
                 >
                   {createMut.isPending ? "Saving…" : "Create float"}

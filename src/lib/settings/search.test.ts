@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { parseSettingsSearch } from "./search";
+import { parseSettingsSearch, searchSettingsFields } from "./search";
 
 describe("Settings billing deep-link parsing", () => {
+  it("falls back safely and signals an invalid Settings category", () => {
+    expect(parseSettingsSearch({ section: "made-up" })).toMatchObject({
+      section: "overview",
+      invalidSection: true,
+    });
+    expect(parseSettingsSearch({ section: ["sales"] })).toMatchObject({
+      section: "overview",
+      invalidSection: true,
+    });
+    expect(parseSettingsSearch({})).not.toHaveProperty("invalidSection");
+  });
+
   it("retains valid plan and billing interval", () => {
     expect(
       parseSettingsSearch({ section: "billing", plan: "pro_annual-2", interval: "year" }),
@@ -55,5 +67,48 @@ describe("Settings billing deep-link parsing", () => {
   it("rejects unsupported intervals without dropping valid plan", () => {
     expect(parseSettingsSearch({ plan: "pro", interval: "weekly" })).toMatchObject({ plan: "pro" });
     expect(parseSettingsSearch({ plan: "pro", interval: "weekly" })).not.toHaveProperty("interval");
+  });
+  it("preserves only safe in-app module return destinations", () => {
+    expect(parseSettingsSearch({ returnTo: "/sales?tab=invoices" }).returnTo).toBe(
+      "/sales?tab=invoices",
+    );
+    for (const returnTo of [
+      "https://example.invalid",
+      "//example.invalid",
+      "/settings",
+      "/../auth",
+      "/sales/%2e%2e/auth",
+      "/auth",
+    ]) {
+      expect(parseSettingsSearch({ returnTo })).not.toHaveProperty("returnTo");
+    }
+  });
+});
+
+describe("global Settings field search", () => {
+  it("finds standalone audited company capabilities and opens their canonical route", () => {
+    expect(searchSettingsFields("fiscal year end")).toContainEqual(
+      expect.objectContaining({
+        key: "company.fiscal_year_end",
+        to: "/settings/organisation/overview",
+        status: "complete",
+      }),
+    );
+  });
+
+  it("finds legacy document numbering in its canonical settings section", () => {
+    expect(searchSettingsFields("document sequences")).toContainEqual(
+      expect.objectContaining({
+        key: "documents.number_sequences",
+        to: "/settings/documents/numbering",
+        section: "documents",
+      }),
+    );
+  });
+
+  it("routes Tax capabilities to the owning Tax workspace", () => {
+    expect(searchSettingsFields("tax rate and code")).toContainEqual(
+      expect.objectContaining({ key: "tax.rate_code_master", to: "/tax", section: null }),
+    );
   });
 });

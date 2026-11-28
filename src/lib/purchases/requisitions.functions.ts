@@ -68,7 +68,7 @@ function mutationError(error: { message: string; code?: string }) {
 }
 export const listPurchaseRequisitions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       status?: RequisitionStatus | "all";
@@ -109,7 +109,7 @@ export const listPurchaseRequisitions = createServerFn({ method: "GET" })
   });
 export const savePurchaseRequisition = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: SaveRequisitionInput) => {
+  .validator((input: SaveRequisitionInput) => {
     const title = input.title.trim();
     if (title.length < 3 || title.length > 160)
       throw new Error("Enter a title from 3 to 160 characters");
@@ -157,7 +157,7 @@ export const savePurchaseRequisition = createServerFn({ method: "POST" })
   });
 export const managePurchaseRequisition = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id: string;

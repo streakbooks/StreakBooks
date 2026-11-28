@@ -441,9 +441,7 @@ function SegmentMembers({ record, canManage }: { record: OpsRecord; canManage: b
           >
             Preview membership change
           </Button>
-          {impact.isError ? (
-            <p role="alert">{friendlyAuthError(impact.error)}</p>
-          ) : null}
+          {impact.isError ? <p role="alert">{friendlyAuthError(impact.error)}</p> : null}
           {impact.data &&
           impact.variables?.mode === mode &&
           JSON.stringify(impact.variables.companyIds) === JSON.stringify(ids) ? (

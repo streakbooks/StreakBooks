@@ -22,7 +22,7 @@ export const firmOnboardingTrendInput = z
 
 export const listFirmOnboardingTrends = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmOnboardingTrendInput.parse(input))
+  .validator((input: unknown) => firmOnboardingTrendInput.parse(input))
   .handler(async ({ data, context }): Promise<FirmOnboardingDailySnapshot[]> => {
     const sb = context.supabase;
     const { data: member, error: membershipError } = await sb

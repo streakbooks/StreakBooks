@@ -43,7 +43,7 @@ async function assertFirmMember(
 
 export const listFirmOnboardingEscalationPolicy = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => scope.parse(input))
+  .validator((input: unknown) => scope.parse(input))
   .handler(async ({ data, context }): Promise<FirmOnboardingEscalationPolicy | null> => {
     await assertFirmMember(context, data.firmId, false);
     const { data: policy, error } = await context.supabase
@@ -66,7 +66,7 @@ export const saveFirmEscalationPolicyInput = scope
 
 export const saveFirmOnboardingEscalationPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => saveFirmEscalationPolicyInput.parse(input))
+  .validator((input: unknown) => saveFirmEscalationPolicyInput.parse(input))
   .handler(async ({ data, context }): Promise<FirmOnboardingEscalationPolicy> => {
     await assertFirmMember(context, data.firmId, true);
     const values = {
@@ -98,7 +98,7 @@ export const saveFirmOnboardingEscalationPolicy = createServerFn({ method: "POST
 
 export const listFirmOnboardingEscalationHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => scope.parse(input))
+  .validator((input: unknown) => scope.parse(input))
   .handler(async ({ data, context }): Promise<FirmOnboardingEscalationEvent[]> => {
     await assertFirmMember(context, data.firmId, true);
     // Record-level RLS requires an active linked client and accounting.view access.

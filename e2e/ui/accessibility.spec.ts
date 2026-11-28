@@ -176,6 +176,19 @@ test("settings results preserve native new tabs and keyboard section selection",
   await expect(page.getByText("Settings destination: features", { exact: true })).toBeVisible();
 });
 
+test("global settings search finds verified company fields and opens the canonical page", async ({
+  page,
+}) => {
+  await page.goto("/?flow=accessibility");
+  await page.getByRole("button", { name: "Search settings", exact: true }).click();
+  const search = page.getByRole("combobox", { name: "Search settings or modules" });
+  await search.fill("fiscal year end");
+  const result = page.getByRole("option", { name: /Organisation fiscal year end/ });
+  await expect(result).toHaveAttribute("href", "/settings/organisation/overview");
+  await search.press("Enter");
+  await expect(page).toHaveURL(/settings\/organisation\/overview/);
+});
+
 test("CAPTCHA hook keeps verification tokens single-use after module separation", async ({
   page,
 }) => {

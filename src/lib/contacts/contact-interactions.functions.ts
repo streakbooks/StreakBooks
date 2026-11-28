@@ -15,7 +15,7 @@ const PAGE_LIMIT = 25;
 
 export const listContactInteractions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactId: string;
@@ -73,7 +73,7 @@ export const listContactInteractions = createServerFn({ method: "GET" })
 
 export const createContactInteraction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactId: string;
@@ -123,7 +123,7 @@ export const createContactInteraction = createServerFn({ method: "POST" })
 
 export const setContactTaskCompleted = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; contactId: string; activityId: string; completed: boolean }) => {
       if (typeof input.completed !== "boolean") throw new Error("Invalid task completion status");
       return {
@@ -167,7 +167,7 @@ export const setContactTaskCompleted = createServerFn({ method: "POST" })
 /** Managers can assign follow-ups only to active colleagues in the same company. */
 export const listContactTaskAssignees = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -208,7 +208,7 @@ export const listContactTaskAssignees = createServerFn({ method: "GET" })
 /** Reassignment and reminder scheduling are independent of the immutable task text. */
 export const updateContactTaskReminder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       contactId: string;
@@ -273,7 +273,7 @@ export const updateContactTaskReminder = createServerFn({ method: "POST" })
  */
 export const listContactFollowUps = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; scope?: ContactFollowUpScope; page?: number }) => ({
+  .validator((input: { companyId: string; scope?: ContactFollowUpScope; page?: number }) => ({
     companyId: assertUuid(input.companyId),
     scope: normalizeContactFollowUpScope(input.scope),
     page: Math.min(4000, Math.max(0, Math.floor(Number(input.page ?? 0) || 0))),

@@ -18,7 +18,7 @@ import {
  */
 export const auditDeferralLedger = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; scheduleId: string }) => ({
+  .validator((input: { companyId: string; scheduleId: string }) => ({
     companyId: assertUuid(input.companyId),
     scheduleId: assertUuid(input.scheduleId, "schedule"),
   }))

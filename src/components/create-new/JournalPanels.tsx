@@ -7,13 +7,18 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { listAccounts, postManualJournal } from "@/lib/accounting/accounting.functions";
+import { getOrganisationConfig } from "@/lib/settings/settings-centre.functions";
+import { backdatedJournalWarning } from "@/lib/settings/backdated-journal-warning";
 import {
   generateRecurringJournal,
   saveRecurringJournalTemplate,
 } from "@/lib/create-new/money-documents.functions";
 import { fromMinorUnits, toSafeMinorNumber } from "@/lib/accounting/money";
 import { tryParseMinor } from "@/lib/purchases/money-input";
-import { inspectManualJournal } from "@/lib/accounting/manual-journal-review";
+import {
+  directBankPostingWarningLines,
+  inspectManualJournal,
+} from "@/lib/accounting/manual-journal-review";
 import { importJournalLinesCsv, JOURNAL_CSV_HEADERS } from "@/lib/accounting/journal-csv-import";
 import { toCsv } from "@/lib/sales/csv";
 import { validateAutoReverseDate } from "@/lib/accounting/fx-reval";
@@ -47,6 +52,9 @@ type AccountRow = {
   is_postable: boolean;
   is_active: boolean;
   is_control?: boolean;
+  account_type: string;
+  account_kind?: string | null;
+  subtype?: string | null;
 };
 
 const emptyLine = (): Line => ({ accountId: "", description: "", debit: "", credit: "" });
@@ -66,6 +74,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   const today = new Date().toISOString().slice(0, 10);
   const qc = useQueryClient();
   const fetchAccounts = useServerFn(listAccounts);
+  const fetchAccountingSettings = useServerFn(getOrganisationConfig);
   const post = useServerFn(postManualJournal);
   const saveTemplate = useServerFn(saveRecurringJournalTemplate);
   const generate = useServerFn(generateRecurringJournal);
@@ -73,6 +82,13 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
     queryKey: ["accounts", companyId],
     enabled: Boolean(companyId),
     queryFn: () => fetchAccounts({ data: { companyId: companyId! } }),
+  });
+  const accountingSettingsQ = useQuery({
+    queryKey: ["organisation-config", companyId, "accounting"],
+    enabled: Boolean(companyId) && mode === "post",
+    staleTime: 60_000,
+    queryFn: () =>
+      fetchAccountingSettings({ data: { companyId: companyId!, category: "accounting" } }),
   });
   const [date, setDate] = useState(today);
   const [name, setName] = useState("");
@@ -100,6 +116,21 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   const totals = review;
   const balanced = review.balanced;
   const reverseError = mode === "post" ? validateAutoReverseDate(date, autoReverseOn) : null;
+  const backdatedWarning =
+    mode === "post"
+      ? backdatedJournalWarning(
+          date,
+          Number(accountingSettingsQ.data?.document["warn_backdated_days"] ?? 90),
+        )
+      : null;
+  const directBankWarningLines =
+    mode === "post" && accountingSettingsQ.isSuccess
+      ? directBankPostingWarningLines(
+          lines,
+          allAccounts,
+          Boolean(accountingSettingsQ.data.document["warn_bank_direct_posting"] ?? true),
+        )
+      : [];
   const canSubmit =
     review.canPost &&
     !reverseError &&
@@ -374,6 +405,11 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                 />
+                {backdatedWarning ? (
+                  <p role="status" className="text-sm text-amber-700">
+                    {backdatedWarning} This is a warning only; accounting period locks still apply.
+                  </p>
+                ) : null}
               </FormControlShell>
               <FormControlShell className="sm:col-span-2">
                 <Label htmlFor="journal-memo">Narration</Label>
@@ -559,6 +595,13 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
         }
         totals={
           <div className="space-y-2">
+            {directBankWarningLines.length > 0 ? (
+              <p role="status" className="text-sm text-amber-700">
+                Lines {directBankWarningLines.join(", ")} post directly to a bank or cash account.
+                Consider using the receipt or payment workflow to keep bank reconciliation history
+                linked. This warning does not block posting.
+              </p>
+            ) : null}
             <TotalsSummary
               lines={[
                 {

@@ -7,7 +7,7 @@ import type { AnyClient } from "@/lib/banking/server-helpers";
 /** Read-only journal detail for the "Journal #N" links on bank transactions (BK-18). */
 export const getJournalDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; journalId: string }) => ({
+  .validator((input: { companyId: string; journalId: string }) => ({
     companyId: assertUuid(input.companyId),
     journalId: assertUuid(input.journalId),
   }))

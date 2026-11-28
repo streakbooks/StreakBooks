@@ -18,6 +18,8 @@ const PSQL = [
   "ON_ERROR_STOP=1",
 ];
 
+const dockerArgs = (host, args) => [...(host ? [host] : []), ...args];
+
 function check(ok, message) {
   if (!ok) throw new Error("Tax concurrency regression: " + message);
 }
@@ -26,7 +28,7 @@ function sql(host, container, statement) {
   try {
     return {
       ok: true,
-      output: execFileSync("docker", [host, "exec", "-i", container, ...PSQL], {
+      output: execFileSync("docker", dockerArgs(host, ["exec", "-i", container, ...PSQL]), {
         input: statement,
         encoding: "utf8",
         maxBuffer: 524288,
@@ -38,7 +40,7 @@ function sql(host, container, statement) {
 }
 
 function beginPosting(host, container, update, marker) {
-  const child = spawn("docker", [host, "exec", "-i", container, ...PSQL], {
+  const child = spawn("docker", dockerArgs(host, ["exec", "-i", container, ...PSQL]), {
     stdio: ["pipe", "pipe", "pipe"],
   });
   let output = "",
@@ -103,7 +105,7 @@ function beginPosting(host, container, update, marker) {
  * rather than using the snapshot from when the UPDATE originally began.
  */
 function beginPendingEdit(host, container, statement, marker) {
-  const child = spawn("docker", [host, "exec", "-i", container, ...PSQL], {
+  const child = spawn("docker", dockerArgs(host, ["exec", "-i", container, ...PSQL]), {
     stdio: ["pipe", "pipe", "pipe"],
   });
   let stdout = "",

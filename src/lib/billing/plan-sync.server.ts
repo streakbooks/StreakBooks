@@ -23,12 +23,15 @@ export async function syncStripeSubscriptionState(
     .maybeSingle();
   if (!row) return { synced: false, reason: "No subscription on file." };
   const eventId = `sync_plan_${subscriptionId}_${Date.now()}`;
-  const { data, error } = await supabaseAdmin.rpc("billing_apply_provider_event" as never, {
-    _provider: "stripe",
-    _event_id: eventId,
-    _kind: event.kind,
-    _data: event.data,
-  } as never);
+  const { data, error } = await supabaseAdmin.rpc(
+    "billing_apply_provider_event" as never,
+    {
+      _provider: "stripe",
+      _event_id: eventId,
+      _kind: event.kind,
+      _data: event.data,
+    } as never,
+  );
   if (error) throw new Error(error.message);
   const result = data as { result?: string; reason?: string };
   if (result.result === "applied" || result.result === "skipped") {

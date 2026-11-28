@@ -7,7 +7,7 @@ import { CompanyEmptyState } from "@/components/common/company-empty";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
-import { AccountLookup } from "@/components/lookup";
+import { AccountLookup, LookupSelect } from "@/components/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import {
   EXPENSE_MANAGEMENT_MIGRATION,
   EXPENSE_NOTIFICATIONS_MIGRATION,
   getExpenseManagementSettings,
+  listExpenseClaimCurrencies,
   importLegacyEmployeeExpenseClaims,
   previewLegacyEmployeeExpenseMigration,
   saveExpenseManagementSettings,
@@ -84,6 +85,7 @@ export function ExpenseManagementSettingsPage() {
     canEdit || can("expenses.view" as Permission) || can("expenses.submit" as Permission);
   const queryClient = useQueryClient();
   const fetchSettings = useServerFn(getExpenseManagementSettings);
+  const fetchCurrencies = useServerFn(listExpenseClaimCurrencies);
   const saveSettings = useServerFn(saveExpenseManagementSettings);
   const fetchAccounts = useServerFn(listAccounts);
   const fetchLegacyPreview = useServerFn(previewLegacyEmployeeExpenseMigration);
@@ -95,6 +97,30 @@ export function ExpenseManagementSettingsPage() {
     queryFn: () => fetchSettings({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canView,
   });
+  const currenciesQ = useQuery({
+    queryKey: ["expense-claim-currencies", company?.id],
+    queryFn: () => fetchCurrencies({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canView,
+  });
+  const claimCurrencyOptions = useMemo(
+    () => [
+      {
+        id: "base",
+        label: `Organisation base currency (${company?.base_currency ?? "USD"})`,
+      },
+      ...(currenciesQ.data ?? [])
+        .filter((code) => code !== company?.base_currency)
+        .map((code) => ({
+          id: code,
+          label: code,
+          disabled: !(draft?.allowMultiCurrencyClaims ?? false),
+          ...(draft?.allowMultiCurrencyClaims
+            ? {}
+            : { disabledReason: "Enable multi-currency claims to choose a foreign currency." }),
+        })),
+    ],
+    [company?.base_currency, currenciesQ.data, draft?.allowMultiCurrencyClaims],
+  );
 
   const accountsQ = useQuery({
     queryKey: ["accounts", company?.id, "expense-settings"],
@@ -330,16 +356,28 @@ export function ExpenseManagementSettingsPage() {
 
         <div className="grid gap-2">
           <Label htmlFor="em-currency">Default claim currency</Label>
-          <Input
+          <LookupSelect
             id="em-currency"
-            value={draft.defaultClaimCurrency}
-            disabled={!canEdit || save.isPending}
-            placeholder={company.base_currency ?? "USD"}
-            maxLength={3}
-            onChange={(event) =>
-              setDraft({ ...draft, defaultClaimCurrency: event.target.value.toUpperCase() })
+            ariaLabel="Default claim currency"
+            options={claimCurrencyOptions}
+            value={draft.defaultClaimCurrency || "base"}
+            onChange={(value) =>
+              setDraft({ ...draft, defaultClaimCurrency: value === "base" ? "" : value })
             }
+            placeholder="Choose claim currency"
+            searchPlaceholder="Search currencies"
+            emptyText="No enabled currencies"
+            disabled={!canEdit || save.isPending || currenciesQ.isPending || currenciesQ.isError}
+            loading={currenciesQ.isPending}
+            error={currenciesQ.isError ? "Company currencies could not be loaded." : undefined}
+            onRetry={() => void currenciesQ.refetch()}
+            allowClear={false}
           />
+          {!draft.allowMultiCurrencyClaims ? (
+            <p className="text-sm text-muted-foreground">
+              Enable multi-currency claims before selecting a foreign currency.
+            </p>
+          ) : null}
         </div>
 
         <div className="grid gap-2">
@@ -428,7 +466,7 @@ export function ExpenseManagementSettingsPage() {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="em-receipt">Require receipt above (minor units)</Label>
+          <Label htmlFor="em-receipt">Flag missing receipts at or above (minor units)</Label>
           <Input
             id="em-receipt"
             inputMode="numeric"
@@ -438,6 +476,10 @@ export function ExpenseManagementSettingsPage() {
               setDraft({ ...draft, requireReceiptAboveMinor: event.target.value })
             }
           />
+          <p className="text-sm text-muted-foreground">
+            Claims at or above this amount without an attachment receive a high-risk review flag;
+            this setting does not block submission. Set to 0 to disable.
+          </p>
         </div>
 
         <div className="grid gap-2">
@@ -489,7 +531,13 @@ export function ExpenseManagementSettingsPage() {
             id="em-fx"
             checked={draft.allowMultiCurrencyClaims}
             disabled={!canEdit || save.isPending}
-            onCheckedChange={(checked) => setDraft({ ...draft, allowMultiCurrencyClaims: checked })}
+            onCheckedChange={(checked) =>
+              setDraft({
+                ...draft,
+                allowMultiCurrencyClaims: checked,
+                defaultClaimCurrency: checked ? draft.defaultClaimCurrency : "",
+              })
+            }
           />
         </div>
 

@@ -36,6 +36,22 @@ export function calculateDueDate(
   return addDaysIso(billDate, days);
 }
 
+/** Default bill date policy: supplier terms override the organisation setting. */
+export function defaultPurchaseBillDueDate(
+  billDate: string,
+  supplierTermsDays?: number | null,
+  organisationTermsDays?: number | null,
+): string {
+  return calculateDueDate(billDate, {
+    days: supplierTermsDays ?? organisationTermsDays ?? 30,
+    calculation_method: "days_after_bill_date",
+  });
+}
+
+export function defaultPurchaseBillMemo(notes?: string | null | undefined): string {
+  return notes ?? "";
+}
+
 export function treatmentForMode(mode: TaxCalculationMode): TaxTreatment {
   return mode === "inclusive" ? "inclusive" : "exclusive";
 }

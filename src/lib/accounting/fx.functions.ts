@@ -80,7 +80,7 @@ export type RevaluationPreview = {
 
 export const previewFxRevaluation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(revalInput)
+  .validator(revalInput)
   .handler(async ({ data, context }): Promise<RevaluationPreview> => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: result, error } = await context.supabase.rpc(
@@ -95,7 +95,7 @@ export const previewFxRevaluation = createServerFn({ method: "POST" })
 
 export const postFxRevaluation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(revalInput)
+  .validator(revalInput)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.post");
     const { data: result, error } = await context.supabase.rpc(
@@ -171,7 +171,7 @@ export type FxOverview = {
 
 export const getFxOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }): Promise<FxOverview> => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: canPost } = await context.supabase.rpc("has_company_permission", {
@@ -268,7 +268,7 @@ export const getFxOverview = createServerFn({ method: "GET" })
 
 export const processDueAutoReversals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; upToDate?: string }) => ({
+  .validator((input: { companyId: string; upToDate?: string }) => ({
     companyId: assertUuid(input?.companyId),
     upToDate: input?.upToDate && isIsoDate(input.upToDate) ? input.upToDate : undefined,
   }))
@@ -293,7 +293,7 @@ export const processDueAutoReversals = createServerFn({ method: "POST" })
 
 export const cancelAutoReversal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; journalId: string }) => ({
+  .validator((input: { companyId: string; journalId: string }) => ({
     companyId: assertUuid(input?.companyId),
     journalId: assertUuid(input?.journalId, "journal"),
   }))

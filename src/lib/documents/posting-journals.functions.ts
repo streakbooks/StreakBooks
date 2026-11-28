@@ -51,7 +51,7 @@ const JOURNAL_SELECT =
  */
 export const listDocumentPostingJournals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; entityType: PostingJournalEntityType; entityId: string }) => {
       if (!isPostingJournalEntityType(input?.entityType)) {
         throw new Error("Unsupported journal document type");

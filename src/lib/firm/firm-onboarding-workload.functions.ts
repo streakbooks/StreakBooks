@@ -23,7 +23,7 @@ const firmInput = z.object({ firmId: z.string().uuid() }).strict();
 
 export const listFirmOnboardingWorkloadContext = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => firmInput.parse(input))
+  .validator((input: unknown) => firmInput.parse(input))
   .handler(async ({ data, context }): Promise<FirmWorkloadContext> => {
     const sb = context.supabase;
     const { data: viewer, error: viewerError } = await sb
@@ -89,7 +89,7 @@ export const saveFirmOnboardingCapacityInput = firmInput
 
 export const saveFirmOnboardingCapacity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => saveFirmOnboardingCapacityInput.parse(input))
+  .validator((input: unknown) => saveFirmOnboardingCapacityInput.parse(input))
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
     const { data: member, error: memberError } = await sb

@@ -387,7 +387,7 @@ const EMPTY_SETTINGS = {
 
 export const getBillingOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }): Promise<BillingOverview> => {
     const { supabase } = context;
     await assertCompanyMember(supabase, data.companyId);
@@ -605,7 +605,7 @@ async function listOfferRows(supabase: Client): Promise<BillingOfferView[]> {
 
 export const previewBillingQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; planCode: string; interval: string; offerCode?: string }) => ({
       companyId: assertUuid(input?.companyId),
       planCode: requirePlanCode(input?.planCode),
@@ -651,7 +651,7 @@ export const startTrialFor = createServerOnlyFn(
 
 export const startBillingTrial = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseTrialRequest)
+  .validator(parseTrialRequest)
   .handler(({ data, context }) => startTrialFor(context, data));
 
 export type CheckoutRequest = {
@@ -788,7 +788,7 @@ export const createCheckoutFor = createServerOnlyFn(
 
 export const createBillingCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseCheckoutRequest)
+  .validator(parseCheckoutRequest)
   .handler(({ data, context }) => createCheckoutFor(context, data));
 
 export const confirmBillingCheckout = createServerFn({ method: "POST" })
@@ -1272,7 +1272,7 @@ async function openRazorpayCheckout(draft: Parameters<typeof razorpayPlanBody>[0
 
 export const saveBillingSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       trialDays: number;
       trialPlanCode: string;
@@ -1329,7 +1329,7 @@ export const saveBillingSettings = createServerFn({ method: "POST" })
 
 export const saveBillingPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       code: string;
       monthlyGbp: number;
@@ -1389,7 +1389,7 @@ export const saveBillingPlan = createServerFn({ method: "POST" })
 
 export const saveBillingOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: BillingOfferView) => normaliseOfferInput(input))
+  .validator((input: BillingOfferView) => normaliseOfferInput(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertOperator(supabase);
@@ -1419,7 +1419,7 @@ export const saveBillingOffer = createServerFn({ method: "POST" })
 
 export const claimBillingOperator = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(() => ({}))
+  .validator(() => ({}))
   .handler(async () => {
     throw new Error("Platform access is granted by the platform owner, not from an organisation.");
   });

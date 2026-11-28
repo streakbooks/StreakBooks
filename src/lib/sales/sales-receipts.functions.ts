@@ -93,7 +93,7 @@ async function receiptSearchOr(supabase: SalesClient, f: ReturnType<typeof parse
 
 export const listReceipts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseReceiptListInput)
+  .validator(parseReceiptListInput)
   .handler(async ({ data: f, context }) => {
     await assertCompanyMember(context.supabase, f.companyId);
     const or = await receiptSearchOr(context.supabase, f);
@@ -131,7 +131,7 @@ export const listReceipts = createServerFn({ method: "GET" })
 
 export const exportReceiptsCsv = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(parseReceiptListInput)
+  .validator(parseReceiptListInput)
   .handler(async ({ data: f, context }) => {
     await assertCompanyMember(context.supabase, f.companyId);
     const or = await receiptSearchOr(context.supabase, f);
@@ -168,7 +168,7 @@ export const exportReceiptsCsv = createServerFn({ method: "GET" })
 
 export const getReceipt = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; receiptId: string }) => ({
+  .validator((input: { companyId: string; receiptId: string }) => ({
     companyId: assertUuid(input.companyId),
     receiptId: assertUuid(input.receiptId, "receipt"),
   }))
@@ -248,7 +248,7 @@ export const getReceipt = createServerFn({ method: "GET" })
 /** Every invoice that can still receive a payment for ONE customer (AR-06: no 50-row cap). */
 export const listOpenInvoicesForCustomer = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; contactId: string; currencyCode?: string }) => ({
+  .validator((input: { companyId: string; contactId: string; currencyCode?: string }) => ({
     companyId: assertUuid(input.companyId),
     contactId: assertUuid(input.contactId, "customer"),
     currencyCode: input.currencyCode ? input.currencyCode.toUpperCase().slice(0, 3) : null,
@@ -304,7 +304,7 @@ type RecordReceiptInput = {
 
 export const recordReceipt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: RecordReceiptInput) => {
+  .validator((input: RecordReceiptInput) => {
     if (!isIsoDate(input.receiptDate)) throw new Error("Receipt date must be YYYY-MM-DD");
     const amount = Math.round(Number(input.amountMinor));
     if (!(amount > 0)) throw new Error("Receipt amount must be positive");
@@ -392,7 +392,7 @@ const CORRECTION_MIGRATION = "20261024110300";
 
 export const unallocateReceipt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       receiptId: string;
@@ -426,7 +426,7 @@ export const unallocateReceipt = createServerFn({ method: "POST" })
 
 export const voidReceipt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; receiptId: string; reason: string; voidDate?: string }) => ({
       companyId: assertUuid(input.companyId),
       receiptId: assertUuid(input.receiptId, "receipt"),

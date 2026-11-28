@@ -90,7 +90,7 @@ export const getCompanyContext = createServerFn({ method: "GET" })
 
 export const setActiveCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     // Membership check (server) + DB trigger as defence in depth.
@@ -105,7 +105,7 @@ export const setActiveCompany = createServerFn({ method: "POST" })
 
 export const createCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(validateCompanyInput)
+  .validator(validateCompanyInput)
   .handler(async ({ data, context }) => {
     const { data: id, error } = await context.supabase.rpc("create_company", {
       _name: data.name,
@@ -157,7 +157,7 @@ export type CompanyDetails = CompanySummary & {
 
 export const getCompanyDetails = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }): Promise<CompanyDetails> => {
     const { supabase, userId } = context;
     await assertCompanyMember(supabase, data.companyId);
@@ -193,19 +193,42 @@ export const getCompanyDetails = createServerFn({ method: "GET" })
 
 export const updateCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (
       input: CreateCompanyInput & {
         companyId: string;
+        expected: Omit<CreateCompanyInput, "legal_name"> & {
+          legal_name: string | null;
+          tax_regime: string;
+          registration_number: string | null;
+          prices_include_tax: boolean;
+        };
         tax_regime: string;
         registration_number: string;
         prices_include_tax: boolean;
       },
     ) => {
       const base = validateCompanyInput(input);
+      if (!input.expected || typeof input.expected !== "object") {
+        throw new Error("Reload organisation settings before saving.");
+      }
+      if (typeof input.expected.prices_include_tax !== "boolean") {
+        throw new Error("Reload organisation settings before saving.");
+      }
+      const expectedCompany = validateCompanyInput({
+        ...input.expected,
+        legal_name: input.expected.legal_name ?? "",
+      });
       return {
         ...base,
         companyId: assertUuid(input.companyId),
+        expected: {
+          ...expectedCompany,
+          legal_name: expectedCompany.legal_name || null,
+          tax_regime: validateTaxRegime(input.expected.tax_regime),
+          registration_number: input.expected.registration_number?.trim() || null,
+          prices_include_tax: input.expected.prices_include_tax,
+        },
         tax_regime: validateTaxRegime(input.tax_regime),
         registration_number: (input.registration_number ?? "").trim().slice(0, 60),
         prices_include_tax: Boolean(input.prices_include_tax),
@@ -215,34 +238,34 @@ export const updateCompany = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "company.settings.edit");
-    const { data: updated, error } = await supabase
-      .from("companies")
-      .update({
-        name: data.name,
-        legal_name: data.legal_name || null,
-        country_code: data.country_code,
-        base_currency: data.base_currency,
-        fiscal_year_end_month: data.fiscal_year_end_month,
-        fiscal_year_end_day: data.fiscal_year_end_day,
-        timezone: data.timezone,
-      })
-      .eq("id", data.companyId)
-      .select("id");
-    if (error) throw new Error(error.message);
-    if (!updated || updated.length === 0) {
-      throw new Error("Only owners and administrators can change company settings.");
+    if (
+      data.tax_regime !== data.expected.tax_regime ||
+      (data.registration_number || null) !== data.expected.registration_number ||
+      data.prices_include_tax !== data.expected.prices_include_tax
+    ) {
+      await assertCompanyPermission(supabase, data.companyId, "tax.settings");
     }
-
-    const { error: taxError } = await supabase
-      .from("company_tax_settings")
-      .update({
-        tax_regime: data.tax_regime,
-        registration_number: data.registration_number || null,
-        prices_include_tax: data.prices_include_tax,
-      })
-      .eq("company_id", data.companyId);
-    if (taxError) throw new Error(taxError.message);
-    return { ok: true };
+    const { data: result, error } = await supabase.rpc(
+      "save_company_identity_and_tax" as never,
+      {
+        _company_id: data.companyId,
+        _expected: data.expected,
+        _desired: {
+          name: data.name,
+          legal_name: data.legal_name || null,
+          country_code: data.country_code,
+          base_currency: data.base_currency,
+          fiscal_year_end_month: data.fiscal_year_end_month,
+          fiscal_year_end_day: data.fiscal_year_end_day,
+          timezone: data.timezone,
+          tax_regime: data.tax_regime,
+          registration_number: data.registration_number || null,
+          prices_include_tax: data.prices_include_tax,
+        },
+      } as never,
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true, result };
   });
 
 export type CompanyMember = {
@@ -256,7 +279,7 @@ export type CompanyMember = {
 
 export const listCompanyMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }): Promise<CompanyMember[]> => {
     const { supabase, userId } = context;
     await assertCompanyPermission(supabase, data.companyId, "members.view");

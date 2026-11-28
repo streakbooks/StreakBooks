@@ -4,7 +4,24 @@ import {
   buildSettingsAuditCsv,
   formatSettingsAuditPageLabel,
   hasNextSettingsAuditPage,
+  settingsAuditDateRange,
 } from "./audit-export";
+
+describe("audit history UTC date filters", () => {
+  it("includes the last microsecond of a selected day", () => {
+    expect(settingsAuditDateRange("2024-02-29", "2024-02-29")).toEqual({
+      fromTimestamp: "2024-02-29T00:00:00Z",
+      toTimestamp: "2024-02-29T23:59:59.999999Z",
+    });
+  });
+  it("accepts open-ended ranges and rejects malformed or reversed dates", () => {
+    expect(settingsAuditDateRange(undefined, "2024-02-29").fromTimestamp).toBeNull();
+    expect(settingsAuditDateRange("2024-02-29").toTimestamp).toBeNull();
+    expect(() => settingsAuditDateRange("2025-02-29")).toThrow();
+    expect(() => settingsAuditDateRange(undefined, "2024-02-29extra")).toThrow();
+    expect(() => settingsAuditDateRange("2024-03-01", "2024-02-29")).toThrow();
+  });
+});
 
 describe("Settings audit history paging", () => {
   it("offers Next only when a full page was returned", () => {

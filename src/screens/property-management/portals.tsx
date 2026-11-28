@@ -178,92 +178,91 @@ export function PmPortalPage({ kind }: { kind: PortalKind }) {
       ) : (
         <>
           {showForm && canManage ? (
-            contacts.isError ||
-            (kind === "owner" ? owners.isError : tenants.isError) ? (
+            contacts.isError || (kind === "owner" ? owners.isError : tenants.isError) ? (
               <QueryErrorState
                 queries={[contacts, kind === "owner" ? owners : tenants]}
                 title="Could not load portal invite options"
               />
             ) : (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle>Invite {kind}</CardTitle>
-                <CardDescription>
-                  Links a contact to a {kind} record. Status starts as invited.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                {contacts.isSuccess &&
-                (kind === "owner" ? owners.isSuccess : tenants.isSuccess) ? (
-                  <>
-                <div className="grid gap-2">
-                  <Label>Contact</Label>
-                  <RecordLookupSelect value={contactId} onValueChange={setContactId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select contact" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contactOptions.map((contact) => (
-                        <SelectItem key={contact.id} value={contact.id}>
-                          {contact.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
-                </div>
-                <div className="grid gap-2">
-                  <Label>{kind === "owner" ? "Owner" : "Tenant"}</Label>
-                  <RecordLookupSelect value={partyId} onValueChange={setPartyId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={`Select ${kind}`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {kind === "owner"
-                        ? (owners.data ?? []).map((owner) => (
-                            <SelectItem key={owner.id} value={owner.id}>
-                              {owner.displayName}
-                            </SelectItem>
-                          ))
-                        : (tenants.data ?? []).map((tenant) => (
-                            <SelectItem key={tenant.id} value={tenant.id}>
-                              {tenant.displayName}
-                            </SelectItem>
-                          ))}
-                    </SelectContent>
-                  </RecordLookupSelect>
-                </div>
-                  </>
-                ) : (
-                  <div className="sm:col-span-2">
-                    <LoadingState />
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>Invite {kind}</CardTitle>
+                  <CardDescription>
+                    Links a contact to a {kind} record. Status starts as invited.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  {contacts.isSuccess &&
+                  (kind === "owner" ? owners.isSuccess : tenants.isSuccess) ? (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Contact</Label>
+                        <RecordLookupSelect value={contactId} onValueChange={setContactId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select contact" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {contactOptions.map((contact) => (
+                              <SelectItem key={contact.id} value={contact.id}>
+                                {contact.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </RecordLookupSelect>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>{kind === "owner" ? "Owner" : "Tenant"}</Label>
+                        <RecordLookupSelect value={partyId} onValueChange={setPartyId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={`Select ${kind}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {kind === "owner"
+                              ? (owners.data ?? []).map((owner) => (
+                                  <SelectItem key={owner.id} value={owner.id}>
+                                    {owner.displayName}
+                                  </SelectItem>
+                                ))
+                              : (tenants.data ?? []).map((tenant) => (
+                                  <SelectItem key={tenant.id} value={tenant.id}>
+                                    {tenant.displayName}
+                                  </SelectItem>
+                                ))}
+                          </SelectContent>
+                        </RecordLookupSelect>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sm:col-span-2">
+                      <LoadingState />
+                    </div>
+                  )}
+                  <div className="grid gap-2 sm:col-span-2">
+                    <Label htmlFor={`pm-portal-email-${kind}`}>Invite email (optional)</Label>
+                    <Input
+                      id={`pm-portal-email-${kind}`}
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                   </div>
-                )}
-                <div className="grid gap-2 sm:col-span-2">
-                  <Label htmlFor={`pm-portal-email-${kind}`}>Invite email (optional)</Label>
-                  <Input
-                    id={`pm-portal-email-${kind}`}
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    disabled={
-                      !contactId ||
-                      !partyId ||
-                      inviteMutation.isPending ||
-                      !contacts.isSuccess ||
-                      (kind === "owner" ? !owners.isSuccess : !tenants.isSuccess)
-                    }
-                    onClick={() => inviteMutation.mutate()}
-                  >
-                    {inviteMutation.isPending ? "Saving…" : "Save invite"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      disabled={
+                        !contactId ||
+                        !partyId ||
+                        inviteMutation.isPending ||
+                        !contacts.isSuccess ||
+                        (kind === "owner" ? !owners.isSuccess : !tenants.isSuccess)
+                      }
+                      onClick={() => inviteMutation.mutate()}
+                    >
+                      {inviteMutation.isPending ? "Saving…" : "Save invite"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )
           ) : null}
           {access.isLoading ? <LoadingState /> : null}

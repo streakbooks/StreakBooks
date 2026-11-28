@@ -178,155 +178,165 @@ export function CorrectionApprovalsPanel({
       ) : null}
       {rowsQ.isSuccess
         ? shown.map((request) => {
-        const isMaker = request.submitted_by === settings.user_id;
-        const canDecide = settings.can_approve && !isMaker && request.status === "pending";
-        const canComplete = isMaker && canPost && request.status === "approved";
-        const isReviewing = request.id === reviewId;
-        return (
-          <details key={request.id} className="rounded-md border p-3">
-            <summary className="cursor-pointer text-sm font-medium">
-              {request.status.toUpperCase()} · {request.submitted_at} · {request.plan.target.code}{" "}
-              {request.plan.target.name} · {request.input.reason}
-            </summary>
-            <div className="mt-3 space-y-3 text-sm">
-              <p>
-                Approval ID: {request.id} · Request key: {request.request_key}
-              </p>
-              <p>
-                Maker: {request.submitted_by} · Checker: {request.decided_by ?? "Awaiting review"}
-              </p>
-              <p>
-                Policy: {request.input.mode} · {request.plan.line_count} selected lines ·{" "}
-                {request.plan.journal_count} correction journals · {request.plan.currency}{" "}
-                {exactMoney(request.plan.gross_minor, decimals)} gross
-              </p>
-              <p>Preview fingerprint: {request.preview_hash}</p>
-              {request.plan.impact ? (
-                <p>
-                  Estimated profit impact: {request.plan.currency}{" "}
-                  {exactMoney(request.plan.impact.profit_change_minor, decimals)} ·{" "}
-                  {request.plan.impact.cross_statement_lines} cross-statement lines
-                </p>
-              ) : null}
-              <ul className="list-disc space-y-1 pl-5">
-                {request.plan.rows.map((line) => (
-                  <li key={line.id}>
-                    <Link
-                      to="/accounting"
-                      search={{ tab: "journals", journal: line.journal_id }}
-                      className="underline"
-                    >
-                      Source journal #{line.journal_number}
-                    </Link>
-                    {" · "} {line.source_account_code} → {request.plan.target.code} ·{" "}
-                    {line.posting_date} · {request.plan.currency}{" "}
-                    {exactMoney(BigInt(line.debit_minor) + BigInt(line.credit_minor), decimals)}
-                  </li>
-                ))}
-              </ul>
-              {request.status === "rejected" ? (
-                <p>Rejection reason: {request.decision_note}</p>
-              ) : null}
-              {request.status === "posted" ? (
-                <p>
-                  Posted by {request.posted_by} at {request.posted_at}. Correction batch{" "}
-                  {request.posted_batch_id}.
-                </p>
-              ) : null}
-              <div className="flex flex-wrap gap-2">
-                {canDecide ? (
-                  <Button
-                    variant="outline"
-                    disabled={busy}
-                    onClick={() => {
-                      setReviewId(isReviewing ? "" : request.id);
-                      setDecisionNote("");
-                    }}
-                  >
-                    {isReviewing ? "Cancel review" : "Review approval"}
-                  </Button>
-                ) : null}
-                {canComplete ? (
-                  <Button
-                    disabled={busy}
-                    onClick={() => {
-                      const message = `Post approved correction ${request.id}? The stored preview will be revalidated against current ledger and period locks. The maker must be the posting user.`;
-                      if (window.confirm(message)) postM.mutate(request);
-                    }}
-                  >
-                    Post approved correction
-                  </Button>
-                ) : null}
-                <Button
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => setHistoryId(historyId === request.id ? "" : request.id)}
-                >
-                  {historyId === request.id ? "Hide audit events" : "View audit events"}
-                </Button>
-              </div>
-              {isReviewing ? (
-                <div className="space-y-3 rounded border p-3">
+            const isMaker = request.submitted_by === settings.user_id;
+            const canDecide = settings.can_approve && !isMaker && request.status === "pending";
+            const canComplete = isMaker && canPost && request.status === "approved";
+            const isReviewing = request.id === reviewId;
+            return (
+              <details key={request.id} className="rounded-md border p-3">
+                <summary className="cursor-pointer text-sm font-medium">
+                  {request.status.toUpperCase()} · {request.submitted_at} ·{" "}
+                  {request.plan.target.code} {request.plan.target.name} · {request.input.reason}
+                </summary>
+                <div className="mt-3 space-y-3 text-sm">
                   <p>
-                    Verify source journals, destination account, posting dates and financial
-                    statement impact before deciding. A decision applies only to this exact plan.
+                    Approval ID: {request.id} · Request key: {request.request_key}
                   </p>
-                  <label className="block space-y-1">
-                    Written review conclusion
-                    <Input
-                      aria-label="Correction approval decision note"
-                      value={decisionNote}
-                      minLength={5}
-                      maxLength={1000}
-                      onChange={(event) => setDecisionNote(event.target.value)}
-                    />
-                  </label>
-                  <div className="flex gap-2">
-                    <Button
-                      disabled={busy || decisionNote.trim().length < 5}
-                      onClick={() => {
-                        if (window.confirm("Independently approve this exact correction plan?")) {
-                          decisionM.mutate({ request, approve: true });
-                        }
-                      }}
-                    >
-                      Approve plan
-                    </Button>
+                  <p>
+                    Maker: {request.submitted_by} · Checker:{" "}
+                    {request.decided_by ?? "Awaiting review"}
+                  </p>
+                  <p>
+                    Policy: {request.input.mode} · {request.plan.line_count} selected lines ·{" "}
+                    {request.plan.journal_count} correction journals · {request.plan.currency}{" "}
+                    {exactMoney(request.plan.gross_minor, decimals)} gross
+                  </p>
+                  <p>Preview fingerprint: {request.preview_hash}</p>
+                  {request.plan.impact ? (
+                    <p>
+                      Estimated profit impact: {request.plan.currency}{" "}
+                      {exactMoney(request.plan.impact.profit_change_minor, decimals)} ·{" "}
+                      {request.plan.impact.cross_statement_lines} cross-statement lines
+                    </p>
+                  ) : null}
+                  <ul className="list-disc space-y-1 pl-5">
+                    {request.plan.rows.map((line) => (
+                      <li key={line.id}>
+                        <Link
+                          to="/accounting"
+                          search={{ tab: "journals", journal: line.journal_id }}
+                          className="underline"
+                        >
+                          Source journal #{line.journal_number}
+                        </Link>
+                        {" · "} {line.source_account_code} → {request.plan.target.code} ·{" "}
+                        {line.posting_date} · {request.plan.currency}{" "}
+                        {exactMoney(BigInt(line.debit_minor) + BigInt(line.credit_minor), decimals)}
+                      </li>
+                    ))}
+                  </ul>
+                  {request.status === "rejected" ? (
+                    <p>Rejection reason: {request.decision_note}</p>
+                  ) : null}
+                  {request.status === "posted" ? (
+                    <p>
+                      Posted by {request.posted_by} at {request.posted_at}. Correction batch{" "}
+                      {request.posted_batch_id}.
+                    </p>
+                  ) : null}
+                  <div className="flex flex-wrap gap-2">
+                    {canDecide ? (
+                      <Button
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() => {
+                          setReviewId(isReviewing ? "" : request.id);
+                          setDecisionNote("");
+                        }}
+                      >
+                        {isReviewing ? "Cancel review" : "Review approval"}
+                      </Button>
+                    ) : null}
+                    {canComplete ? (
+                      <Button
+                        disabled={busy}
+                        onClick={() => {
+                          const message = `Post approved correction ${request.id}? The stored preview will be revalidated against current ledger and period locks. The maker must be the posting user.`;
+                          if (window.confirm(message)) postM.mutate(request);
+                        }}
+                      >
+                        Post approved correction
+                      </Button>
+                    ) : null}
                     <Button
                       variant="outline"
-                      disabled={busy || decisionNote.trim().length < 5}
-                      onClick={() => {
-                        if (window.confirm("Reject this correction? A new preview is required.")) {
-                          decisionM.mutate({ request, approve: false });
-                        }
-                      }}
+                      disabled={busy}
+                      onClick={() => setHistoryId(historyId === request.id ? "" : request.id)}
                     >
-                      Reject plan
+                      {historyId === request.id ? "Hide audit events" : "View audit events"}
                     </Button>
                   </div>
-                </div>
-              ) : null}
-              {historyId === request.id ? (
-                <div className="space-y-1 rounded border p-3">
-                  <h4 className="font-medium">Immutable approval events (first 100)</h4>
-                  {eventsQ.isPending ? <p>Loading audit evidence…</p> : null}
-                  {eventsQ.isError ? (
-                    <QueryErrorState queries={[eventsQ]} title="Could not load approval events" />
+                  {isReviewing ? (
+                    <div className="space-y-3 rounded border p-3">
+                      <p>
+                        Verify source journals, destination account, posting dates and financial
+                        statement impact before deciding. A decision applies only to this exact
+                        plan.
+                      </p>
+                      <label className="block space-y-1">
+                        Written review conclusion
+                        <Input
+                          aria-label="Correction approval decision note"
+                          value={decisionNote}
+                          minLength={5}
+                          maxLength={1000}
+                          onChange={(event) => setDecisionNote(event.target.value)}
+                        />
+                      </label>
+                      <div className="flex gap-2">
+                        <Button
+                          disabled={busy || decisionNote.trim().length < 5}
+                          onClick={() => {
+                            if (
+                              window.confirm("Independently approve this exact correction plan?")
+                            ) {
+                              decisionM.mutate({ request, approve: true });
+                            }
+                          }}
+                        >
+                          Approve plan
+                        </Button>
+                        <Button
+                          variant="outline"
+                          disabled={busy || decisionNote.trim().length < 5}
+                          onClick={() => {
+                            if (
+                              window.confirm("Reject this correction? A new preview is required.")
+                            ) {
+                              decisionM.mutate({ request, approve: false });
+                            }
+                          }}
+                        >
+                          Reject plan
+                        </Button>
+                      </div>
+                    </div>
                   ) : null}
-                  {eventsQ.isSuccess
-                    ? eventsQ.data.map((event) => (
-                        <p key={event.id}>
-                          {event.created_at} · {event.action} · {event.actor_id} · v{event.version}
-                          {event.note ? ` · ${event.note}` : ""}
-                        </p>
-                      ))
-                    : null}
+                  {historyId === request.id ? (
+                    <div className="space-y-1 rounded border p-3">
+                      <h4 className="font-medium">Immutable approval events (first 100)</h4>
+                      {eventsQ.isPending ? <p>Loading audit evidence…</p> : null}
+                      {eventsQ.isError ? (
+                        <QueryErrorState
+                          queries={[eventsQ]}
+                          title="Could not load approval events"
+                        />
+                      ) : null}
+                      {eventsQ.isSuccess
+                        ? eventsQ.data.map((event) => (
+                            <p key={event.id}>
+                              {event.created_at} · {event.action} · {event.actor_id} · v
+                              {event.version}
+                              {event.note ? ` · ${event.note}` : ""}
+                            </p>
+                          ))
+                        : null}
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
-          </details>
-        );
-      })
+              </details>
+            );
+          })
         : null}
       <div className="flex gap-2">
         <Button

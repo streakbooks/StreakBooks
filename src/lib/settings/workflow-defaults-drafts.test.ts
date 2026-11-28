@@ -6,7 +6,6 @@ const sales = {
   quoteDays: "14",
   notes: "Thank you",
   instructions: "Bank transfer",
-  inclusive: true,
 };
 
 describe("sales workflow settings drafts", () => {
@@ -17,7 +16,6 @@ describe("sales workflow settings drafts", () => {
       value: {
         salesDefaultPaymentTermsDays: 30,
         salesQuoteValidityDays: 14,
-        salesPricesIncludeTax: true,
       },
     });
   });

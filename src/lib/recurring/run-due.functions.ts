@@ -30,7 +30,7 @@ async function loadDue(
  */
 export const runDueRecurringInvoices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }): Promise<RunDueSummary> => {
     const { supabase, userId } = context;
     await assertCompanyPermission(supabase, data.companyId, "sales.draft");
@@ -52,7 +52,7 @@ export const runDueRecurringInvoices = createServerFn({ method: "POST" })
 
 export const runDueRecurringBills = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }): Promise<RunDueSummary> => {
     const { supabase, userId } = context;
     await assertCompanyPermission(supabase, data.companyId, "purchases.draft");

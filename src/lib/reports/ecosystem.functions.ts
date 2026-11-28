@@ -30,7 +30,7 @@ const missing = "The reporting ecosystem database update is required.";
 const scope = (input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) });
 export const recordReportOpen = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       reportId: string;
@@ -78,7 +78,7 @@ export const recordReportOpen = createServerFn({ method: "POST" })
   });
 export const getReportActivity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(scope)
+  .validator(scope)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     return JSON.stringify(
@@ -92,7 +92,7 @@ export const getReportActivity = createServerFn({ method: "GET" })
   });
 export const getReportingFeatureAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(scope)
+  .validator(scope)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     return JSON.stringify(
@@ -106,7 +106,7 @@ export const getReportingFeatureAccess = createServerFn({ method: "GET" })
   });
 export const searchReportingModels = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         companyId: z.string().uuid(),
@@ -138,7 +138,7 @@ export const searchReportingModels = createServerFn({ method: "GET" })
   });
 export const getReportingModel = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ companyId: z.string().uuid(), id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -155,7 +155,7 @@ export const getReportingModel = createServerFn({ method: "GET" })
   });
 export const getReportingWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       packPage?: number;
@@ -260,7 +260,7 @@ export const getReportingWorkspace = createServerFn({ method: "GET" })
   });
 export const getReportFilterOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(scope)
+  .validator(scope)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const result = await context.supabase.rpc("get_reporting_filter_options", {
@@ -273,14 +273,14 @@ export const getReportFilterOptions = createServerFn({ method: "GET" })
   });
 export const getReportAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(scope)
+  .validator(scope)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     return loadAccountMetas(context.supabase as Sb, data.companyId);
   });
 export const previewCustomReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; from: string; to: string; definition: unknown }) => {
+  .validator((input: { companyId: string; from: string; to: string; definition: unknown }) => {
     const from = dateSchema.parse(input.from),
       to = dateSchema.parse(input.to);
     if (from > to) throw new Error("Invalid reporting period");
@@ -321,7 +321,7 @@ export const previewCustomReport = createServerFn({ method: "POST" })
   });
 export const getSavedReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; viewId: string }) => ({
+  .validator((input: { companyId: string; viewId: string }) => ({
     ...scope(input),
     viewId: assertUuid(input.viewId),
   }))
@@ -340,7 +340,7 @@ export const getSavedReport = createServerFn({ method: "GET" })
   });
 export const setReportAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         companyId: z.string().uuid(),
@@ -378,7 +378,7 @@ export const setReportAccess = createServerFn({ method: "POST" })
   });
 export const saveReportPack = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; payload: unknown }) => ({
+  .validator((input: { companyId: string; payload: unknown }) => ({
     ...scope(input),
     payload: packPayloadSchema.parse(input.payload),
   }))
@@ -394,7 +394,7 @@ export const saveReportPack = createServerFn({ method: "POST" })
   });
 export const transitionReportPack = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         companyId: z.string().uuid(),
@@ -432,7 +432,7 @@ export const transitionReportPack = createServerFn({ method: "POST" })
   });
 export const getReportPack = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; id: string }) => ({
+  .validator((input: { companyId: string; id: string }) => ({
     ...scope(input),
     id: assertUuid(input.id),
   }))
@@ -463,7 +463,7 @@ export const getReportPack = createServerFn({ method: "GET" })
   });
 export const addReportComment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         companyId: z.string().uuid(),
@@ -485,7 +485,7 @@ export const addReportComment = createServerFn({ method: "POST" })
   });
 export const saveReportingModel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => {
+  .validator((input: unknown) => {
     const data = z
       .object({
         companyId: z.string().uuid(),
@@ -555,7 +555,7 @@ async function assertDeliveryBasis(supabase: Sb, companyId: string, viewId?: str
 }
 export const queueReportDelivery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; payload: unknown }) => ({
+  .validator((input: { companyId: string; payload: unknown }) => ({
     ...scope(input),
     payload: deliveryPayloadSchema.parse(input.payload),
   }))
@@ -583,7 +583,7 @@ export const queueReportDelivery = createServerFn({ method: "POST" })
   });
 export const saveReportSchedule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; payload: unknown }) => ({
+  .validator((input: { companyId: string; payload: unknown }) => ({
     ...scope(input),
     payload: schedulePayloadSchema.parse(input.payload),
   }))
@@ -601,7 +601,7 @@ export const saveReportSchedule = createServerFn({ method: "POST" })
   });
 export const deleteReportSchedule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; id: string }) => ({
+  .validator((input: { companyId: string; id: string }) => ({
     ...scope(input),
     id: assertUuid(input.id),
   }))
@@ -619,7 +619,7 @@ export const deleteReportSchedule = createServerFn({ method: "POST" })
   });
 export const captureReportDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; viewId?: string; packId?: string; from?: string; to?: string }) =>
       z
         .object({
@@ -742,7 +742,7 @@ export const captureReportDocument = createServerFn({ method: "POST" })
   });
 export const exportReportDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         companyId: z.string().uuid(),
@@ -913,7 +913,7 @@ export const exportReportDocument = createServerFn({ method: "POST" })
 
 export const getManagementMetrics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       from: string;
@@ -950,7 +950,7 @@ export const getManagementMetrics = createServerFn({ method: "GET" })
   });
 export const previewForecast = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; config: unknown }) => ({
+  .validator((input: { companyId: string; config: unknown }) => ({
     ...scope(input),
     config: forecastSchema.parse(input.config),
   }))
@@ -961,7 +961,7 @@ export const previewForecast = createServerFn({ method: "POST" })
   });
 export const getFirmReportingPortfolio = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         firmId: z.string().uuid(),
@@ -1047,7 +1047,7 @@ export const getFirmReportingPortfolio = createServerFn({ method: "GET" })
 
 export const getReportGrants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; viewId: string }) => ({
+  .validator((input: { companyId: string; viewId: string }) => ({
     ...scope(input),
     viewId: assertUuid(input.viewId),
   }))

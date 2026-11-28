@@ -1,3 +1,114 @@
+# NEEDS FROM OWNER
+
+- Configure a dedicated non-production authenticated browser-test account through `E2E_EMAIL` and `E2E_PASSWORD` when available; do not commit or paste credentials.
+- Provide matching backup evidence for Supabase project `qugoaaizclvkzesptovm` before any hosted migration is run. Existing backup evidence in historical notes names a different project.
+- Review deployment-provider account constraints before enabling deploy checks: the PR currently reports Vercel Hobby/private-organization restrictions and a failed Cloudflare Workers build check. No plan change or production deploy was made.
+
+# Settings overhaul — profile preference completion, 26 November 2026
+
+Profile appearance preferences now save theme mode and named palette per authenticated user and organisation through the existing `user_ui_preferences` row and RLS policy. Custom palette colours remain device-local. Added server-function tests for membership checks, user scoping, upsert ownership and invalid palette rejection. No schema change or hosted Supabase action was needed.
+
+The working diff based on feature commit `37bb5f338a63277d7460cf3ef1ce8e6dab4b86d9` passes: 638 test files / 4,359 tests, full ESLint, typecheck and production build; UI/module/navigation checks pass. GitHub run [#45839137235](https://github.com/streakbooks/StreakBooks/actions/runs/45839137235) passed six isolated PostgreSQL suites and browser fixtures, but `validate` failed `check:lookups` because a fixed theme enumeration needed the documented annotation. That fix now passes locally and is pending the next PR run. PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) remains open/draft. Next: push the lookup fix and server-function tests, then proceed to Batch 3 Accounting and Tax; authenticated browser review still needs a dedicated non-production test account. No hosted migration, deployment or production verification occurred.
+
+# Settings overhaul — Accounting display preference, 26 November 2026
+
+Implemented `accounting.account_code_padding` end to end for the Chart of Accounts display: the existing versioned `organisation_config` save validates 0–8, requires `company.settings.edit`, and records before/after configuration audit; a membership-checked reader applies zero padding only to numeric chart labels. Stored account IDs/codes, CSV data and journals are unchanged. No migration was needed. Local validation of this diff: 638 test files / 4,360 tests, TypeScript, full ESLint and production build pass; focused Accounting/registry tests (12), UI/navigation/lookup/migration checks pass. The most recent GitHub run [#45840352414](https://github.com/streakbooks/StreakBooks/actions/runs/45840352414) passes the previous profile-settings head; a new run is required for this Accounting diff. Next: continue Batch 3 with tax/accounting effects proven by consumers and tests. PR #92 stays open/draft; no hosted migration, deploy, authenticated staging or production verification.
+
+# Settings overhaul — Tax master coverage, 26 November 2026
+
+Registered the existing Tax rate/code master as a discrete capability using the real module route `/tax`, with server validation, `tax.settings` permission, tenant RLS, transactional before/after history, effective-rate selection and tax consumers. Updated the review guide to distinguish implemented rate/code lifecycle from still-partial jurisdiction/regime/filing configuration. Capability and Tax date/math tests pass (3 files / 27 tests), changed-file lint and diff checks pass. The existing tax-master isolated PostgreSQL suites passed on Actions run [#45840352414](https://github.com/streakbooks/StreakBooks/actions/runs/45840352414); run [#45842500901](https://github.com/streakbooks/StreakBooks/actions/runs/45842500901) for the Accounting code is in progress, and this registry/documentation diff requires a fresh run. No schema changed. Continue Batch 3 with evidence-backed settings; the Tax module remains partial overall.
+
+# Settings overhaul — manual-journal audit safeguard, 26 November 2026
+
+The existing manual-journal memo requirement was already enforced by `postManualJournal`; it lacked settings-change audit evidence. Added migration `20261126180000_workflow_settings_audit.sql` with same-transaction per-field before/after rows, no-op suppression and redaction for free-text defaults, plus a drop-only rollback. Added function behavior tests and `tests/integration/workflow-settings-audit.sql`; `npm.cmd run test:workflows:postgres` passed using its network-disabled temporary PostgreSQL 17 container. It verifies RLS, tenant isolation, null defaults, audit redaction, permission restrictions and rollback on audit failure. Local checks passed: 639 test files / 4,362 tests, TypeScript, full ESLint, production build, modules/UI/navigation/lookups and migration contracts. The deterministic Playwright UI fixture suite passed all 97 tests after fixing its TanStack server-only import alias. Two unrelated report tests timed out only during a concurrent run and passed on the serial rerun. Authenticated Settings review still requires a non-production test account and Supabase environment. Migration status: **READY-TO-APPLY**. Do not apply to hosted project `qugoaaizclvkzesptovm` until matching confirmed backup evidence is added here; no hosted DB was touched. PR #92 remains open/draft; this feature head still needs a fresh Actions run. Continue Batch 3; do not merge the overall Settings PR while remaining batches or authenticated browser verification are incomplete.
+
+# Settings overhaul — latest continuation, 26 November 2026
+
+Published commits `b2c1ce871a3f56f0d34b118f9fdea286f1c2d0b6` (corrected the atomic
+identity/tax SQL regression to test February 30) and
+`a1ff0cbd08abf71e9cfa32fdc8e06fe317330097` (added Settings / Personal preferences /
+Profile breadcrumbs and refreshed progress notes) to `feat/settings-module-overhaul`.
+PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) remains open and draft.
+
+On Actions run [#45807731340](https://github.com/streakbooks/StreakBooks/actions/runs/45807731340),
+all five isolated PostgreSQL suites and browser fixtures passed, including the identity/tax
+atomic-save regression. The current head run
+[#45808722118](https://github.com/streakbooks/StreakBooks/actions/runs/45808722118) has all
+five PostgreSQL jobs passed; `validate` and browser fixtures were still running at last check.
+Vercel status checks fail because its Hobby plan disallows this private organization repo;
+Cloudflare Workers also reports an external build failure. Neither is an org billing job-start
+failure. The Supabase Preview check is skipped because the PR is not linked to a Supabase branch.
+
+Local changed-file ESLint and the two focused Settings tests pass (8 tests). A new full
+TypeScript command did not return and was interrupted; the preceding full typecheck/build/lint
+and wider test suite passed before the Profile breadcrumb-only edit. Local Docker is absent, so
+the SQL workflow is CI-verified only. The Vite server started on `http://localhost:8080`, but
+the workstation socket is inaccessible from this execution's browser and shell network contexts;
+no live browser verification is claimed. Port 8081 was not used.
+
+No hosted migration, deploy, authenticated staging or production verification was performed.
+The identity/tax migration is additive and has a drop-only rollback, but remains unapplied until
+the correct project's backup and complete release verification are available. Batches 2–9 and
+authenticated browser checks remain open. Continue with Batch 2 personal settings, then proceed
+in order; do not merge this incomplete PR.
+
+# Settings overhaul — Batch 2 continuation, 26 November 2026
+
+The organisation identity and legacy tax-summary editor now calls
+`save_company_identity_and_tax`, an additive transactional RPC with permission
+validation, stale-snapshot rejection, and a before/after audit in the same
+transaction. The migration is `20261126150000_settings_company_identity_atomic.sql`;
+its drop-only rollback is in `supabase/rollback/`. An isolated PostgreSQL test covers
+successful two-table persistence, audit evidence, stale and invalid input, denied
+tenant access, and rollback after an audit failure.
+
+Verification status: TypeScript passed, all 633 unit-test files / 4,349 tests passed,
+the 27-file / 225-test focused set passed, full repository ESLint passed, production
+build passed, and navigation, UI, module, bundle, browsing-inventory and migration
+identity checks passed. The Docker PostgreSQL harness could not start because Docker
+is unavailable; `psql` and the Supabase CLI are absent. The isolated SQL test remains
+unexecuted. PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) run
+[#38](https://github.com/streakbooks/StreakBooks/actions/runs/45801553959) started and
+failed `check:lookups` on four mapped option lists. Those source violations are fixed
+and pass locally, but the fix is not yet pushed or checked by GitHub. Vercel reports
+private-organization restrictions on its Hobby plan; Cloudflare Workers also reports
+a failed external build. No migration was applied to hosted Supabase, no deploy
+occurred, and PR #92 remains open/draft. The
+configured project is `qugoaaizclvkzesptovm`; only target-specific confirmed backup
+evidence authorizes any hosted migration.
+
+Gulshan's standing StreakBooks delivery instruction is recorded in
+`.cursor/rules/merge-without-ci-billing.mdc`: merge completed work to `main` after
+local gates pass without waiting for GitHub Actions when jobs never started solely
+because of org billing/spending limits. This does not waive real failures, unfinished
+work, or the required hosted migration safety check.
+
+# Settings overhaul — continuation, 26 November 2026
+
+Continued `feat/settings-module-overhaul` / PR #92. Fixed the repository-wide Prettier lint failure without disabling lint rules, and corrected the browsing inventory so the public `/advisors` storefront is tracked separately from authenticated routes. Current local verification: 633 Vitest files / 4,349 tests, TypeScript, full ESLint with zero warnings, production build, navigation/UI/module/bundle checks and all-module browsing inventory pass. Browser E2E is still unverified because the in-app browser cannot reach the workspace-local Vite listener; three authenticated Playwright cases remain skipped without a test account. The coverage inventory correctly reports 0/30 modules as fully verified.
+
+No Settings schema change was needed; no Supabase migration or hosted database action was performed. The configured target is `qugoaaizclvkzesptovm`, and the backup evidence in historical notes is for a different project. PR #92 remains open/draft; do not merge while Settings batches 2–9, authenticated browser verification and the task's release gates remain incomplete. Recheck new-head Actions after the verification commit is pushed. Previous CI evidence is at [run #37](https://github.com/streakbooks/StreakBooks/actions/runs/45797328652), which predates the current fixes.
+
+---
+
+# Settings overhaul — 26 November 2026
+
+Work is in progress on `feat/settings-module-overhaul`, based on clean `main`
+`207b7bc6`. Phases 0–2 and the route-first implementation foundation are
+documented in `docs/settings/`; batches 2–9 remain open. The current full unit
+suite passes (633 files / 4,349 tests), as do typecheck, build, changed-file
+ESLint, navigation/UI/module checks and bundle check. Full-repository lint still
+fails; three authenticated Settings Playwright tests are skipped without test
+credentials, and the local browser visit to `/settings` rendered an application
+error. See `docs/settings/05-TEST-REPORT.md` and `defect-register.md`.
+
+No database change or migration was needed for the route/UI work. No deployment
+or hosted Supabase action was made. The configured Supabase project is
+`qugoaaizclvkzesptovm`; historical backup evidence elsewhere in this file is for
+a different project and does not authorize a hosted migration. Continue the
+remaining batches in `docs/settings/TASKS.md`; do not merge until the task's
+remaining work and green-check requirements are satisfied.
+
 # Executing workers and observed alerts — 3 November 2026
 
 Delivery stays on main only; fetch before the next change. The preceding
@@ -313,3 +424,85 @@ Before applying a migration to project `ipxflpzfcqwtenodbxwc`: confirm a restore
 ## Next action
 
 Review `docs/superadmin/start-month-backfill.md` before any start-month update. Continue batches E–H only with a working RPC, an authorisation check and a test. Do not add placeholder buttons.
+
+# Settings overhaul — Sales invoice and quote dates, 26 November 2026
+
+Implemented the existing Sales default payment terms in invoice due-date calculation and corrected quote creation/date edits to consume the saved quote-validity setting instead of hardcoding 30 days. Customer-specific invoice terms remain higher priority. Added `salesDocumentEndDate` with consumer tests, field-specific settings permission/persistence tests, registry/coverage entries, and review steps. Local validation passed: 640 test files / 4,368 tests; TypeScript, full ESLint, production build, module/UI/navigation/lookup/migration contracts and client bundle check passed. The isolated network-disabled workflow PostgreSQL suite passed with typed audit, RLS, tenant-isolation, redaction, nullable-default and rollback checks.
+
+The previous pushed commit `55b719cfcfb5a2ce66220c790a655173a9afb283` passed Actions run [#45849928949](https://github.com/streakbooks/StreakBooks/actions/runs/45849928949), including all 97 UI fixtures and six PostgreSQL jobs; this Sales diff requires its own fresh run. PR #92 remains open/draft. Hosted Supabase and deployment were not touched. Continue Sales/Purchases work; Settings batches 4–9 and authenticated browser review remain incomplete.
+
+# Settings overhaul — purchase bill payment terms, 26 November 2026
+
+Factored purchase bill due-date defaults into `defaultPurchaseBillDueDate` and routed initial bill dates, term resets, supplier changes and form reset through it. Supplier terms take precedence; the existing manual override guard remains. Added `purchases.default_payment_terms` evidence plus server permission/persistence and typed audit regressions. Local validation passed: 640 test files / 4,370 tests, TypeScript, full ESLint, production build, module/UI/navigation/lookup/migration contracts, bundle check, isolated workflow PostgreSQL suite and all 97 deterministic UI fixtures. The Sales commit `1d715142f47dd55c11cf249948845ab901467e6f` and Purchases commit `5ae0270241fc4617e736d43c2bb2a1b95477d8ad` are published. Actions run [#45854284429](https://github.com/streakbooks/StreakBooks/actions/runs/45854284429) passed static validation, six PostgreSQL suites and browser fixtures. PR #92 remains open/draft. Hosted Supabase, deployment, authenticated staging and production were not touched; the matching backup evidence for hosted migrations is still missing. Continue the remaining Batch 4 fields and batches 5–9.
+
+# Settings overhaul — Sales and Purchase note defaults, 26 November 2026
+
+Added memo-default behavior tests for Sales invoices/quotes (not credit notes) and purchase bills. The server writer remains permission-checked; the isolated workflow audit regression verifies that Sales and Purchase free-text values are redacted on insert/update and that no note text leaks into `settings_change_log`. Local validation passed: 640 test files / 4,373 tests, TypeScript, full ESLint, production build, module/UI/navigation/lookup/migration contracts, bundle check, isolated workflow PostgreSQL and 97 deterministic UI fixtures. These note changes were published in commit `1892178817d98e69c7c3923fdcd7bbe95f5405a1`; Actions run [#45856529957](https://github.com/streakbooks/StreakBooks/actions/runs/45856529957) passed. PR #92 remains open/draft; remaining Batch 4 fields and batches 5–9, authenticated browser review, hosted backup evidence, deployment and production verification remain incomplete.
+
+# Settings overhaul — Sales payment instructions, 26 November 2026
+
+Connected the saved Sales payment-instructions setting to invoice, quote and receipt document branding as a fallback. Explicit branding text wins; purchase documents retain existing branding and never use the Sales default. Added resolver and database-loader behavior tests and capability coverage. Focused tests passed (3 files / 10 tests); the full suite passed (642 files / 4,378 tests), TypeScript, full ESLint, production build, module/UI/navigation/lookup/migration checks and client bundle guard passed. All 97 deterministic Playwright UI fixtures and the isolated workflow PostgreSQL suite passed.
+
+The visual route inventory was stale for Advisor navigation and the new canonical Settings route. It is now synchronized at 30 sidebar modules and 206 routes; the guard passes and runtime verification remains explicitly false. These changes remain local to the feature worktree and need a fresh Actions run. Authenticated localhost review still needs non-production credentials. No migration, hosted database or deployment was changed.
+
+# Settings overhaul — base-currency ledger integrity, 26 November 2026
+
+Added migration `20261126210000_settings_base_currency_posting_guard.sql`: the identity RPC rejects a base-currency change after posted journals, and the migration locks base-currency reads in the central `post_journal` writer plus higher-level posting functions that calculate FX before calling it. These share locks serialize against the Settings RPC's existing company-row update lock. The isolated identity regression proves that a journal posted after switching to INR uses INR, direct changes after posted history fail without identity-setting audit noise, and posting functions carry the lock. Test journals and lines are deleted before the harness's unrelated accounting assertions. The network-disabled PostgreSQL 17 workflow harness passed; migration identity/history checks passed at 383 unique versions and 8 tests; focused Settings tests passed (3 files / 13 tests). No hosted Supabase, deployment, authenticated staging or production was used. Batch 3 and the wider Settings work remain incomplete.
+
+# Settings overhaul — manual-journal backdate warning, 26 November 2026
+
+Connected the saved Accounting backdate threshold to a non-blocking notice on the manual-journal date field. `0` disables the notice; invalid stored values do not block entry; accounting-period locks continue to be enforced by the posting path. The typed field is editable through the existing versioned organisation settings RPC and audited category update. Focused tests passed (4 files / 14 tests), typecheck, changed-file ESLint, `check:ui`, `check:modules`, and the isolated network-disabled PostgreSQL 17 workflow regression. No schema change was needed. No hosted Supabase, authenticated staging, deployment or production was used; the rest of Accounting Batch 3 remains partial.
+
+# Settings overhaul — notification sender and digest quiet-hours coverage, 26 November 2026
+
+Registered the existing organisation notification sender name, reply-to and quiet-hours fields as complete after tests verified their saved configuration, sender construction, timezone scheduling and defaults. The sender name cannot replace the verified FROM address. Focused tests passed (4 files / 21 tests), typecheck and changed-file lint passed. Commit `71b16b9648ff07c7bdb7d8d907afdad4ea3f4c33` passed GitHub Actions run [#45874577603](https://github.com/streakbooks/StreakBooks/actions/runs/45874577603), including browser fixtures and isolated PostgreSQL suites. Provider delivery and deployment remain unverified. No hosted Supabase, migration or production changes were made.
+
+# Settings overhaul — organisation config RPC security regression, 26 November 2026
+
+Added an isolated PostgreSQL test for the shared `upsert_organisation_config` Settings Centre RPC, using its production function definition with synthetic tenant fixtures. It verifies authenticated setting writes, optimistic version conflicts, config and audit RLS, permission-denied writes, no direct table mutation, audit-failure rollback and no anonymous execution. The network-disabled workflow harness passed after adding the test; harness ESLint and diff checks passed. The test makes no hosted database calls. Authenticated staging and production remain unverified.
+
+# Settings overhaul — custom palette synchronisation, 27 November 2026
+
+Extended the existing per-user, per-organisation appearance preference document with validated custom palette colors. The Appearance card loads saved custom values into local theme storage and offers a save action when edits made through the global theme controls differ from the saved palette. Theme rendering and validation continue to use the existing color-token path. Focused tests passed (4 files / 23 tests), typecheck, changed-file ESLint, `check:ui` and `git diff --check` passed. No migration, hosted Supabase, deployment or production changes were made. Account-wide preference scope remains incomplete.
+
+# Settings overhaul — purchase-order three-way matching, 27 November 2026
+
+Made `purchases.three_way_matching` a field-level complete capability after tracing the existing fail-closed bill authorization path. Malformed saved purchase settings now stop authorization rather than being interpreted as disabled. New loader tests cover missing, enabled, malformed and unreadable configuration. Focused tests passed (3 files / 29 tests), typecheck, changed-file ESLint, `check:modules`, `check:ui` and `git diff --check` passed. No schema, hosted Supabase, deployment or production change was made. Batch 4 remains partial.
+
+# Settings overhaul — organisation timezone validation, 27 November 2026
+
+Company create/update input now rejects invalid IANA time-zone identifiers before saving, and the existing date tests confirm company-local dates can differ from UTC. Focused tests passed (2 files / 10 tests), typecheck, changed-file ESLint and `git diff --check` passed. The directly granted SQL RPC currently checks only for a nonempty timezone, so database-level validation and a direct-RPC regression are still required before this field can be marked complete. No migration was applied to hosted Supabase.
+
+# Settings overhaul — organisation locale and date formatting, 27 November 2026
+
+Added separate evidence-backed capabilities for the saved document locale and date format. Document context now has a regression proving those organisation values are forwarded to output, and an invoice email test verifies that selected locale/date style affect formatting. The isolated PostgreSQL workflow harness now exercises localisation RPC audit values, invalid locale rejection, stale snapshot, denied permission and audit rollback; it passed in a network-disabled PostgreSQL 17 container. Focused tests passed (3 files / 29 tests), typecheck, changed-file ESLint and `git diff --check` passed. No hosted Supabase change or schema migration was made.
+
+# Settings overhaul — purchase-order preference behavior, 26 November 2026
+
+Connected the existing `purchases_require_po` setting to a tested bill-workspace notice. Enabling it clearly recommends linking a PO but continues to allow independent bills, consistent with the setting's “Prefer purchase order before bill” label. Added enabled/disabled consumer tests, a permission/persistence regression, and field-level capability evidence. The isolated workflow SQL regression proves true/false typed before/after audit values; the network-disabled PostgreSQL 17 harness passed. Focused tests passed (3 files / 13 tests), changed-file ESLint and UI contracts passed. No migration was needed. The feature branch push and Actions for this preference are still in progress; no hosted Supabase, deployment, authenticated staging or production was used.
+
+# Settings overhaul — verified Profile email changes, 26 November 2026
+
+Replaced the read-only Profile email field with a verification-based change request through the installed Supabase Auth SDK. The app sends the confirmation to Supabase's `/auth/callback`, preserves a safe return to `/profile`, clears that return path if the request fails, and tells the user the current address remains active until they confirm. Added address-validation tests. Focused tests passed (1 file / 7 tests), changed-file ESLint, UI contracts and TypeScript passed. No schema migration was needed. Authenticated email-delivery confirmation was not tested; the change remains on the Settings feature branch pending GitHub Actions. Hosted Supabase settings, deployment and production were not changed or verified.
+
+# Settings overhaul — tax treatment ownership, 26 November 2026
+
+Removed the duplicate “prices include tax” control and write path from Sales workflow defaults. The organisation Tax settings page is the single configuration owner, preventing independent saves from diverging between transaction previews and posting. The legacy workflow database column remains for compatibility but application code no longer reads or writes it. Focused tests passed (3 files / 31 tests), changed-file lint and full typecheck passed. No migration, hosted database or deployment was changed.
+
+# Settings overhaul — payment reminder audit, 26 November 2026
+
+Added `20261126200000_reminder_settings_audit.sql` and its drop-only rollback. Reminder schedule fields now receive typed same-transaction before/after audit rows; unchanged values and metadata-only updates do not log, audit failures roll back the setting, and the internal trigger function is not executable by clients. Added a network-disabled PostgreSQL regression to the workflow harness and promoted the capability in the registry/matrix. Reminder delivery remains explicitly manual. Focused tests passed (5 files / 52 tests), migration identity checks passed (382 versions), and the isolated workflow PostgreSQL suite passed. Full suite/build and fresh-head Actions remain pending. This migration is not applied to hosted Supabase because matching restore-point evidence remains unavailable. The tax-treatment cleanup passed 31 focused tests, changed-file lint and typecheck. Current latest pushed head is `52aadac1953ccfa7e24955f9970691f2cb14aa4a`; Actions run [#45860832213](https://github.com/streakbooks/StreakBooks/actions/runs/45860832213) was running when this reminder change began.
+
+# Settings overview and purchase display defaults — 26 November 2026
+
+Fixed the Settings overview company query to read tax regime through the authoritative `company_tax_settings` relation; the former `companies.tax_regime` selection caused an error in the localhost:8080 Settings overview. A focused mapping/query regression, lint and typecheck passed. The prior reminder-audit commit `21aa2a294197395eecce8f59c2fe3697c79b5b53` passed Actions run [#45862846980](https://github.com/streakbooks/StreakBooks/actions/runs/45862846980); the published overview fix `306d50b1bccd755581dbd912bad3685c2e018051` had Actions run [#45863944490](https://github.com/streakbooks/StreakBooks/actions/runs/45863944490) in progress when this purchase display change began. Connected the Purchases supplier-summary default to new bill workspaces, while preserving a user's saved per-account sidebar preference. Focused tests, lint, module/UI contracts, typecheck and diff checks passed; this change is pending its own branch publication and CI. No hosted Supabase changes or deployment occurred.
+
+2026-11-27 — PR #92 reconciled with main through 44336170. The checkout fixture passed on 30839d75. Batch 3 fixes the report basis source and cached reports for both Accounting editors (721 Settings/Reports tests passed). Authenticated acceptance, remaining batches and production verification remain open.
+
+2026-11-27 — Batch 2 now reads the latest accessible legacy personal palette when the signed-in user has no account-wide preference. New saves use the existing account-wide writer. Both appearance suites passed (7 tests). No schema changes.
+
+2026-11-27 — Batch 6 fixes new portal invitation MFA precedence, valid lifetime handling and read-only account selectors. Migration 20261127160000, its emergency rollback and reapplication passed in the isolated PostgreSQL workflow suite. The rollback pauses new invitations through the authenticated RPC. Existing memberships and hosted Supabase were untouched.
+
+2026-11-28 — Batch 8 corrected audit history UTC filtering and equal-timestamp ordering. Seventeen focused tests and an isolated PostgreSQL timestamp check passed. Workstation main was fast-forwarded to 166c9551 while PR #92 was reconciled separately.
+
+2026-11-28 — Batch 4 now distinguishes a missing bill preference from a failed read. Both bill screens offer retry; saves preserve existing data after read errors. Seven focused tests passed.

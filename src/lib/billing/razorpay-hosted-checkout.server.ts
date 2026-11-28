@@ -50,7 +50,10 @@ export async function handleRazorpayHostedCheckout(request: Request): Promise<Re
     successOrigin = assertCheckoutOrigin(successUrl, { host: requestHost, proto: requestProto });
     cancelOrigin = assertCheckoutOrigin(cancelUrl, { host: requestHost, proto: requestProto });
   } catch {
-    return new Response("The return address is not allowed.", { status: 400, headers: htmlHeaders });
+    return new Response("The return address is not allowed.", {
+      status: 400,
+      headers: htmlHeaders,
+    });
   }
   if (successOrigin !== cancelOrigin) {
     return new Response("Return addresses must share one origin.", {

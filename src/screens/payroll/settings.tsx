@@ -867,12 +867,7 @@ export function PayrollSettingsPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={
-                    !canEdit ||
-                    sequenceMut.isPending ||
-                    !page.isSuccess ||
-                    page.isError
-                  }
+                  disabled={!canEdit || sequenceMut.isPending || !page.isSuccess || page.isError}
                   onClick={() => sequenceMut.mutate()}
                 >
                   Save numbering
@@ -1022,12 +1017,7 @@ export function PayrollSettingsPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={
-                    !canEdit ||
-                    componentMut.isPending ||
-                    !page.isSuccess ||
-                    page.isError
-                  }
+                  disabled={!canEdit || componentMut.isPending || !page.isSuccess || page.isError}
                   onClick={() => componentMut.mutate()}
                 >
                   {componentDraft.id ? "Save component changes" : "Add custom component"}

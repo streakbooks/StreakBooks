@@ -232,7 +232,10 @@ export function BulkJournalImportPanel({
                 <Button
                   size="sm"
                   disabled={
-                    !pending.length || posting.isPending || !accountsQ.isSuccess || accountsQ.isError
+                    !pending.length ||
+                    posting.isPending ||
+                    !accountsQ.isSuccess ||
+                    accountsQ.isError
                   }
                   onClick={confirmPosting}
                 >

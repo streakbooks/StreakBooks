@@ -105,7 +105,7 @@ function mapTask(raw: unknown): HrOffboardingTask {
 
 export const listHrTransferRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string | null }) => ({
+  .validator((input: { companyId: string; status?: string | null }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || null,
   }))
@@ -125,7 +125,7 @@ export const listHrTransferRequests = createServerFn({ method: "GET" })
 
 export const upsertHrTransferRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -165,7 +165,7 @@ export const upsertHrTransferRequest = createServerFn({ method: "POST" })
 
 export const decideHrTransferRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       requestId: string;
@@ -202,7 +202,7 @@ export const decideHrTransferRequest = createServerFn({ method: "POST" })
 
 export const listHrOffboardingCases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string | null }) => ({
+  .validator((input: { companyId: string; status?: string | null }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || null,
   }))
@@ -246,7 +246,7 @@ function mapOffboardingDetail(raw: unknown): HrOffboardingCaseDetail {
 
 export const getHrOffboardingCase = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; caseId: string }) => ({
+  .validator((input: { companyId: string; caseId: string }) => ({
     companyId: companyIdOf(input),
     caseId: input.caseId,
   }))
@@ -266,7 +266,7 @@ export const getHrOffboardingCase = createServerFn({ method: "GET" })
 
 export const createHrOffboardingCase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -295,7 +295,7 @@ export const createHrOffboardingCase = createServerFn({ method: "POST" })
 
 export const updateHrOffboardingTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; taskId: string; status: string; notes?: string | null }) => ({
       companyId: companyIdOf(input),
       taskId: input.taskId,

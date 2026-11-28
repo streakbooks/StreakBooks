@@ -182,9 +182,7 @@ export function SettingsCommunicationsPanel({
       {status.isPending && (
         <p className="text-sm text-muted-foreground">Checking email delivery configuration…</p>
       )}
-      {status.isError ? (
-        <QueryErrorState queries={[status]} title="Status check failed" />
-      ) : null}
+      {status.isError ? <QueryErrorState queries={[status]} title="Status check failed" /> : null}
       {status.isSuccess && status.data && (
         <Alert variant={providerReady ? "default" : "destructive"}>
           {providerReady ? (

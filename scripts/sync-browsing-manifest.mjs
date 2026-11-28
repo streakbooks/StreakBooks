@@ -1,5 +1,5 @@
 /**
- * Sync docs/ux/all-module-browsing-manifest.json to current nav + authenticated routes.
+ * Sync docs/ux/all-module-browsing-manifest.json to current nav and route files.
  * Inventory only — never marks modules fullyVerified.
  */
 import { readFileSync, writeFileSync, readdirSync } from "node:fs";
@@ -15,19 +15,24 @@ const sidebar = [...nav.matchAll(/\{\s*label:\s*"([^"]+)",\s*to:\s*"([^"]+)",/g)
   href: m[2],
 }));
 
-function listRoutes(dir) {
+function listRoutes(dir, baseDir = dir) {
   const out = [];
   for (const item of readdirSync(dir, { withFileTypes: true })) {
     const target = join(dir, item.name);
-    if (item.isDirectory()) out.push(...listRoutes(target));
+    if (item.isDirectory()) out.push(...listRoutes(target, baseDir));
     else if (/\.(?:ts|tsx)$/.test(item.name)) {
-      out.push(relative(join(root, "src/routes/_authenticated"), target).split("\\").join("/"));
+      out.push(relative(baseDir, target).split("\\").join("/"));
     }
   }
   return out.sort();
 }
 
-const actualRoutes = listRoutes(join(root, "src/routes/_authenticated"));
+const authenticatedRouteRoot = join(root, "src/routes/_authenticated");
+const publicRouteRoot = join(root, "src/routes");
+const actualRoutes = listRoutes(authenticatedRouteRoot);
+const publicRoutes = listRoutes(publicRouteRoot).filter(
+  (route) => !route.startsWith("_authenticated/"),
+);
 const supporting = new Set(manifest.supportingRoutes);
 const moduleRoutes = actualRoutes.filter((r) => !supporting.has(r));
 
@@ -48,6 +53,12 @@ const nextModules = sidebar.map((entry) => {
       (r) => r === `${prefix}.tsx` || r.startsWith(`${prefix}/`) || r.startsWith(`${prefix}.`),
     );
   }
+  let publicRouteFiles = [];
+  if (prefix) {
+    publicRouteFiles = publicRoutes.filter(
+      (r) => r === `${prefix}.tsx` || r === `${prefix}.ts` || r.startsWith(`${prefix}.`),
+    );
+  }
   // Purchases also owns legacy expense-management nested under purchases/
   if (entry.href === "/purchases") {
     const extra = moduleRoutes.filter(
@@ -59,6 +70,7 @@ const nextModules = sidebar.map((entry) => {
     label: entry.label,
     href: entry.href,
     routeFiles: routeFiles.sort(),
+    ...(publicRouteFiles.length ? { publicRouteFiles: publicRouteFiles.sort() } : {}),
     browsingImplementation: existing?.browsingImplementation ?? "partial_code_not_runtime_verified",
     fullyVerified: false,
     ...(existing?.currentEvidence ? { currentEvidence: existing.currentEvidence } : {}),
@@ -90,6 +102,10 @@ manifest.counts = {
   sidebarModules: nextModules.length,
   authenticatedRouteFiles: actualRoutes.length,
   supportingRouteFiles: manifest.supportingRoutes.length,
+  publicRouteFiles: nextModules.reduce(
+    (total, module) => total + (module.publicRouteFiles?.length ?? 0),
+    0,
+  ),
 };
 manifest.source = {
   ...manifest.source,

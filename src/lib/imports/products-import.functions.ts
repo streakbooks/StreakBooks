@@ -20,7 +20,7 @@ export type ProductsImportResult = {
  */
 export const importProductsCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; csvText: string }) => {
+  .validator((input: { companyId: string; csvText: string }) => {
     if (typeof input.csvText !== "string" || input.csvText.length > 5 * 1024 * 1024) {
       throw new Error("Invalid CSV input or file exceeds 5 MB");
     }

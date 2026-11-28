@@ -1,3 +1,4 @@
+import { reportQueryUsesAccountingDefaults } from "@/lib/settings/report-defaults";
 import { useEffect, useState } from "react";
 import { Link, useBlocker } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,6 +36,55 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 type Props = { companyId: string; canEdit: boolean; canLock: boolean };
+
+type WorkflowSafeguardsProps = {
+  warnDuplicateNumbers: boolean;
+  warnControlAccounts: boolean;
+  autoApplyCredits: boolean;
+};
+
+export function ReadOnlyAccountingWorkflowSafeguards({
+  warnDuplicateNumbers,
+  warnControlAccounts,
+  autoApplyCredits,
+}: WorkflowSafeguardsProps) {
+  return (
+    <>
+      <Alert>
+        <AlertTitle>Workflow safeguards are not active yet</AlertTitle>
+        <AlertDescription id="settings-accounting-partial-note">
+          Duplicate-number and control-account warnings plus automatic credit application are not
+          yet enforced by their workflows. They remain read-only so a saved preference cannot imply
+          behavior that is not available.
+        </AlertDescription>
+      </Alert>
+      <fieldset
+        disabled
+        aria-describedby="settings-accounting-partial-note"
+        data-settings-status="partial"
+        className="grid gap-3"
+      >
+        <legend className="sr-only">Workflow safeguards awaiting implementation</legend>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="settings-warn-duplicate">Warn on duplicate document numbers</Label>
+          <Switch id="settings-warn-duplicate" checked={warnDuplicateNumbers} />
+        </div>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="settings-warn-control">Warn posting to control accounts</Label>
+          <Switch id="settings-warn-control" checked={warnControlAccounts} />
+        </div>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="settings-auto-credits">Auto-apply credits / prepayments</Label>
+          <Switch id="settings-auto-credits" checked={autoApplyCredits} />
+        </div>
+      </fieldset>
+      <p className="text-xs text-muted-foreground">
+        Direct bank-posting and back-dated journal warnings are active in manual journals. Their
+        settings are available in the typed Accounting preferences.
+      </p>
+    </>
+  );
+}
 
 export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Props) {
   const qc = useQueryClient();
@@ -177,15 +227,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
       await qc.invalidateQueries({ queryKey: ["organisation-config", companyId, "accounting"] });
       // Basis-dependent data must be refreshed after changing the company default.
       await qc.invalidateQueries({
-        predicate: (query) =>
-          (query.queryKey[0] === "firm-reporting" || query.queryKey.includes(companyId)) &&
-          (query.queryKey[0] === "management-metrics" ||
-            query.queryKey[0] === "firm-reporting" ||
-            query.queryKey[0] === "reporting-basis" ||
-            query.queryKey[0] === "dashboard-snapshot" ||
-            query.queryKey[0] === "standard-statement" ||
-            query.queryKey[0] === "project-profitability" ||
-            String(query.queryKey[0]).startsWith("report-")),
+        predicate: (query) => reportQueryUsesAccountingDefaults(query.queryKey, companyId),
       });
       toast.success("Accounting preferences saved");
     },
@@ -363,7 +405,8 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
         <CardHeader>
           <CardTitle className="text-base">Accounting preferences</CardTitle>
           <CardDescription>
-            Warnings and reporting defaults. Do not affect posted journals.
+            Reporting defaults and workflow safeguards. Reporting-basis changes affect reports only
+            and never rewrite posted journals.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid max-w-xl gap-3">
@@ -383,72 +426,11 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
               <option value="cash">Cash (reporting view)</option>
             </select>
           </div>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="settings-warn-duplicate">Warn on duplicate document numbers</Label>
-            <Switch
-              id="settings-warn-duplicate"
-              checked={warnDup}
-              disabled={!canEdit || !cfgQ.isSuccess}
-              onCheckedChange={(value) => {
-                setWarnDup(value);
-                setCfgTouched(true);
-              }}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="settings-warn-control">Warn posting to control accounts</Label>
-            <Switch
-              id="settings-warn-control"
-              checked={warnControl}
-              disabled={!canEdit || !cfgQ.isSuccess}
-              onCheckedChange={(value) => {
-                setWarnControl(value);
-                setCfgTouched(true);
-              }}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="settings-warn-bank">Warn bank-account direct posting</Label>
-            <Switch
-              id="settings-warn-bank"
-              checked={warnBank}
-              disabled={!canEdit || !cfgQ.isSuccess}
-              onCheckedChange={(value) => {
-                setWarnBank(value);
-                setCfgTouched(true);
-              }}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="settings-backdated-days">Warn back-dated entries beyond (days)</Label>
-            <Input
-              id="settings-backdated-days"
-              value={backdated}
-              inputMode="numeric"
-              aria-invalid={Boolean(cfgErrors["warn_backdated_days"])}
-              aria-describedby={
-                cfgErrors["warn_backdated_days"] ? "settings-backdated-error" : undefined
-              }
-              disabled={!canEdit || !cfgQ.isSuccess}
-              onChange={(e) => {
-                setBackdated(e.target.value);
-                setCfgTouched(true);
-                setCfgErrors({});
-              }}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="settings-auto-credits">Auto-apply credits / prepayments</Label>
-            <Switch
-              id="settings-auto-credits"
-              checked={autoCredits}
-              disabled={!canEdit || !cfgQ.isSuccess}
-              onCheckedChange={(value) => {
-                setAutoCredits(value);
-                setCfgTouched(true);
-              }}
-            />
-          </div>
+          <ReadOnlyAccountingWorkflowSafeguards
+            warnDuplicateNumbers={warnDup}
+            warnControlAccounts={warnControl}
+            autoApplyCredits={autoCredits}
+          />
           {cfgServerChanged ? (
             <Alert variant="destructive">
               <AlertTitle>Accounting preferences changed on the server</AlertTitle>

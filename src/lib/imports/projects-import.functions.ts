@@ -15,7 +15,7 @@ export type ProjectsImportResult = {
 /** Non-posting project master-data import; project codes are case-sensitive per DB constraint. */
 export const importProjectsCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; csvText: string }) => {
+  .validator((input: { companyId: string; csvText: string }) => {
     if (typeof input.csvText !== "string" || input.csvText.length > 5 * 1024 * 1024) {
       throw new Error("Invalid CSV or file exceeds 5 MB");
     }

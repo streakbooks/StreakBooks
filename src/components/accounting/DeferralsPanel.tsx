@@ -137,9 +137,7 @@ export function DeferralsPanel({ companyId, currency }: { companyId: string; cur
   });
   if (q.isPending || accounts.isPending) return <LoadingState />;
   if (q.isError || accounts.isError)
-    return (
-      <QueryErrorState queries={[q, accounts]} title="Could not load deferrals" />
-    );
+    return <QueryErrorState queries={[q, accounts]} title="Could not load deferrals" />;
   const active = (accounts.data ?? []).filter((a) => a.is_active && a.is_postable);
   const counts = deferralPageCounts(q.data.rows, q.data.today);
   const shown = filterDeferralPage(q.data.rows, statusFilter, q.data.today);

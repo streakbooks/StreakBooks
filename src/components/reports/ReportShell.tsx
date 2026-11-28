@@ -322,7 +322,9 @@ export function ReportShell({
                   size="sm"
                   variant="outline"
                   disabled={
-                    !canExport || fileExport.isPending || !(explorerActive ? explorerData : getCsv?.())
+                    !canExport ||
+                    fileExport.isPending ||
+                    !(explorerActive ? explorerData : getCsv?.())
                   }
                   aria-label="Download report"
                 >

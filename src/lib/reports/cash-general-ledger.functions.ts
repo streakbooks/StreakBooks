@@ -13,7 +13,7 @@ import { parseReportAccountIds } from "./report-account-selection";
  */
 export const getCashGeneralLedgerAll = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         companyId: z.string().uuid(),

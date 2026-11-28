@@ -44,7 +44,7 @@ function uniqueNameError(error: { code?: string | null; message: string }) {
 
 export const listProductCategories = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }): Promise<ProductCategory[]> => {
@@ -61,7 +61,7 @@ export const listProductCategories = createServerFn({ method: "GET" })
 
 export const saveProductCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -105,7 +105,7 @@ export const saveProductCategory = createServerFn({ method: "POST" })
 
 export const listProductPriceLists = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }): Promise<ProductPriceList[]> => {
@@ -122,7 +122,7 @@ export const listProductPriceLists = createServerFn({ method: "GET" })
 
 export const saveProductPriceList = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -177,7 +177,7 @@ export const saveProductPriceList = createServerFn({ method: "POST" })
 
 export const listProductPriceOverrides = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; priceListId: string }) => ({
+  .validator((input: { companyId: string; priceListId: string }) => ({
     companyId: assertUuid(input.companyId),
     priceListId: assertUuid(input.priceListId),
   }))
@@ -226,7 +226,7 @@ export const listProductPriceOverrides = createServerFn({ method: "GET" })
 
 export const saveProductPriceOverride = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       priceListId: string;
@@ -295,7 +295,7 @@ export const saveProductPriceOverride = createServerFn({ method: "POST" })
 
 export const deleteProductPriceOverride = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; priceListItemId: string }) => ({
+  .validator((input: { companyId: string; priceListItemId: string }) => ({
     companyId: assertUuid(input.companyId),
     priceListItemId: assertUuid(input.priceListItemId),
   }))
@@ -319,7 +319,7 @@ export const deleteProductPriceOverride = createServerFn({ method: "POST" })
  */
 export const resolveSalesDraftPriceList = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       priceListId: string;

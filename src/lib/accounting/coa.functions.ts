@@ -38,7 +38,7 @@ export const getCoaCatalogStats = createServerFn({ method: "GET" })
 
 export const listOptionalLibraryAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { q?: string; recommendation?: string }) => ({
+  .validator((input: { q?: string; recommendation?: string }) => ({
     q: (input?.q ?? "").trim().toLowerCase(),
     recommendation: input?.recommendation ?? "",
   }))
@@ -63,7 +63,7 @@ export const listOptionalLibraryAccounts = createServerFn({ method: "GET" })
 
 export const getCompanyCoaSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyIdInput)
+  .validator(companyIdInput)
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: row, error } = await context.supabase
@@ -122,7 +122,7 @@ async function loadExistingAccounts(
 
 export const previewCoaIndustryApply = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; industryCodes: string[]; level: DetailLevel }) => ({
+  .validator((input: { companyId: string; industryCodes: string[]; level: DetailLevel }) => ({
     companyId: assertUuid(input?.companyId),
     industryCodes: [...new Set((input?.industryCodes ?? []).filter(Boolean))],
     level: (["simple", "standard", "detailed"].includes(input?.level)
@@ -146,7 +146,7 @@ export const previewCoaIndustryApply = createServerFn({ method: "POST" })
 
 export const applyCoaIndustryTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       industryCodes: string[];
@@ -288,7 +288,7 @@ export const applyCoaIndustryTemplate = createServerFn({ method: "POST" })
 
 export const createManualAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       code: string;
@@ -366,7 +366,7 @@ export const createManualAccount = createServerFn({ method: "POST" })
 
 export const addOptionalLibraryAccounts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; keys: string[] }) => ({
+  .validator((input: { companyId: string; keys: string[] }) => ({
     companyId: assertUuid(input?.companyId),
     keys: [...new Set((input?.keys ?? []).filter(Boolean))],
   }))
@@ -411,7 +411,7 @@ export const addOptionalLibraryAccounts = createServerFn({ method: "POST" })
 
 export const listTrackingCategories = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyIdInput)
+  .validator(companyIdInput)
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: cats, error } = await context.supabase

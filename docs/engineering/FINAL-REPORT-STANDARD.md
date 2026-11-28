@@ -31,12 +31,12 @@ URLs to unpublished local commits or claim a skipped CI job passed.
 
 ## Local PowerShell review
 
-User workstation: `D:\MyApp\StreakBooks`. Development URL: `http://localhost:8080`.
+User workstation: `D:\StreakBooks`. Development URL: `http://localhost:8080`.
 The cloud executor's checkout is separate; never claim it changed this Windows directory.
 Before switching branches or pulling, inspect and protect uncommitted work. A safe review sequence:
 
 ```powershell
-cd D:\MyApp\StreakBooks
+cd D:\StreakBooks
 git status
 if (git status --porcelain) { throw "Commit or stash your changes before continuing." }
 git switch main

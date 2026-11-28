@@ -39,7 +39,7 @@ export type SalesOrder = {
 };
 export const listSalesOrders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; q?: string; status?: string; page?: number }) => ({
+  .validator((input: { companyId: string; q?: string; status?: string; page?: number }) => ({
     companyId: assertUuid(input.companyId),
     q: (input.q ?? "").trim().slice(0, 100),
     status: input.status ?? "all",
@@ -64,7 +64,7 @@ export const listSalesOrders = createServerFn({ method: "GET" })
   });
 export const getSalesOrder = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; orderId: string }) => ({
+  .validator((input: { companyId: string; orderId: string }) => ({
     companyId: assertUuid(input.companyId),
     orderId: assertUuid(input.orderId, "order"),
   }))
@@ -82,7 +82,7 @@ export const getSalesOrder = createServerFn({ method: "GET" })
   });
 export const saveSalesOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       requestId: string;
@@ -125,7 +125,7 @@ export const saveSalesOrder = createServerFn({ method: "POST" })
   });
 export const actSalesOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       orderId: string;

@@ -30,6 +30,7 @@ import {
 } from "@/lib/accounting/account-import";
 import { saveAccountSchema } from "@/lib/accounting/account-schema";
 import { signedBalance } from "@/lib/accounting/account-rules";
+import { formatAccountCodeForDisplay } from "@/lib/accounting/chart-view";
 import { assessMergePlan } from "@/lib/accounting/account-merge";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { STARTER_CHARTS } from "@/lib/accounting/starter-charts";
@@ -64,6 +65,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { EmptyState, LoadingState } from "@/components/common/states";
+import { getOrganisationConfig } from "@/lib/settings/settings-centre.functions";
 
 const ROW_HEIGHT = 44;
 
@@ -83,6 +85,7 @@ export function ChartAccountsPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: companies } = useActiveCompany();
   const fetchChart = useServerFn(listChartAccounts);
+  const fetchAccountingSettings = useServerFn(getOrganisationConfig);
   const archive = useServerFn(archiveChartAccount);
   const merge = useServerFn(mergeChartAccounts);
   const previewMerge = useServerFn(previewMergeChartAccounts);
@@ -94,6 +97,15 @@ export function ChartAccountsPanel({
     queryKey: ["chart-accounts", companyId],
     queryFn: () => fetchChart({ data: { companyId } }),
   });
+  const accountingSettingsQuery = useQuery({
+    queryKey: ["organisation-config", companyId, "accounting"],
+    queryFn: () => fetchAccountingSettings({ data: { companyId, category: "accounting" } }),
+  });
+  const rawAccountCodePadding = accountingSettingsQuery.data?.document["account_code_padding"];
+  const accountCodePadding =
+    typeof rawAccountCodePadding === "number" && Number.isInteger(rawAccountCodePadding)
+      ? Math.min(8, Math.max(0, rawAccountCodePadding))
+      : 0;
 
   const search = browsing.chartQ ?? "";
   const classFilter = browsing.chartClass ?? "all";
@@ -629,7 +641,7 @@ export function ChartAccountsPanel({
                         <button
                           type="button"
                           className="flex items-center gap-1 text-left font-mono text-xs"
-                          aria-label={`${account.code} ${account.name} subaccounts`}
+                          aria-label={`${formatAccountCodeForDisplay(account.code, accountCodePadding)} ${account.name} subaccounts`}
                           aria-expanded={!collapsed.has(account.id)}
                           onClick={() => {
                             setCollapsed((current) => {
@@ -645,10 +657,12 @@ export function ChartAccountsPanel({
                           ) : (
                             <ChevronDown aria-hidden="true" className="size-4" />
                           )}
-                          {account.code}
+                          {formatAccountCodeForDisplay(account.code, accountCodePadding)}
                         </button>
                       ) : (
-                        <span className="truncate pl-5 font-mono text-xs">{account.code}</span>
+                        <span className="truncate pl-5 font-mono text-xs">
+                          {formatAccountCodeForDisplay(account.code, accountCodePadding)}
+                        </span>
                       )}
                     </div>
                     <div

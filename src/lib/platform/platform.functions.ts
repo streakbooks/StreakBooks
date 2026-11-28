@@ -18,7 +18,7 @@ export const getPlatformContext = createServerFn({ method: "GET" })
   );
 export const getPlatformOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => overviewSchema.parse(v))
+  .validator((v: unknown) => overviewSchema.parse(v))
   .handler(async ({ context, data }) =>
     unwrap<Overview>(
       await context.supabase.rpc(
@@ -29,7 +29,7 @@ export const getPlatformOverview = createServerFn({ method: "GET" })
   );
 export const listPlatformRecords = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => listSchema.parse(v))
+  .validator((v: unknown) => listSchema.parse(v))
   .handler(async ({ context, data }) =>
     unwrap<ListResult>(
       await context.supabase.rpc(
@@ -45,7 +45,7 @@ export const listPlatformRecords = createServerFn({ method: "GET" })
   );
 export const mutatePlatform = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => mutationSchema.parse(v))
+  .validator((v: unknown) => mutationSchema.parse(v))
   .handler(async ({ context, data }) =>
     unwrap<{ ok: true; id: string }>(
       await context.supabase.rpc(
@@ -66,7 +66,7 @@ export const getPlatformHealth = createServerFn({ method: "GET" })
   );
 export const readSupportDiagnostics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => z.object({ companyId: z.string().uuid() }).parse(v))
+  .validator((v: unknown) => z.object({ companyId: z.string().uuid() }).parse(v))
   .handler(async ({ context, data }) =>
     unwrap<Row[]>(
       await context.supabase.rpc(
@@ -77,7 +77,7 @@ export const readSupportDiagnostics = createServerFn({ method: "POST" })
   );
 export const getAnnouncements = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => z.object({ companyId: z.string().uuid().nullable() }).parse(v))
+  .validator((v: unknown) => z.object({ companyId: z.string().uuid().nullable() }).parse(v))
   .handler(async ({ context, data }) =>
     unwrap<{ id: string; name: string; message: string }[]>(
       await context.supabase.rpc(
@@ -112,7 +112,7 @@ export const getIntegrationReadiness = createServerFn({ method: "GET" })
   });
 export const getPlatformDetails = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) =>
+  .validator((v: unknown) =>
     z
       .object({ resource: z.enum(["businesses", "users", "firms"]), id: z.string().uuid() })
       .parse(v),
@@ -127,7 +127,7 @@ export const getPlatformDetails = createServerFn({ method: "GET" })
   );
 export const bulkBusinessStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) =>
+  .validator((v: unknown) =>
     z
       .object({
         ids: z.array(z.string().uuid()).min(1).max(100),
@@ -146,7 +146,7 @@ export const bulkBusinessStatus = createServerFn({ method: "POST" })
   );
 export const exportPlatformRecords = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => listSchema.parse(v))
+  .validator((v: unknown) => listSchema.parse(v))
   .handler(async ({ context, data }) => {
     const result = unwrap<ListResult>(
       await context.supabase.rpc(
@@ -183,7 +183,7 @@ const entitlementChange = z.object({
 
 export const setPlatformEntitlement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => entitlementChange.parse(v))
+  .validator((v: unknown) => entitlementChange.parse(v))
   .handler(async ({ context, data }) =>
     unwrap<{ ok: true; pending: boolean; id: string }>(
       await context.supabase.rpc(
@@ -212,7 +212,7 @@ export const listPlatformApprovals = createServerFn({ method: "GET" })
 
 export const decidePlatformApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) =>
+  .validator((v: unknown) =>
     z
       .object({
         id: z.string().uuid(),
@@ -324,7 +324,7 @@ export const getSupervisedSupport = createServerFn({ method: "GET" })
   });
 export const requestSupervisedSupport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(async (value: unknown) =>
+  .validator(async (value: unknown) =>
     (await import("./support")).supportRequestSchema.parse(value),
   )
   .handler(async ({ context, data }) =>
@@ -342,9 +342,7 @@ export const requestSupervisedSupport = createServerFn({ method: "POST" })
   );
 export const revokeSupervisedSupport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(async (value: unknown) =>
-    (await import("./support")).supportRevokeSchema.parse(value),
-  )
+  .validator(async (value: unknown) => (await import("./support")).supportRevokeSchema.parse(value))
   .handler(async ({ context, data }) =>
     unwrap<void>(
       await context.supabase.rpc(
@@ -359,7 +357,7 @@ export const revokeSupervisedSupport = createServerFn({ method: "POST" })
 
 export const searchPlatform = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(async (value: unknown) =>
+  .validator(async (value: unknown) =>
     (await import("./navigation")).platformSearchSchema.parse(value),
   )
   .handler(async ({ context, data }) => {
@@ -375,7 +373,7 @@ export const searchPlatform = createServerFn({ method: "GET" })
   });
 export const getPlatformRecord = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(async (value: unknown) =>
+  .validator(async (value: unknown) =>
     (await import("./navigation")).platformRecordSchema.parse(value),
   )
   .handler(async ({ context, data }) =>

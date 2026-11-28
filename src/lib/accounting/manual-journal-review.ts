@@ -1,4 +1,5 @@
 import { tryParseMinor } from "@/lib/purchases/money-input";
+import { isBankOrCashAccount } from "@/lib/purchases/bank-account-rules";
 
 export type JournalDraftLine = {
   accountId: string;
@@ -16,6 +17,32 @@ export type JournalDraftReview = {
   balanced: boolean;
   canPost: boolean;
 };
+
+export type JournalWarningAccount = {
+  id: string;
+  account_type: string;
+  is_active: boolean;
+  is_postable: boolean;
+  account_kind?: string | null;
+  subtype?: string | null;
+  is_payment_enabled?: boolean | null;
+};
+
+/** Non-blocking warning lines for an enabled direct bank/cash posting preference. */
+export function directBankPostingWarningLines(
+  lines: readonly JournalDraftLine[],
+  accounts: readonly JournalWarningAccount[],
+  enabled: boolean,
+): number[] {
+  if (!enabled) return [];
+  const byId = new Map(accounts.map((account) => [account.id, account]));
+  return lines.flatMap((line, index) => {
+    const account = byId.get(line.accountId);
+    const hasAmount = Boolean(line.debit.trim() || line.credit.trim());
+    if (!account || !hasAmount || !isBankOrCashAccount(account, new Set())) return [];
+    return [index + 1];
+  });
+}
 
 /**
  * Review before calling the posting RPC. Invalid, negative, unsafe, zero or

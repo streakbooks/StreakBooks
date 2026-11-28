@@ -4,6 +4,11 @@ import { openSettingsPanel } from "@/lib/settings/panels";
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
 import { InPlaceSettingsPanel } from "@/components/settings/InPlaceSettingsPanel";
 import { parseSettingsPanel } from "@/lib/settings/panels";
+import {
+  resolveSettingsRoute,
+  settingsRouteForSection,
+  settingsRouteForPanel,
+} from "@/lib/settings/route-model";
 import { ModuleSettingsLinks } from "@/components/settings/ModuleSettingsLinks";
 import { WakeSettings } from "@/components/ai-voice/WakeSettings";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -27,7 +32,7 @@ import {
   upsertBranding,
   voidExchangeRate,
 } from "@/lib/settings/org-settings.functions";
-import { countries, currencies, months, taxRegimes, timezones } from "@/lib/company-constants";
+import { countries, currencies, months, timezones } from "@/lib/company-constants";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   categoryMeta,
@@ -52,7 +57,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 import {
   Select,
@@ -89,6 +93,8 @@ import { SubscriptionPanel } from "@/components/billing/SubscriptionPanel";
 import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPalette";
 import { maxFiscalYearEndDay, formatDocumentNumberPreview } from "@/lib/settings/dimension-helpers";
 import { SettingsSaveBar } from "@/components/settings/SettingsSaveBar";
+import { MODULE_REGISTRY } from "@/lib/modules/registry";
+import { validateSettingsReturnTo } from "@/lib/settings/return-context";
 import { hasUnsavedLegacySettings } from "@/lib/settings/legacy-navigation";
 import {
   AUDIT_PAGE_SIZE,
@@ -159,7 +165,7 @@ export function SettingsPage() {
     );
   }
 
-  return <SettingsForCompany companyId={companyId} />;
+  return <SettingsForCompany key={companyId} companyId={companyId} />;
 }
 
 export function SettingsForCompany({
@@ -170,20 +176,34 @@ export function SettingsForCompany({
   embeddedSection?: SettingsCategory;
 }) {
   const navigate = useNavigate();
-  const currentSearch = useRouterState({ select: (s) => s.location.search }) as Record<
-    string,
-    unknown
-  >;
+  const location = useRouterState({ select: (s) => s.location });
+  const currentSearch = location.search as Record<string, unknown>;
+  const pathParts = location.pathname.split("/").filter(Boolean);
+  const canonicalRoute =
+    pathParts.length === 3 && pathParts[0] === "settings"
+      ? resolveSettingsRoute(pathParts[1]!, pathParts[2]!)
+      : undefined;
   const sectionRaw =
     embeddedSection ??
+    canonicalRoute?.section ??
     (typeof currentSearch["section"] === "string" ? currentSearch["section"] : "overview");
   const plan = typeof currentSearch["plan"] === "string" ? currentSearch["plan"] : undefined;
   const interval =
     currentSearch["interval"] === "month" || currentSearch["interval"] === "year"
       ? currentSearch["interval"]
       : undefined;
-  const detail = embeddedSection ? undefined : parseSettingsPanel(currentSearch["settingsPanel"]);
+  const detail = embeddedSection
+    ? undefined
+    : (canonicalRoute?.panel ?? parseSettingsPanel(currentSearch["settingsPanel"]));
   const section = resolveSettingsCategory(sectionRaw);
+  const invalidSection =
+    !embeddedSection && !canonicalRoute && currentSearch["invalidSection"] === true;
+  const returnTo = validateSettingsReturnTo(currentSearch["returnTo"]);
+  const returnPath = returnTo?.split(/[?#]/, 1)[0] ?? "";
+  const returnModule = MODULE_REGISTRY.find(
+    (module) =>
+      module.inSidebar && (returnPath === module.path || returnPath.startsWith(module.path + "/")),
+  );
   const [navFilter, setNavFilter] = useState("");
   const [cmdOpen, setCmdOpen] = useState(false);
 
@@ -211,8 +231,38 @@ export function SettingsForCompany({
       });
       return;
     }
-    void navigate({ to: "/settings", search: { section: id } });
+    const route = settingsRouteForSection(resolveSettingsCategory(id));
+    void navigate({
+      to: "/settings/$group/$page",
+      params: route,
+      search: {
+        section: route.group,
+        ...(returnTo ? { returnTo } : {}),
+        ...(plan ? { plan } : {}),
+        ...(interval ? { interval } : {}),
+      },
+    });
   };
+
+  const legacyRoute = detail
+    ? settingsRouteForPanel(detail)
+    : section === "overview"
+      ? undefined
+      : settingsRouteForSection(section);
+  useEffect(() => {
+    if (embeddedSection || location.pathname !== "/settings" || !legacyRoute) return;
+    void navigate({
+      to: "/settings/$group/$page",
+      params: legacyRoute,
+      search: {
+        section: legacyRoute.group,
+        ...(returnTo ? { returnTo } : {}),
+        ...(plan ? { plan } : {}),
+        ...(interval ? { interval } : {}),
+      },
+      replace: true,
+    });
+  }, [embeddedSection, interval, legacyRoute, location.pathname, navigate, plan, returnTo]);
 
   const fetchDetails = useServerFn(getCompanyDetails);
   const saveCompany = useServerFn(updateCompany);
@@ -283,9 +333,6 @@ export function SettingsForCompany({
   const [timezone, setTimezone] = useState("Europe/London");
   const [fyMonth, setFyMonth] = useState("3");
   const [fyDay, setFyDay] = useState("31");
-  const [taxRegime, setTaxRegime] = useState("none");
-  const [regNumber, setRegNumber] = useState("");
-  const [pricesIncludeTax, setPricesIncludeTax] = useState(false);
 
   const [locale, setLocale] = useState("en-GB");
   const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
@@ -331,9 +378,6 @@ export function SettingsForCompany({
     setTimezone(d.timezone);
     setFyMonth(String(d.fiscal_year_end_month));
     setFyDay(String(d.fiscal_year_end_day));
-    setTaxRegime(d.tax?.tax_regime ?? "none");
-    setRegNumber(d.tax?.registration_number ?? "");
-    setPricesIncludeTax(Boolean(d.tax?.prices_include_tax));
   }, [detailsQuery.isSuccess, detailsQuery.data, detailsDirty]);
 
   useEffect(() => {
@@ -424,9 +468,6 @@ export function SettingsForCompany({
     setTimezone(d.timezone);
     setFyMonth(String(d.fiscal_year_end_month));
     setFyDay(String(d.fiscal_year_end_day));
-    setTaxRegime(d.tax?.tax_regime ?? "none");
-    setRegNumber(d.tax?.registration_number ?? "");
-    setPricesIncludeTax(Boolean(d.tax?.prices_include_tax));
     setDetailsBaseline(JSON.stringify(d));
     setDetailsDirty(false);
   };
@@ -469,10 +510,24 @@ export function SettingsForCompany({
   const baseCurrency = detailsQuery.data?.base_currency ?? "GBP";
 
   const saveMutation = useMutation({
-    mutationFn: () =>
-      saveCompany({
+    mutationFn: () => {
+      const current = detailsQuery.data;
+      if (!current) throw new Error("Reload organisation settings before saving.");
+      return saveCompany({
         data: {
           companyId,
+          expected: {
+            name: current.name,
+            legal_name: current.legal_name,
+            country_code: current.country_code,
+            base_currency: current.base_currency,
+            fiscal_year_end_month: current.fiscal_year_end_month,
+            fiscal_year_end_day: current.fiscal_year_end_day,
+            timezone: current.timezone,
+            tax_regime: current.tax?.tax_regime ?? "none",
+            registration_number: current.tax?.registration_number ?? null,
+            prices_include_tax: Boolean(current.tax?.prices_include_tax),
+          },
           name,
           legal_name: legalName,
           country_code: countryCode,
@@ -480,11 +535,12 @@ export function SettingsForCompany({
           fiscal_year_end_month: Number(fyMonth),
           fiscal_year_end_day: Number(fyDay),
           timezone,
-          tax_regime: taxRegime,
-          registration_number: regNumber,
-          prices_include_tax: pricesIncludeTax,
+          tax_regime: current.tax?.tax_regime ?? "none",
+          registration_number: current.tax?.registration_number ?? "",
+          prices_include_tax: Boolean(current.tax?.prices_include_tax),
         },
-      }),
+      });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["company-details", companyId] });
       await queryClient.invalidateQueries({ queryKey: companyContextKey });
@@ -639,7 +695,11 @@ export function SettingsForCompany({
 
       <div
         className={
-          embeddedSection ? "" : isHubView ? "space-y-5" : "grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]"
+          embeddedSection
+            ? ""
+            : isHubView
+              ? "space-y-5"
+              : "grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]"
         }
       >
         {!embeddedSection && !isHubView && (
@@ -669,18 +729,70 @@ export function SettingsForCompany({
         )}
 
         <div className="min-w-0 space-y-5">
-          {!detail && sectionMeta && !embeddedSection && !isHubView ? (
-            <nav className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          {!embeddedSection ? (
+            <nav
+              aria-label="Breadcrumb"
+              className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
+            >
               <Link
                 to="/settings"
-                search={{ section: "overview" }}
+                search={{ section: "overview", ...(returnTo ? { returnTo } : {}) }}
                 className="font-medium hover:text-foreground"
               >
                 Settings
               </Link>
-              <span aria-hidden>/</span>
-              <span className="text-foreground">{sectionMeta.label}</span>
+              {sectionMeta && !isHubView ? (
+                <>
+                  <span aria-hidden>/</span>
+                  {detail ? (
+                    <Link
+                      to="/settings/$group/$page"
+                      params={settingsRouteForSection(section)}
+                      search={{ section, ...(returnTo ? { returnTo } : {}) }}
+                      className="font-medium hover:text-foreground"
+                    >
+                      {sectionMeta.label}
+                    </Link>
+                  ) : (
+                    <span className="text-foreground" aria-current="page">
+                      {sectionMeta.label}
+                    </span>
+                  )}
+                  {detail ? (
+                    <>
+                      <span aria-hidden>/</span>
+                      <span className="text-foreground" aria-current="page">
+                        {canonicalRoute?.pageLabel ?? detail.replaceAll("-", " ")}
+                      </span>
+                    </>
+                  ) : null}
+                </>
+              ) : isHubView ? (
+                <>
+                  <span aria-hidden>/</span>
+                  <span className="text-foreground" aria-current="page">
+                    Overview
+                  </span>
+                </>
+              ) : null}
+              {returnTo && returnModule ? (
+                <a
+                  href={returnTo}
+                  className="ml-auto rounded-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  Back to {returnModule.label}
+                </a>
+              ) : null}
             </nav>
+          ) : null}
+          {invalidSection ? (
+            <Alert>
+              <AlertTitle>Settings category unavailable</AlertTitle>
+              <AlertDescription>
+                This link points to an unknown Settings category. Showing the Settings overview;
+                choose a supported category from the navigation.
+              </AlertDescription>
+            </Alert>
           ) : null}
           {!detail && sectionMeta && !embeddedSection && !isHubView ? (
             <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border bg-card/60 p-4 shadow-sm sm:p-5">
@@ -695,7 +807,7 @@ export function SettingsForCompany({
               {sectionMeta.availability === "unavailable" ? (
                 <Badge variant="outline">Not available</Badge>
               ) : sectionMeta.availability === "partial" ? (
-                <Badge variant="secondary">Module setup</Badge>
+                <Badge variant="secondary">Partial</Badge>
               ) : null}
             </div>
           ) : null}
@@ -929,52 +1041,18 @@ export function SettingsForCompany({
                             </SelectContent>
                           </RecordLookupSelect>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="org-tax-regime">Tax regime</Label>
-                          <Select
-                            value={taxRegime}
-                            disabled={!canEdit || saveMutation.isPending}
-                            onValueChange={(value) => {
-                              setTaxRegime(value);
-                              setDetailsDirty(true);
-                            }}
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 p-3 text-sm sm:col-span-2">
+                          <span className="text-muted-foreground">
+                            Tax registration and document tax treatment are managed in the Tax
+                            workspace.
+                          </span>
+                          <Link
+                            className="font-medium underline underline-offset-4"
+                            to="/tax"
+                            search={{ tab: "registration" }}
                           >
-                            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
-
-                            <SelectTrigger id="org-tax-regime">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {taxRegimes.map((t) => (
-                                <SelectItem key={t.value} value={t.value}>
-                                  {t.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2 sm:col-span-2">
-                          <Label htmlFor="tax-reg">Tax registration number</Label>
-                          <Input
-                            id="tax-reg"
-                            value={regNumber}
-                            disabled={!canEdit || saveMutation.isPending}
-                            onChange={(e) => {
-                              setRegNumber(e.target.value);
-                              setDetailsDirty(true);
-                            }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between gap-4 sm:col-span-2">
-                          <Label className="font-normal">Prices include tax by default</Label>
-                          <Switch
-                            checked={pricesIncludeTax}
-                            disabled={!canEdit || saveMutation.isPending}
-                            onCheckedChange={(checked) => {
-                              setPricesIncludeTax(checked);
-                              setDetailsDirty(true);
-                            }}
-                          />
+                            Manage tax settings
+                          </Link>
                         </div>
                         <SettingsSaveBar
                           label="Save organisation details"
@@ -1587,8 +1665,7 @@ export function SettingsForCompany({
                       <CardHeader>
                         <CardTitle className="text-base">Audit history</CardTitle>
                         <CardDescription>
-                          Append-only financial and administrative actions. Filter to reduce noise
-                          from journal.posted / demo.seed bursts. Secrets are stripped server-side.
+                          Date filters use UTC. Event times are shown in your local time zone.
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">

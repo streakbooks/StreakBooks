@@ -97,7 +97,7 @@ export const getLegalDocumentsAdmin = createServerFn({ method: "GET" })
 
 export const draftLegalDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => draftInput.parse(input))
+  .validator((input: unknown) => draftInput.parse(input))
   .handler(async ({ data, context }) => {
     const result = (await callRpc(context.supabase, "platform_draft_legal_document", {
       _kind: data.kind,
@@ -111,7 +111,7 @@ export const draftLegalDocument = createServerFn({ method: "POST" })
 
 export const actOnLegalDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => actionInput.parse(input))
+  .validator((input: unknown) => actionInput.parse(input))
   .handler(async ({ data, context }) => {
     const fn = {
       approve: "platform_approve_legal_document",

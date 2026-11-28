@@ -160,10 +160,7 @@ export function AdvisorsManageAppointmentPage({ manageToken }: { manageToken: st
                 <Button
                   type="button"
                   disabled={
-                    !selectedSlot ||
-                    rescheduleM.isPending ||
-                    !slotsQ.isSuccess ||
-                    slotsQ.isError
+                    !selectedSlot || rescheduleM.isPending || !slotsQ.isSuccess || slotsQ.isError
                   }
                   onClick={() => rescheduleM.mutate()}
                 >

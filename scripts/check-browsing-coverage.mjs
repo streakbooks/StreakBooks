@@ -6,7 +6,7 @@
  * This audits inventory presence only. It never claims that an included route
  * is fully functional, accessible, secure, tested or production-ready.
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isCanonicalRoutePath } from "./lib/browsing-route-path.mjs";
@@ -48,6 +48,7 @@ const parsedSidebar = [...navSource.matchAll(/\{\s*label:\s*"([^"]+)",\s*to:\s*"
   (match) => ({ label: match[1], href: match[2] }),
 );
 const sidebar = manifest.modules.map(({ label, href }) => ({ label, href }));
+const publicRouteFiles = manifest.modules.flatMap((module) => module.publicRouteFiles ?? []);
 // A set-based inventory comparison alone cannot detect duplicate sidebar
 // declarations. Reject duplicates in both the source navigation and manifest.
 for (const [name, entries] of [
@@ -99,8 +100,8 @@ compareList(
 // Each module must own at least one unique authenticated route. A duplicate
 // module route would otherwise be hidden by the global inventory comparison.
 for (const module of manifest.modules) {
-  if (!Array.isArray(module.routeFiles) || module.routeFiles.length === 0) {
-    throw new Error("Browsing module requires at least one route: " + module.label);
+  if (!Array.isArray(module.routeFiles)) {
+    throw new Error("Browsing module requires a route inventory: " + module.label);
   }
   if (module.routeFiles.some((route) => !isCanonicalRoutePath(route))) {
     throw new Error("Browsing module contains a noncanonical route: " + module.label);
@@ -108,6 +109,26 @@ for (const module of manifest.modules) {
   if (new Set(module.routeFiles).size !== module.routeFiles.length) {
     throw new Error("Browsing module contains duplicate routes: " + module.label);
   }
+  if (!Array.isArray(module.publicRouteFiles ?? [])) {
+    throw new Error("Public route inventory must be an array: " + module.label);
+  }
+  if (module.routeFiles.length === 0 && (module.publicRouteFiles ?? []).length === 0) {
+    throw new Error("Browsing module requires at least one route: " + module.label);
+  }
+  for (const route of module.publicRouteFiles ?? []) {
+    if (!isCanonicalRoutePath(route) || !existsSync(join(root, "src/routes", route))) {
+      throw new Error("Browsing module contains a missing or noncanonical public route: " + route);
+    }
+    if (module.routeFiles.includes(route)) {
+      throw new Error("A route cannot be listed as both authenticated and public: " + route);
+    }
+  }
+  if (new Set(module.publicRouteFiles ?? []).size !== (module.publicRouteFiles ?? []).length) {
+    throw new Error("Browsing module contains duplicate public routes: " + module.label);
+  }
+}
+if (new Set(publicRouteFiles).size !== publicRouteFiles.length) {
+  throw new Error("Public routes must appear exactly once in the browsing manifest");
 }
 if (
   !Array.isArray(manifest.supportingRoutes) ||
@@ -135,6 +156,7 @@ const expectedCounts = {
   sidebarModules: sidebar.length,
   authenticatedRouteFiles: actualRoutes.length,
   supportingRouteFiles: manifest.supportingRoutes.length,
+  publicRouteFiles: publicRouteFiles.length,
 };
 for (const [key, actual] of Object.entries(expectedCounts)) {
   if (manifest.counts?.[key] !== actual) {
@@ -284,7 +306,8 @@ const missingRequirements = manifest.modules.filter(
     typeof module.browsingImplementation !== "string" ||
     !module.browsingImplementation.trim() ||
     typeof module.fullyVerified !== "boolean" ||
-    !Array.isArray(module.routeFiles),
+    !Array.isArray(module.routeFiles) ||
+    (module.publicRouteFiles !== undefined && !Array.isArray(module.publicRouteFiles)),
 );
 if (missingRequirements.length) {
   throw new Error(
@@ -307,6 +330,8 @@ console.log(
     " sidebar modules, " +
     actualRoutes.length +
     " authenticated routes, " +
+    publicRouteFiles.length +
+    " public route files, " +
     manifest.supportingRoutes.length +
     " supporting routes.",
 );

@@ -91,7 +91,7 @@ function throwIfRelation(error: { message: string; code?: string } | null) {
 
 export const getCrmSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<CrmSettings> => {
     await requireCrmView(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(
@@ -105,7 +105,7 @@ export const getCrmSettings = createServerFn({ method: "GET" })
 
 export const upsertCrmSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       enabled: boolean;
@@ -146,7 +146,7 @@ export const upsertCrmSettings = createServerFn({ method: "POST" })
 
 export const getCrmDashboardKpis = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; from?: string; to?: string }) => ({
+  .validator((input: { companyId: string; from?: string; to?: string }) => ({
     companyId: companyIdOf(input),
     from: input.from || undefined,
     to: input.to || undefined,
@@ -175,7 +175,7 @@ export const getCrmDashboardKpis = createServerFn({ method: "GET" })
 
 export const listCrmLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       status?: string;
@@ -218,7 +218,7 @@ export const listCrmLeads = createServerFn({ method: "GET" })
 
 export const getCrmLead = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; leadId: string }) => ({
+  .validator((input: { companyId: string; leadId: string }) => ({
     companyId: companyIdOf(input),
     leadId: assertUuid(input.leadId),
   }))
@@ -237,7 +237,7 @@ export const getCrmLead = createServerFn({ method: "GET" })
 
 export const upsertCrmLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string } & CrmLeadDraftInput) => {
+  .validator((input: { companyId: string } & CrmLeadDraftInput) => {
     const companyId = companyIdOf(input);
     const firstName = input.firstName?.trim() ?? "";
     const lastName = input.lastName?.trim() ?? "";
@@ -313,7 +313,7 @@ export const upsertCrmLead = createServerFn({ method: "POST" })
 
 export const assignCrmLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; leadId: string; ownerUserId: string | null }) => ({
+  .validator((input: { companyId: string; leadId: string; ownerUserId: string | null }) => ({
     companyId: companyIdOf(input),
     leadId: assertUuid(input.leadId),
     ownerUserId: input.ownerUserId ? assertUuid(input.ownerUserId) : null,
@@ -334,7 +334,7 @@ export const assignCrmLead = createServerFn({ method: "POST" })
 
 export const convertCrmLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       leadId: string;
@@ -375,7 +375,7 @@ export type CrmDuplicateLeadMatch = {
 
 export const findCrmDuplicateLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       email?: string;
@@ -428,7 +428,7 @@ export const findCrmDuplicateLeads = createServerFn({ method: "GET" })
 
 export const findCrmConversionMatches = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; leadId: string }) => ({
+  .validator((input: { companyId: string; leadId: string }) => ({
     companyId: companyIdOf(input),
     leadId: assertUuid(input.leadId),
   }))
@@ -455,7 +455,7 @@ export const findCrmConversionMatches = createServerFn({ method: "GET" })
 
 export const scoreCrmLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; leadId: string; persist?: boolean }) => ({
+  .validator((input: { companyId: string; leadId: string; persist?: boolean }) => ({
     companyId: companyIdOf(input),
     leadId: assertUuid(input.leadId),
     persist: input.persist !== false,
@@ -481,7 +481,7 @@ export const scoreCrmLead = createServerFn({ method: "POST" })
 
 export const reopenCrmOpportunity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; opportunityId: string; stageId?: string; note?: string }) => ({
       companyId: companyIdOf(input),
       opportunityId: assertUuid(input.opportunityId),
@@ -506,7 +506,7 @@ export const reopenCrmOpportunity = createServerFn({ method: "POST" })
 
 export const listCrmPipelines = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(
     async ({
       data,
@@ -548,7 +548,7 @@ export const listCrmPipelines = createServerFn({ method: "GET" })
 
 export const listCrmOpportunities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       status?: string;
@@ -587,7 +587,7 @@ export const listCrmOpportunities = createServerFn({ method: "GET" })
 
 export const upsertCrmOpportunity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string } & CrmOpportunityDraftInput) => {
+  .validator((input: { companyId: string } & CrmOpportunityDraftInput) => {
     const name = (input.name ?? "").trim();
     if (!name) throw new Error("Opportunity name is required");
     return {
@@ -642,7 +642,7 @@ export const upsertCrmOpportunity = createServerFn({ method: "POST" })
 
 export const setCrmOpportunityStage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       opportunityId: string;
@@ -682,7 +682,7 @@ export const setCrmOpportunityStage = createServerFn({ method: "POST" })
 
 export const listCrmActivities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       status?: string;
@@ -737,7 +737,7 @@ export const listCrmActivities = createServerFn({ method: "GET" })
 
 export const upsertCrmActivity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -800,7 +800,7 @@ export const upsertCrmActivity = createServerFn({ method: "POST" })
 
 export const completeCrmActivity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; activityId: string }) => ({
+  .validator((input: { companyId: string; activityId: string }) => ({
     companyId: companyIdOf(input),
     activityId: assertUuid(input.activityId),
   }))
@@ -816,7 +816,7 @@ export const completeCrmActivity = createServerFn({ method: "POST" })
 
 export const listCrmLeadSources = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<CrmLeadSource[]> => {
     await requireCrmView(context.supabase, data.companyId);
     try {
@@ -845,7 +845,7 @@ export const listCrmLeadSources = createServerFn({ method: "GET" })
  */
 export const listCrmContactPeople = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: companyIdOf(input),
   }))
   .handler(async ({ data, context }): Promise<CrmPersonDirectoryRow[]> => {
@@ -896,14 +896,12 @@ export const listCrmContactPeople = createServerFn({ method: "GET" })
 
 export const listCrmAccountOverlay = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; q?: string; crmOnly?: boolean; limit?: number }) => ({
-      companyId: companyIdOf(input),
-      q: (input.q ?? "").trim().slice(0, 100),
-      crmOnly: Boolean(input.crmOnly),
-      limit: Math.min(Math.max(input.limit ?? 200, 1), 500),
-    }),
-  )
+  .validator((input: { companyId: string; q?: string; crmOnly?: boolean; limit?: number }) => ({
+    companyId: companyIdOf(input),
+    q: (input.q ?? "").trim().slice(0, 100),
+    crmOnly: Boolean(input.crmOnly),
+    limit: Math.min(Math.max(input.limit ?? 200, 1), 500),
+  }))
   .handler(async ({ data, context }): Promise<CrmAccountOverlayRow[]> => {
     await requireCrmView(context.supabase, data.companyId);
     // Contacts remain the customer master; CRM only attaches pipeline facts.
@@ -1015,7 +1013,7 @@ async function resolveCrmQuoteIncomeAccount(
  */
 export const createCrmOpportunityQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; opportunityId: string }) => ({
+  .validator((input: { companyId: string; opportunityId: string }) => ({
     companyId: companyIdOf(input),
     opportunityId: assertUuid(input.opportunityId),
   }))
@@ -1106,7 +1104,7 @@ export const createCrmOpportunityQuote = createServerFn({ method: "POST" })
 
 export const upsertCrmPipeline = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -1161,7 +1159,7 @@ export const upsertCrmPipeline = createServerFn({ method: "POST" })
 
 export const upsertCrmPipelineStage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -1231,7 +1229,7 @@ export const upsertCrmPipelineStage = createServerFn({ method: "POST" })
  */
 export const listCrmDealInvoices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; limit?: number }) => ({
+  .validator((input: { companyId: string; limit?: number }) => ({
     companyId: companyIdOf(input),
     limit: Math.min(Math.max(input.limit ?? 100, 1), 300),
   }))
@@ -1341,7 +1339,7 @@ export const listCrmDealInvoices = createServerFn({ method: "GET" })
 /** Stage-weighted CRM forecast — expectation only; not GL revenue. */
 export const getCrmForecastReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; pipelineId?: string }) => ({
+  .validator((input: { companyId: string; pipelineId?: string }) => ({
     companyId: companyIdOf(input),
     pipelineId: input.pipelineId ? assertUuid(input.pipelineId) : undefined,
   }))
@@ -1411,7 +1409,7 @@ export const getCrmForecastReport = createServerFn({ method: "GET" })
 /** Honest outbound-comms gate — always fail-closed until a provider is wired. */
 export const getCrmCommsPolicy = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<CrmCommsPolicy> => {
     await requireCrmView(context.supabase, data.companyId);
     // Provider wiring is intentionally absent: never claim send is available.
@@ -1421,7 +1419,7 @@ export const getCrmCommsPolicy = createServerFn({ method: "GET" })
 /** Automation engine gate — flagged off until durable runners exist. */
 export const getCrmAutomationPolicy = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<CrmAutomationPolicy> => {
     await assertCompanyPermission(context.supabase, data.companyId, "crm.automation.manage");
     return resolveCrmAutomationPolicy({ engineEnabled: false });
@@ -1430,7 +1428,7 @@ export const getCrmAutomationPolicy = createServerFn({ method: "GET" })
 /** Import/export gate — permissions alone never unlock unbacked data moves. */
 export const getCrmImportExportPolicy = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(
     async ({
       data,
@@ -1469,7 +1467,7 @@ export const getCrmImportExportPolicy = createServerFn({ method: "GET" })
 
 export const getCrmTerritoryPolicy = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<CrmTerritoryPolicy> => {
     await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
     return resolveCrmTerritoryPolicy({ backendReady: true });
@@ -1477,7 +1475,7 @@ export const getCrmTerritoryPolicy = createServerFn({ method: "GET" })
 
 export const getCrmPublicFormsPolicy = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<CrmPublicFormsPolicy> => {
     await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
     return resolveCrmPublicFormsPolicy({ intakeReady: false });
@@ -1486,7 +1484,7 @@ export const getCrmPublicFormsPolicy = createServerFn({ method: "GET" })
 /** Company members with CRM ownership workload (leads/opps). Territories remain gated. */
 export const listCrmTeamWorkload = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(
     async ({
       data,
@@ -1563,7 +1561,7 @@ export const listCrmTeamWorkload = createServerFn({ method: "GET" })
 
 export const listCrmCampaigns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; limit?: number }) => ({
+  .validator((input: { companyId: string; limit?: number }) => ({
     companyId: companyIdOf(input),
     limit: Math.min(Math.max(input.limit ?? 200, 1), 500),
   }))
@@ -1584,7 +1582,7 @@ export const listCrmCampaigns = createServerFn({ method: "GET" })
 
 export const upsertCrmCampaign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -1671,7 +1669,7 @@ export const upsertCrmCampaign = createServerFn({ method: "POST" })
 
 export const listCrmTerritories = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<CrmTerritory[]> => {
     await requireCrmView(context.supabase, data.companyId);
     const { data: rows, error } = await crmClient(context.supabase)
@@ -1689,7 +1687,7 @@ export const listCrmTerritories = createServerFn({ method: "GET" })
 
 export const upsertCrmTerritory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;

@@ -135,10 +135,29 @@ function TaxConfigPage() {
   // TX-02: each form sends only its own fields. The server updates just those columns, so saving
   // registration never wipes the account mappings or default codes (and the reverse).
   const registrationM = useMutation({
-    mutationFn: () =>
-      saveSettings({
+    mutationFn: () => {
+      const current = settingsQ.data as {
+        tax_regime: string;
+        registration_number: string | null;
+        prices_include_tax: boolean;
+        tax_basis: string;
+        jurisdiction_code: string | null;
+        registration_date: string | null;
+        filing_frequency: string | null;
+      } | null;
+      if (!current) throw new Error("Reload Tax settings before saving.");
+      return saveSettings({
         data: {
           companyId: companyId!,
+          expected: {
+            taxRegime: current.tax_regime,
+            registrationNumber: current.registration_number,
+            pricesIncludeTax: current.prices_include_tax,
+            taxBasis: current.tax_basis,
+            jurisdictionCode: current.jurisdiction_code,
+            registrationDate: current.registration_date,
+            filingFrequency: current.filing_frequency,
+          },
           taxRegime: regime,
           registrationNumber: regNumber,
           pricesIncludeTax: includeTax,
@@ -147,7 +166,8 @@ function TaxConfigPage() {
           registrationDate: regDate || null,
           filingFrequency: filing || null,
         },
-      }),
+      });
+    },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["tax-settings", companyId] });
       toast.success("Registration saved. Posted history is not rewritten.");
@@ -156,15 +176,27 @@ function TaxConfigPage() {
   });
 
   const mappingsM = useMutation({
-    mutationFn: () =>
-      saveSettings({
+    mutationFn: () => {
+      const current = settingsQ.data as {
+        output_tax_account_id: string | null;
+        input_tax_account_id: string | null;
+        non_recoverable_tax_account_id: string | null;
+      } | null;
+      if (!current) throw new Error("Reload Tax settings before saving.");
+      return saveSettings({
         data: {
           companyId: companyId!,
+          expected: {
+            outputTaxAccountId: current.output_tax_account_id,
+            inputTaxAccountId: current.input_tax_account_id,
+            nonRecoverableTaxAccountId: current.non_recoverable_tax_account_id,
+          },
           outputTaxAccountId: outputAcc || null,
           inputTaxAccountId: inputAcc || null,
           nonRecoverableTaxAccountId: nonRecAcc || null,
         },
-      }),
+      });
+    },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["tax-settings", companyId] });
       toast.success("Account mappings saved. Posted history is not rewritten.");

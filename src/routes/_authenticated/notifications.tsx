@@ -1020,106 +1020,109 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
         <p className="text-sm text-muted-foreground">Loading document requests…</p>
       )}
       {requests.isSuccess ? (
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Requests assigned to me ({incoming.length})</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {incoming.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No open requests assigned to you</p>
-            ) : null}
-            {incoming.map((r) => {
-              const matches = (files.data ?? []).filter((f) => f.created_at >= r.created_at);
-              return (
-                <div key={r.id} className="space-y-2 rounded border p-3 text-sm">
-                  <div className="font-medium">{r.subject}</div>
-                  {r.instructions && <p className="text-muted-foreground">{r.instructions}</p>}
-                  <a
-                    href="/files"
-                    className="inline-flex items-center gap-1 text-primary underline"
-                  >
-                    Upload in Files <ArrowUpRight className="size-3" />
-                  </a>
-                  {files.isError ? (
-                    <QueryErrorState queries={[files]} title="Could not load uploaded files" />
-                  ) : files.isSuccess ? (
-                    <RecordLookupSelect
-                      value={uploaded[r.id] ?? ""}
-                      onValueChange={(id) => setUploaded((old) => ({ ...old, [r.id]: id }))}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Requests assigned to me ({incoming.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {incoming.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No open requests assigned to you</p>
+              ) : null}
+              {incoming.map((r) => {
+                const matches = (files.data ?? []).filter((f) => f.created_at >= r.created_at);
+                return (
+                  <div key={r.id} className="space-y-2 rounded border p-3 text-sm">
+                    <div className="font-medium">{r.subject}</div>
+                    {r.instructions && <p className="text-muted-foreground">{r.instructions}</p>}
+                    <a
+                      href="/files"
+                      className="inline-flex items-center gap-1 text-primary underline"
                     >
-                      <SelectTrigger aria-label={`Attachment for ${r.subject}`}>
-                        <SelectValue placeholder="Select a file you uploaded for this request" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {matches.map((f) => (
-                          <SelectItem key={f.id} value={f.id}>
-                            {f.file_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </RecordLookupSelect>
-                  ) : (
-                    <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                      Loading uploaded files…
-                    </p>
-                  )}
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => void files.refetch()}>
-                      Refresh uploaded files
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={
-                        !uploaded[r.id] ||
-                        finishRequest.isPending ||
-                        files.isError ||
-                        !files.isSuccess
-                      }
-                      onClick={() =>
-                        finishRequest.mutate({ id: r.id, attachmentId: uploaded[r.id]! })
-                      }
-                    >
-                      <Check className="mr-1 size-3" />
-                      Mark fulfilled
-                    </Button>
+                      Upload in Files <ArrowUpRight className="size-3" />
+                    </a>
+                    {files.isError ? (
+                      <QueryErrorState queries={[files]} title="Could not load uploaded files" />
+                    ) : files.isSuccess ? (
+                      <RecordLookupSelect
+                        value={uploaded[r.id] ?? ""}
+                        onValueChange={(id) => setUploaded((old) => ({ ...old, [r.id]: id }))}
+                      >
+                        <SelectTrigger aria-label={`Attachment for ${r.subject}`}>
+                          <SelectValue placeholder="Select a file you uploaded for this request" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {matches.map((f) => (
+                            <SelectItem key={f.id} value={f.id}>
+                              {f.file_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </RecordLookupSelect>
+                    ) : (
+                      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                        Loading uploaded files…
+                      </p>
+                    )}
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => void files.refetch()}>
+                        Refresh uploaded files
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={
+                          !uploaded[r.id] ||
+                          finishRequest.isPending ||
+                          files.isError ||
+                          !files.isSuccess
+                        }
+                        onClick={() =>
+                          finishRequest.mutate({ id: r.id, attachmentId: uploaded[r.id]! })
+                        }
+                      >
+                        <Check className="mr-1 size-3" />
+                        Mark fulfilled
+                      </Button>
+                    </div>
                   </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Requests I sent ({outgoing.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {outgoing.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No pending requests</p>
+              ) : null}
+              {outgoing.map((r) => (
+                <div key={r.id} className="rounded border p-3 text-sm">
+                  <div className="font-medium">{r.subject}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(r.created_at).toLocaleString()}
+                  </p>
+                  <Button
+                    className="mt-2"
+                    size="sm"
+                    variant="outline"
+                    disabled={cancelRequest.isPending}
+                    onClick={() => {
+                      if (window.confirm("Cancel this document request?"))
+                        cancelRequest.mutate(r.id);
+                    }}
+                  >
+                    Cancel request
+                  </Button>
                 </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Requests I sent ({outgoing.length})</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {outgoing.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No pending requests</p>
-            ) : null}
-            {outgoing.map((r) => (
-              <div key={r.id} className="rounded border p-3 text-sm">
-                <div className="font-medium">{r.subject}</div>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(r.created_at).toLocaleString()}
-                </p>
-                <Button
-                  className="mt-2"
-                  size="sm"
-                  variant="outline"
-                  disabled={cancelRequest.isPending}
-                  onClick={() => {
-                    if (window.confirm("Cancel this document request?")) cancelRequest.mutate(r.id);
-                  }}
-                >
-                  Cancel request
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       ) : null}
     </section>
   );

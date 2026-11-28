@@ -367,7 +367,7 @@ async function apControlBalanceAsAt(
 
 export const getAgedPayablesAsAt = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; asOf?: string }) => {
+  .validator((input: { companyId: string; asOf?: string }) => {
     if (input.asOf !== undefined && input.asOf !== "" && !isReportDate(input.asOf)) {
       throw new Error("As-at date must be YYYY-MM-DD");
     }

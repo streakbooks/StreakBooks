@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
+import { settingsAuditDateRange } from "./audit-export";
 import type { CompanyRole } from "@/lib/company-constants";
 import { normaliseAdjustments, type AccessAdjustment } from "@/lib/access-catalogue";
 import { normalizeCurrencySelection } from "@/lib/settings/currency-selection";
@@ -48,7 +49,7 @@ async function audit(
 
 export const getOrgExtendedSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: company, error } = await context.supabase
@@ -139,7 +140,7 @@ export const getOrgExtendedSettings = createServerFn({ method: "GET" })
 
 export const updateLocalization = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       expected: LocalisationSnapshot;
@@ -185,7 +186,7 @@ export const updateLocalization = createServerFn({ method: "POST" })
 
 export const upsertBranding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       expected: BrandingSnapshot;
@@ -246,7 +247,7 @@ export const upsertBranding = createServerFn({ method: "POST" })
 
 export const updateDocumentSequence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       expected: SequenceSnapshot;
@@ -295,7 +296,7 @@ export const updateDocumentSequence = createServerFn({ method: "POST" })
 
 export const setEnabledCurrencies = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; currencies: string[]; expectedCurrencies: string[] }) => ({
       companyId: assertUuid(input.companyId),
       currencies: normalizeCurrencySelection(input.currencies, { enforceSupported: true }),
@@ -321,7 +322,7 @@ export const setEnabledCurrencies = createServerFn({ method: "POST" })
 
 export const createExchangeRate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       from_currency: string;
@@ -383,7 +384,7 @@ export const createExchangeRate = createServerFn({ method: "POST" })
 
 export const voidExchangeRate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { rateId: string }) => ({ rateId: assertUuid(input.rateId, "rate") }))
+  .validator((input: { rateId: string }) => ({ rateId: assertUuid(input.rateId, "rate") }))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.rpc(
       "void_exchange_rate" as never,
@@ -397,7 +398,7 @@ export const voidExchangeRate = createServerFn({ method: "POST" })
 
 export const updateMemberRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; userId: string; role: CompanyRole }) => {
+  .validator((input: { companyId: string; userId: string; role: CompanyRole }) => {
     const allowed: CompanyRole[] = [
       "owner",
       "admin",
@@ -464,7 +465,7 @@ export const updateMemberRole = createServerFn({ method: "POST" })
 
 export const resetDemoCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "demo.reset");
     const { data: company } = await context.supabase
@@ -492,7 +493,7 @@ export const resetDemoCompany = createServerFn({ method: "POST" })
 
 export const listCompanyAuditEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       limit?: number;
@@ -507,8 +508,7 @@ export const listCompanyAuditEvents = createServerFn({ method: "GET" })
       offset: Math.max(0, Number(input.offset) || 0),
       action: (input.action ?? "").trim().slice(0, 80),
       entityType: (input.entityType ?? "").trim().slice(0, 80),
-      fromDate: (input.fromDate ?? "").slice(0, 10),
-      toDate: (input.toDate ?? "").slice(0, 10),
+      ...settingsAuditDateRange(input.fromDate, input.toDate),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -518,11 +518,12 @@ export const listCompanyAuditEvents = createServerFn({ method: "GET" })
       .select("id, action, entity_type, entity_id, details, actor_user_id, created_at" as never)
       .eq("company_id" as never, data.companyId as never)
       .order("created_at" as never, { ascending: false })
+      .order("id" as never, { ascending: false })
       .range(data.offset, data.offset + data.limit - 1);
     if (data.action) q = q.ilike("action" as never, `%${data.action}%` as never);
     if (data.entityType) q = q.eq("entity_type" as never, data.entityType as never);
-    if (data.fromDate) q = q.gte("created_at" as never, `${data.fromDate}T00:00:00.000Z` as never);
-    if (data.toDate) q = q.lte("created_at" as never, `${data.toDate}T23:59:59.999Z` as never);
+    if (data.fromTimestamp) q = q.gte("created_at" as never, data.fromTimestamp as never);
+    if (data.toTimestamp) q = q.lte("created_at" as never, data.toTimestamp as never);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return (
@@ -548,7 +549,7 @@ export const listCompanyAuditEvents = createServerFn({ method: "GET" })
 
 export const listCompanyInvitations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "members.manage");
     const { data: rows, error } = await context.supabase
@@ -580,7 +581,7 @@ export const listCompanyInvitations = createServerFn({ method: "GET" })
 
 export const createCompanyInvitation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       email: string;
@@ -633,7 +634,7 @@ export const createCompanyInvitation = createServerFn({ method: "POST" })
 
 export const revokeCompanyInvitation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; invitationId: string }) => ({
+  .validator((input: { companyId: string; invitationId: string }) => ({
     companyId: assertUuid(input.companyId),
     invitationId: assertUuid(input.invitationId),
   }))

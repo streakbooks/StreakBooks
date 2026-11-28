@@ -84,7 +84,7 @@ function mapInstallFields(app: MarketplaceAppDefinition, rows: unknown): Company
 }
 
 export const listPublicMarketplaceCatalogue = createServerFn({ method: "GET" })
-  .inputValidator((input?: { fingerprint?: string | null }) => ({
+  .validator((input?: { fingerprint?: string | null }) => ({
     fingerprint: String(input?.fingerprint ?? "")
       .trim()
       .slice(0, 128),
@@ -146,7 +146,7 @@ export const listPublicMarketplaceCatalogue = createServerFn({ method: "GET" })
 
 export const listCompanyMarketplaceApps = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<CompanyMarketplaceCatalogue> => {
     await assertCompanyMember(context.supabase, data.companyId);
     await assertCompanyPermission(context.supabase, data.companyId, "appstore.view");
@@ -188,7 +188,7 @@ export const listCompanyMarketplaceApps = createServerFn({ method: "GET" })
 
 export const requestMarketplaceAppInstall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; appCode: string }) => ({
+  .validator((input: { companyId: string; appCode: string }) => ({
     companyId: assertUuid(input.companyId),
     appCode: String(input.appCode ?? "")
       .trim()
@@ -294,7 +294,7 @@ const CONNECTIONS_MIGRATION =
 
 export const listCompanyIntegrationConnections = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<IntegrationConnectionRow[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     try {
@@ -388,7 +388,7 @@ export type FirmAppRecommendationRow = {
 
 export const listFirmAppRecommendations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { firmId: string }) => ({ firmId: assertUuid(input.firmId) }))
+  .validator((input: { firmId: string }) => ({ firmId: assertUuid(input.firmId) }))
   .handler(async ({ data, context }): Promise<FirmAppRecommendationRow[]> => {
     await assertCompanyMember(context.supabase, data.firmId);
     await assertCompanyPermission(context.supabase, data.firmId, "appstore.advise");
@@ -433,7 +433,7 @@ export const listFirmAppRecommendations = createServerFn({ method: "GET" })
 
 export const listCompanyAppInstallRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<AppInstallRequestRow[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     try {
@@ -543,7 +543,7 @@ function toSerializableAlertMeta(raw: unknown): MarketplaceSecurityAlertMeta {
 
 export const listCompanyAppConsents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<AppConsentRow[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     try {
@@ -605,7 +605,7 @@ export const listCompanyAppConsents = createServerFn({ method: "GET" })
 
 export const revokeMarketplaceAppAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; appCode: string; reason?: string }) => ({
+  .validator((input: { companyId: string; appCode: string; reason?: string }) => ({
     companyId: assertUuid(input.companyId),
     appCode: String(input.appCode ?? "")
       .trim()
@@ -647,7 +647,7 @@ export const revokeMarketplaceAppAccess = createServerFn({ method: "POST" })
 
 export const suspendMarketplaceAppForCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; appCode: string; reason: string }) => ({
+  .validator((input: { companyId: string; appCode: string; reason: string }) => ({
     companyId: assertUuid(input.companyId),
     appCode: String(input.appCode ?? "")
       .trim()
@@ -692,7 +692,7 @@ export const suspendMarketplaceAppForCompany = createServerFn({ method: "POST" }
 
 export const listCompanyMarketplaceSecurityAlerts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<MarketplaceSecurityAlertRow[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     try {
@@ -745,7 +745,7 @@ export const listCompanyMarketplaceSecurityAlerts = createServerFn({ method: "GE
 
 export const listCompanySyncJobs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<SyncJobRow[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     try {
@@ -834,7 +834,7 @@ export type SecurityReviewRow = {
 
 export const grantAppConnectionConsent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       appCode: string;
@@ -906,7 +906,7 @@ export const grantAppConnectionConsent = createServerFn({ method: "POST" })
 
 export const submitMarketplaceSecurityReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { appCode: string; checklist: Record<string, boolean>; submitterNotes?: string }) => ({
       appCode: String(input.appCode ?? "")
         .trim()
@@ -952,7 +952,7 @@ export const submitMarketplaceSecurityReview = createServerFn({ method: "POST" }
 
 export const listMarketplaceSecurityReviews = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<SecurityReviewRow[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     await assertCompanyPermission(
@@ -1009,7 +1009,7 @@ export const listMarketplaceSecurityReviews = createServerFn({ method: "GET" })
 
 export const decideMarketplaceSecurityReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; reviewId: string; approve: boolean; reviewerNotes?: string }) => ({
       companyId: assertUuid(input.companyId),
       reviewId: assertUuid(input.reviewId),
@@ -1063,7 +1063,7 @@ const HARDENING_MIGRATION =
 
 export const createMarketplaceOAuthState = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       appCode: string;
@@ -1126,7 +1126,7 @@ export const createMarketplaceOAuthState = createServerFn({ method: "POST" })
 
 export const consumeMarketplaceOAuthState = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; appCode: string; state: string; redirectUri: string }) => ({
       companyId: assertUuid(input.companyId),
       appCode: String(input.appCode ?? "")
@@ -1185,7 +1185,7 @@ export const consumeMarketplaceOAuthState = createServerFn({ method: "POST" })
 
 export const suspendMarketplaceAppListing = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; appCode: string; reason: string }) => ({
+  .validator((input: { companyId: string; appCode: string; reason: string }) => ({
     companyId: assertUuid(input.companyId),
     appCode: String(input.appCode ?? "")
       .trim()
@@ -1237,7 +1237,7 @@ export type EnqueueSyncAttemptResult = {
  */
 export const attemptEnqueueMarketplaceSyncJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       appCode: string;

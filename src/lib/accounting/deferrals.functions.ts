@@ -27,7 +27,7 @@ export type DeferralSchedule = {
 };
 export const listDeferrals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; page?: number }) => ({
+  .validator((input: { companyId: string; page?: number }) => ({
     companyId: assertUuid(input.companyId),
     page: Math.min(100000, Math.max(1, Math.floor(input.page ?? 1))),
   }))
@@ -56,7 +56,7 @@ export const listDeferrals = createServerFn({ method: "GET" })
   });
 export const createDeferral = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       requestId: string;
@@ -106,7 +106,7 @@ export const createDeferral = createServerFn({ method: "POST" })
   });
 export const postDeferral = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; entryId: string; postingDate: string }) => ({
+  .validator((input: { companyId: string; entryId: string; postingDate: string }) => ({
     companyId: assertUuid(input.companyId),
     entryId: assertUuid(input.entryId, "entry"),
     postingDate: assertOrderDate(input.postingDate),
@@ -121,7 +121,7 @@ export const postDeferral = createServerFn({ method: "POST" })
   });
 export const cancelDeferral = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; scheduleId: string }) => ({
+  .validator((input: { companyId: string; scheduleId: string }) => ({
     companyId: assertUuid(input.companyId),
     scheduleId: assertUuid(input.scheduleId, "schedule"),
   }))

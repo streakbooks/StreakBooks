@@ -24,6 +24,10 @@ import {
 import { evaluateSettingsChange } from "@/lib/settings/dependency-engine";
 import { loadBasicPayrollFeatureConfigComplete } from "@/lib/payroll/payroll.functions";
 import type { Sb } from "@/lib/accounting/ledger-data";
+import {
+  mapSettingsOverviewCompany,
+  SETTINGS_OVERVIEW_COMPANY_SELECT,
+} from "@/lib/settings/settings-overview-company";
 
 /** JSON-serializable settings document for TanStack server functions. */
 export type SettingsDocument = Record<
@@ -52,7 +56,7 @@ function toSettingsDocument(raw: unknown): SettingsDocument {
 
 export const getOrganisationConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; category: string }) => ({
+  .validator((input: { companyId: string; category: string }) => ({
     companyId: assertUuid(input.companyId),
     category: assertSettingsCategory(input.category),
   }))
@@ -90,7 +94,7 @@ export const getOrganisationConfig = createServerFn({ method: "GET" })
 
 export const upsertOrganisationConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       category: string;
@@ -140,7 +144,7 @@ export const upsertOrganisationConfig = createServerFn({ method: "POST" })
 
 export const listOrganisationFeatures = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }): Promise<ComputedFeatureState[]> => {
@@ -227,7 +231,7 @@ export const listOrganisationFeatures = createServerFn({ method: "GET" })
 
 export const setOrganisationFeature = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; featureKey: string; enabled: boolean; reason?: string }) => ({
       companyId: assertUuid(input.companyId),
       featureKey: String(input.featureKey || "").slice(0, 64),
@@ -277,7 +281,7 @@ export const setOrganisationFeature = createServerFn({ method: "POST" })
 
 export const getLockPolicy = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -311,7 +315,7 @@ export const getLockPolicy = createServerFn({ method: "GET" })
 
 export const setLockPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       expectedVersion?: number | null;
@@ -355,7 +359,7 @@ export const setLockPolicy = createServerFn({ method: "POST" })
 
 export const getSettingsOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -363,16 +367,17 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
 
     const { data: company, error: companyError } = await context.supabase
       .from("companies" as never)
-      .select("name, base_currency, fiscal_year_end_month, tax_regime, is_demo" as never)
+      .select(SETTINGS_OVERVIEW_COMPANY_SELECT as never)
       .eq("id" as never, data.companyId as never)
       .maybeSingle();
 
     if (companyError) throw new Error(companyError.message);
     if (!company) throw new Error("Organisation not found");
     const { readEmailConfig } = await import("@/lib/documents/email-provider.server");
+    const overviewCompany = mapSettingsOverviewCompany(company);
     const integrations = buildIntegrationHealth({
       emailConfigured: readEmailConfig().configured,
-      isDemo: (company as { is_demo: boolean }).is_demo,
+      isDemo: overviewCompany.is_demo,
     });
 
     // These reads are independent after organisation membership is checked.
@@ -435,13 +440,7 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
     };
 
     return {
-      company: company as {
-        name: string;
-        base_currency: string;
-        fiscal_year_end_month: number;
-        tax_regime: string | null;
-        is_demo: boolean;
-      } | null,
+      company: overviewCompany,
       lockPolicy,
       memberCount: memberCount ?? 0,
       warnings,
@@ -458,7 +457,7 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
 
 export const listSettingsChangeLog = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; category?: string; limit?: number; offset?: number }) => ({
       companyId: assertUuid(input.companyId),
       category: input.category ? String(input.category).slice(0, 64) : null,
@@ -508,7 +507,7 @@ export const listSettingsChangeLog = createServerFn({ method: "GET" })
 
 export const evaluateFeatureChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; featureKey: string; enabled: boolean }) => ({
+  .validator((input: { companyId: string; featureKey: string; enabled: boolean }) => ({
     companyId: assertUuid(input.companyId),
     featureKey: String(input.featureKey || "").slice(0, 64),
     enabled: assertSettingsBoolean(input.enabled),
@@ -534,7 +533,7 @@ export const evaluateFeatureChange = createServerFn({ method: "POST" })
 
 export const writeOrganisationSecret = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; secretKey: string; plaintext: string }) => ({
+  .validator((input: { companyId: string; secretKey: string; plaintext: string }) => ({
     companyId: assertUuid(input.companyId),
     secretKey: String(input.secretKey || "").slice(0, 64),
     plaintext: String(input.plaintext || ""),
@@ -556,7 +555,7 @@ export const writeOrganisationSecret = createServerFn({ method: "POST" })
 /** Whether a dimension feature is enabled for form visibility. */
 export const isDimensionFeatureEnabled = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; featureKey: string }) => ({
+  .validator((input: { companyId: string; featureKey: string }) => ({
     companyId: assertUuid(input.companyId),
     featureKey: String(input.featureKey || "").slice(0, 64),
   }))

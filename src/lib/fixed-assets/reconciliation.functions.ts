@@ -21,7 +21,7 @@ import { loadExactReconciliationLedgerBalances } from "./reconciliation-ledger";
  */
 export const getFixedAssetReconciliation = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; asOf: string }) => {
+  .validator((input: { companyId: string; asOf: string }) => {
     const asOf = isoDate(input?.asOf, "Reconciliation date");
     if (asOf > todayIso()) throw new Error("Reconciliation cannot be dated in the future.");
     return { companyId: companyIdOf(input), asOf };

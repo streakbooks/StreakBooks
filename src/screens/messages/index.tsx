@@ -977,65 +977,65 @@ export function MessagesScreen({
                 ) : null}
                 {messages.isSuccess
                   ? messages.data.map((message) => (
-                  <article
-                    key={message.id}
-                    id={`msg-${message.id}`}
-                    className={cn(
-                      "rounded-md border bg-background px-3 py-2",
-                      highlightMessageId === message.id && "ring-2 ring-primary",
-                    )}
-                    aria-label={`Message from ${message.author_name ?? "member"}`}
-                  >
-                    <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                      <span>
-                        {message.author_name ?? "Member"}
-                        {message.is_edited ? " · edited" : ""}
-                        {message.is_pinned ? " · pinned" : ""}
-                      </span>
-                      <time
-                        dateTime={message.created_at}
-                        title={new Date(message.created_at).toLocaleString()}
+                      <article
+                        key={message.id}
+                        id={`msg-${message.id}`}
+                        className={cn(
+                          "rounded-md border bg-background px-3 py-2",
+                          highlightMessageId === message.id && "ring-2 ring-primary",
+                        )}
+                        aria-label={`Message from ${message.author_name ?? "member"}`}
                       >
-                        {formatMessagingRelativeTime(message.created_at)}
-                      </time>
-                    </div>
-                    {message.reply_to_message_id ? (
-                      <p className="mb-1 truncate rounded bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
-                        Replying to message {message.reply_to_message_id.slice(0, 8)}…
-                      </p>
-                    ) : null}
-                    <SafeMessageBody body={message.body} />
-                    {companyId ? (
-                      <MessageActions
-                        companyId={companyId}
-                        message={message}
-                        canEdit={Boolean(user?.id && message.author_user_id === user.id)}
-                        onReply={(target) => setReplyTo(target)}
-                        onForward={(target) => setForwardMessage(target)}
-                      />
-                    ) : null}
-                    {companyId && user?.id && message.author_user_id === user.id ? (
-                      <div className="mt-1">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 px-2 text-xs"
-                          onClick={() =>
-                            setReceiptMessageId((current) =>
-                              current === message.id ? null : message.id,
-                            )
-                          }
-                        >
-                          {receiptMessageId === message.id ? "Hide receipts" : "Read receipts"}
-                        </Button>
-                        {receiptMessageId === message.id ? (
-                          <MessageReceipts companyId={companyId} messageId={message.id} />
+                        <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                          <span>
+                            {message.author_name ?? "Member"}
+                            {message.is_edited ? " · edited" : ""}
+                            {message.is_pinned ? " · pinned" : ""}
+                          </span>
+                          <time
+                            dateTime={message.created_at}
+                            title={new Date(message.created_at).toLocaleString()}
+                          >
+                            {formatMessagingRelativeTime(message.created_at)}
+                          </time>
+                        </div>
+                        {message.reply_to_message_id ? (
+                          <p className="mb-1 truncate rounded bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
+                            Replying to message {message.reply_to_message_id.slice(0, 8)}…
+                          </p>
                         ) : null}
-                      </div>
-                    ) : null}
-                  </article>
-                ))
+                        <SafeMessageBody body={message.body} />
+                        {companyId ? (
+                          <MessageActions
+                            companyId={companyId}
+                            message={message}
+                            canEdit={Boolean(user?.id && message.author_user_id === user.id)}
+                            onReply={(target) => setReplyTo(target)}
+                            onForward={(target) => setForwardMessage(target)}
+                          />
+                        ) : null}
+                        {companyId && user?.id && message.author_user_id === user.id ? (
+                          <div className="mt-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() =>
+                                setReceiptMessageId((current) =>
+                                  current === message.id ? null : message.id,
+                                )
+                              }
+                            >
+                              {receiptMessageId === message.id ? "Hide receipts" : "Read receipts"}
+                            </Button>
+                            {receiptMessageId === message.id ? (
+                              <MessageReceipts companyId={companyId} messageId={message.id} />
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </article>
+                    ))
                   : null}
                 {messages.isSuccess && (messages.data?.length ?? 0) === 0 ? (
                   <p className="text-sm text-muted-foreground">No messages yet. Say hello.</p>
@@ -1389,7 +1389,9 @@ export function MessagesScreen({
                     Could not load eligible people. Try again.
                   </li>
                 ) : peers.length === 0 ? (
-                  <li className="px-3 py-2 text-xs text-muted-foreground">No eligible people found.</li>
+                  <li className="px-3 py-2 text-xs text-muted-foreground">
+                    No eligible people found.
+                  </li>
                 ) : (
                   peers.map((peer) => (
                     <li key={peer.user_id}>
@@ -1526,7 +1528,9 @@ export function MessagesScreen({
                     Could not load eligible people. Try again.
                   </li>
                 ) : peers.length === 0 ? (
-                  <li className="px-3 py-2 text-xs text-muted-foreground">No eligible people found.</li>
+                  <li className="px-3 py-2 text-xs text-muted-foreground">
+                    No eligible people found.
+                  </li>
                 ) : (
                   peers.map((peer) => (
                     <li key={peer.user_id}>

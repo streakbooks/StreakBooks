@@ -24,6 +24,22 @@ export type TaxSettingsInput = {
   registrationEndDate?: string | null | undefined;
 };
 
+const TAX_SETTINGS_COLUMNS: Record<keyof TaxSettingsInput, string> = {
+  taxRegime: "tax_regime",
+  registrationNumber: "registration_number",
+  pricesIncludeTax: "prices_include_tax",
+  filingFrequency: "filing_frequency",
+  taxBasis: "tax_basis",
+  jurisdictionCode: "jurisdiction_code",
+  defaultSalesTaxCodeId: "default_sales_tax_code_id",
+  defaultPurchaseTaxCodeId: "default_purchase_tax_code_id",
+  outputTaxAccountId: "output_tax_account_id",
+  inputTaxAccountId: "input_tax_account_id",
+  nonRecoverableTaxAccountId: "non_recoverable_tax_account_id",
+  registrationDate: "registration_date",
+  registrationEndDate: "registration_end_date",
+};
+
 export const TAX_REGIMES = ["none", "vat", "gst", "sales_tax", "other"] as const;
 export const FILING_FREQUENCIES = [
   "monthly",
@@ -95,4 +111,26 @@ export function buildTaxSettingsPatch(input: TaxSettingsInput): Record<string, u
   const regEnd = optionalDate(input.registrationEndDate, "registrationEndDate");
   if (regEnd !== undefined) patch["registration_end_date"] = regEnd;
   return patch;
+}
+
+/** Build compare-and-set filters for only the fields sent by one Tax settings form. */
+export function buildTaxSettingsExpected(
+  patch: Record<string, unknown>,
+  expected: TaxSettingsInput | null | undefined,
+): Record<string, unknown> {
+  if (!expected || typeof expected !== "object") {
+    throw new Error("Reload the latest Tax settings before saving.");
+  }
+  const expectedByColumn: Record<string, unknown> = {};
+  for (const [inputKey, column] of Object.entries(TAX_SETTINGS_COLUMNS)) {
+    if (!Object.hasOwn(patch, column)) continue;
+    if (
+      !Object.hasOwn(expected, inputKey) ||
+      expected[inputKey as keyof TaxSettingsInput] === undefined
+    ) {
+      throw new Error("Reload the latest Tax settings before saving.");
+    }
+    expectedByColumn[column] = expected[inputKey as keyof TaxSettingsInput];
+  }
+  return expectedByColumn;
 }

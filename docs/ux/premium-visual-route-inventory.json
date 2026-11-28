@@ -6,9 +6,9 @@
   "baseRevision": "48421b1c710f7e4f3dd50e4a496e4fe4c3723ed9",
   "scopeStatement": "No authenticated, support, public, forms, overlays, workflow screens or future module is excluded. An inventory entry is not a test result.",
   "counts": {
-    "sidebarModules": 28,
-    "routeFiles": 190,
-    "supportingRoutes": 51
+    "sidebarModules": 30,
+    "routeFiles": 206,
+    "supportingRoutes": 44
   },
   "moduleAcceptance": [
     "layout_hierarchy",
@@ -699,7 +699,7 @@
       ]
     },
     {
-      "label": "Advisors",
+      "label": "Advisors admin",
       "href": "/advisors-admin",
       "routeFiles": [
         "_authenticated/advisors-admin.appointments.tsx",
@@ -739,7 +739,7 @@
       ]
     },
     {
-      "label": "Advisors portal",
+      "label": "Advisor portal",
       "href": "/advisors-portal",
       "routeFiles": [
         "_authenticated/advisors-portal.account.tsx",
@@ -769,6 +769,38 @@
       "changedScreens": [
         "src/screens/advisors/portal-tasks.tsx \u2014 live delivery task status"
       ]
+    },
+    {
+      "label": "Find an advisor",
+      "href": "/advisors",
+      "routeFiles": [
+        "advisors.tsx",
+        "advisors_.$serviceCode.tsx",
+        "advisors_.agreement.$token.tsx",
+        "advisors_.book.tsx",
+        "advisors_.checkout.tsx",
+        "advisors_.manage.$manageToken.tsx",
+        "advisors_.portal.invite.$token.tsx",
+        "advisors_.proposal.$token.tsx"
+      ],
+      "visualReview": "public_checkout_and_client_discovery_not_runtime_verified",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      },
+      "changedScreens": []
     },
     {
       "visualReview": "merged_code_not_runtime_verified",
@@ -881,7 +913,8 @@
       "label": "Settings",
       "href": "/settings",
       "routeFiles": [
-        "_authenticated/settings.tsx"
+        "_authenticated/settings.tsx",
+        "_authenticated/settings.$group.$page.tsx"
       ],
       "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
@@ -953,13 +986,6 @@
     "_authenticated/projects.tsx",
     "_authenticated/recurring-journals.tsx",
     "_authenticated/route.tsx",
-    "advisors.tsx",
-    "advisors_.$serviceCode.tsx",
-    "advisors_.agreement.$token.tsx",
-    "advisors_.book.tsx",
-    "advisors_.manage.$manageToken.tsx",
-    "advisors_.portal.invite.$token.tsx",
-    "advisors_.proposal.$token.tsx",
     "auth.tsx",
     "auth_.callback.tsx",
     "auth_.mfa.tsx",

@@ -129,7 +129,7 @@ const sellerInput = z
 
 export const saveSeller = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => sellerInput.parse(input))
+  .validator((input: unknown) => sellerInput.parse(input))
   .handler(async ({ data, context }) => {
     const { id, reason: why, ...fields } = data;
     await callRpc(context.supabase, "platform_save_seller_entity", {
@@ -142,7 +142,7 @@ export const saveSeller = createServerFn({ method: "POST" })
 
 export const setSellerStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ id: uuid, status: z.enum(["active", "retired"]), reason })
       .strict()
@@ -159,7 +159,7 @@ export const setSellerStatus = createServerFn({ method: "POST" })
 
 export const createSeries = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         sellerId: uuid,
@@ -201,7 +201,7 @@ const taxRuleInput = z
 
 export const draftTaxRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => taxRuleInput.parse(input))
+  .validator((input: unknown) => taxRuleInput.parse(input))
   .handler(async ({ data, context }) => {
     const { reason: why, ...rule } = data;
     await callRpc(context.supabase, "platform_draft_tax_rule", { _data: rule, _reason: why });
@@ -210,7 +210,7 @@ export const draftTaxRule = createServerFn({ method: "POST" })
 
 export const decideTaxRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ id: uuid, action: z.enum(["approve", "retire"]), reason })
       .strict()
@@ -227,7 +227,7 @@ export const decideTaxRule = createServerFn({ method: "POST" })
 
 export const issuePendingInvoices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ reason }).strict().parse(input))
+  .validator((input: unknown) => z.object({ reason }).strict().parse(input))
   .handler(
     async ({ data, context }) =>
       (await callRpc(context.supabase, "platform_issue_pending_invoices", {
@@ -237,7 +237,7 @@ export const issuePendingInvoices = createServerFn({ method: "POST" })
 
 export const requestRefund = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({ paymentId: uuid, amountMinor: z.number().int().min(1), reason })
       .strict()
@@ -254,7 +254,7 @@ export const requestRefund = createServerFn({ method: "POST" })
 
 export const decideRefund = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ id: uuid, approve: z.boolean(), reason }).strict().parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -269,7 +269,7 @@ export const decideRefund = createServerFn({ method: "POST" })
 /** Sends an approved refund to the provider and records its answer with the service role. */
 export const executeRefund = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: uuid }).strict().parse(input))
+  .validator((input: unknown) => z.object({ id: uuid }).strict().parse(input))
   .handler(async ({ data, context }) => {
     const ref = (await callRpc(context.supabase, "platform_refund_for_execution", {
       _refund_id: data.id,

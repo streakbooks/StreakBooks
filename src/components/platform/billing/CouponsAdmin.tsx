@@ -83,7 +83,9 @@ export function CouponsAdmin({ canEdit }: { canEdit: boolean }) {
                 <span className="font-medium">{coupon.code}</span>
                 <span>
                   {describe(coupon)}
-                  {coupon.plan_codes?.length ? ` · ${coupon.plan_codes.join(", ")}` : " · all plans"}
+                  {coupon.plan_codes?.length
+                    ? ` · ${coupon.plan_codes.join(", ")}`
+                    : " · all plans"}
                   {coupon.countries?.length ? ` · ${coupon.countries.join(", ")}` : ""} · used{" "}
                   {coupon.redemption_count}
                   {coupon.max_redemptions ? ` of ${coupon.max_redemptions}` : ""}
@@ -97,10 +99,7 @@ export function CouponsAdmin({ canEdit }: { canEdit: boolean }) {
           </ul>
           {canEdit ? <CouponForm /> : null}
           {canEdit ? (
-            <LinkForm
-              codes={(query.data ?? []).map((c) => c.code)}
-              codesReady={query.isSuccess}
-            />
+            <LinkForm codes={(query.data ?? []).map((c) => c.code)} codesReady={query.isSuccess} />
           ) : null}
         </>
       )}

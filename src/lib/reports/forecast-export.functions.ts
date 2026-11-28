@@ -8,7 +8,7 @@ import { forecastReportDocument } from "./forecast-document";
 
 export const exportForecast = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         companyId: z.string().uuid(),

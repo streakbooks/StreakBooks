@@ -272,10 +272,7 @@ export function PeriodClosePanel({
           </div>
 
           {facts.isError || ar.isError || ap.isError ? (
-            <QueryErrorState
-              queries={[facts, ar, ap]}
-              title="Could not run period-close checks"
-            />
+            <QueryErrorState queries={[facts, ar, ap]} title="Could not run period-close checks" />
           ) : !items ? (
             <LoadingState />
           ) : (

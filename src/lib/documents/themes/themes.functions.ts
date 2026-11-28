@@ -12,7 +12,7 @@ import {
 const company = z.object({ companyId: z.string().uuid() });
 export const listDocumentThemes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => company.parse(input))
+  .validator((input: unknown) => company.parse(input))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const themes = await context.supabase
@@ -48,7 +48,7 @@ export const listDocumentThemes = createServerFn({ method: "GET" })
   });
 export const saveDocumentTheme = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => themeInput.parse(input))
+  .validator((input: unknown) => themeInput.parse(input))
   .handler(async ({ data, context }) => {
     const r = await context.supabase.rpc(
       "save_document_theme" as never,
@@ -65,7 +65,7 @@ export const saveDocumentTheme = createServerFn({ method: "POST" })
   });
 export const setDocumentThemeDefault = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     company
       .extend({ kind: z.enum(THEME_KINDS), themeId: z.string().uuid().nullable() })
       .parse(input),
@@ -80,7 +80,7 @@ export const setDocumentThemeDefault = createServerFn({ method: "POST" })
   });
 export const deleteDocumentTheme = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     company.extend({ id: z.string().uuid(), revision: z.number().int().positive() }).parse(input),
   )
   .handler(async ({ data, context }) => {

@@ -56,6 +56,7 @@ jobs:
           [
             "test:firm-access:postgres",
             "test:workflows:postgres",
+            "test:tax:master:postgres",
             "test:platform:postgres",
             "test:banking:postgres",
             "test:pos:postgres",

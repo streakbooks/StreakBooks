@@ -10,7 +10,6 @@ import {
   upsertWorkflowSettings,
 } from "@/lib/settings/workflow-settings.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { parsePaymentTermsDays } from "@/lib/settings/workflow-defaults-validation";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +21,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -46,9 +44,6 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
     queryFn: () => fetch({ data: { companyId } }),
   });
 
-  const [salesTerms, setSalesTerms] = useState("30");
-  const [purchTerms, setPurchTerms] = useState("30");
-  const [requirePo, setRequirePo] = useState(false);
   const [requireMemo, setRequireMemo] = useState(false);
   const [csvFmt, setCsvFmt] = useState("YYYY-MM-DD");
   const [dirty, setDirty] = useState(false);
@@ -60,20 +55,12 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
 
   useEffect(() => {
     if (!q.isSuccess || !q.data || dirty) return;
-    setSalesTerms(String(q.data.sales_default_payment_terms_days));
-    setPurchTerms(String(q.data.purchases_default_payment_terms_days));
-    setRequirePo(q.data.purchases_require_po);
     setRequireMemo(q.data.accounting_require_journal_memo);
     setCsvFmt(q.data.banking_csv_date_format);
   }, [q.isSuccess, q.data, dirty]);
 
-  const parsedSalesTerms = parsePaymentTermsDays(salesTerms);
-  const parsedPurchaseTerms = parsePaymentTermsDays(purchTerms);
   const reset = () => {
     if (!q.data) return;
-    setSalesTerms(String(q.data.sales_default_payment_terms_days));
-    setPurchTerms(String(q.data.purchases_default_payment_terms_days));
-    setRequirePo(q.data.purchases_require_po);
     setRequireMemo(q.data.accounting_require_journal_memo);
     setCsvFmt(q.data.banking_csv_date_format);
     setDirty(false);
@@ -81,24 +68,12 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
 
   const saveM = useMutation({
     mutationFn: () => {
-      if (!q.data || parsedSalesTerms === null || parsedPurchaseTerms === null) {
-        throw new Error("Enter whole-day payment terms between 0 and 3650.");
-      }
+      if (!q.data) throw new Error("Workflow settings are not loaded.");
       return save({
         data: {
           companyId,
-          salesDefaultPaymentTermsDays: parsedSalesTerms,
-          purchasesDefaultPaymentTermsDays: parsedPurchaseTerms,
-          purchasesRequirePo: requirePo,
           accountingRequireJournalMemo: requireMemo,
           bankingCsvDateFormat: csvFmt,
-          // The shared workflow save endpoint persists an entire record.
-          // Preserve module-owned sales and purchase settings on this save.
-          salesDefaultNotes: q.data.sales_default_notes ?? "",
-          salesPaymentInstructions: q.data.sales_payment_instructions ?? "",
-          salesQuoteValidityDays: q.data.sales_quote_validity_days,
-          salesPricesIncludeTax: q.data.sales_prices_include_tax,
-          purchasesDefaultNotes: q.data.purchases_default_notes ?? "",
         },
       });
     },
@@ -133,50 +108,6 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid max-w-xl gap-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label htmlFor="workflow-sales-terms">Default sales payment terms (days)</Label>
-            <Input
-              id="workflow-sales-terms"
-              inputMode="numeric"
-              value={salesTerms}
-              disabled={!canEdit || saveM.isPending}
-              aria-invalid={parsedSalesTerms === null}
-              aria-describedby={parsedSalesTerms === null ? "workflow-sales-error" : undefined}
-              onChange={(e) => {
-                setSalesTerms(e.target.value);
-                setDirty(true);
-              }}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="workflow-purchase-terms">Default purchase payment terms (days)</Label>
-            <Input
-              id="workflow-purchase-terms"
-              inputMode="numeric"
-              value={purchTerms}
-              disabled={!canEdit || saveM.isPending}
-              aria-invalid={parsedPurchaseTerms === null}
-              aria-describedby={
-                parsedPurchaseTerms === null ? "workflow-purchases-error" : undefined
-              }
-              onChange={(e) => {
-                setPurchTerms(e.target.value);
-                setDirty(true);
-              }}
-            />
-          </div>
-        </div>
-        {parsedSalesTerms === null ? (
-          <p id="workflow-sales-error" className="text-sm text-destructive">
-            Sales terms must be a whole number from 0 to 3650.
-          </p>
-        ) : null}
-        {parsedPurchaseTerms === null ? (
-          <p id="workflow-purchases-error" className="text-sm text-destructive">
-            Purchase terms must be a whole number from 0 to 3650.
-          </p>
-        ) : null}
         <div className="space-y-1">
           <Label htmlFor="workflow-csv-date">Banking CSV date format</Label>
           <Select
@@ -198,17 +129,6 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
           </Select>
         </div>
         <label className="flex items-center justify-between gap-3 text-sm">
-          <span>Require purchase order reference on bills</span>
-          <Switch
-            checked={requirePo}
-            disabled={!canEdit || saveM.isPending}
-            onCheckedChange={(value) => {
-              setRequirePo(value);
-              setDirty(true);
-            }}
-          />
-        </label>
-        <label className="flex items-center justify-between gap-3 text-sm">
           <span>Require memo on manual journals</span>
           <Switch
             checked={requireMemo}
@@ -225,15 +145,7 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
         <div className="flex flex-wrap items-center gap-3 border-t pt-4">
           <Button
             size="sm"
-            disabled={
-              !canEdit ||
-              !dirty ||
-              saveM.isPending ||
-              parsedSalesTerms === null ||
-              parsedPurchaseTerms === null ||
-              !q.isSuccess ||
-              q.isError
-            }
+            disabled={!canEdit || !dirty || saveM.isPending || !q.isSuccess || q.isError}
             onClick={() => saveM.mutate()}
           >
             {saveM.isPending ? "Saving…" : "Save automation defaults"}

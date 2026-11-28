@@ -16,7 +16,7 @@ export type ManagedDiscountRule = DraftDiscountRule & {
 /** Return the complete manageable set, or an explicit truncation error. */
 export const listManagedDiscountRules = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; priceListId: string }) => ({
+  .validator((input: { companyId: string; priceListId: string }) => ({
     companyId: assertUuid(input.companyId),
     priceListId: assertUuid(input.priceListId),
   }))
@@ -85,7 +85,7 @@ export const listManagedDiscountRules = createServerFn({ method: "GET" })
 
 export const saveManagedDiscountRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       priceListId: string;
@@ -179,7 +179,7 @@ export const saveManagedDiscountRule = createServerFn({ method: "POST" })
 
 export const deleteManagedDiscountRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; priceListId: string; ruleId: string }) => ({
+  .validator((input: { companyId: string; priceListId: string; ruleId: string }) => ({
     companyId: assertUuid(input.companyId),
     priceListId: assertUuid(input.priceListId),
     ruleId: assertUuid(input.ruleId),

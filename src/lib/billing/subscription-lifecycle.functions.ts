@@ -70,7 +70,7 @@ const platformInput = z
 
 export const getSubscriptionState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => companyInput.parse(input))
+  .validator((input: unknown) => companyInput.parse(input))
   .handler(
     async ({ data, context }) =>
       (await callRpc(context.supabase, "billing_subscription_state", {
@@ -106,7 +106,7 @@ export const cancelSubscriptionFor = createServerOnlyFn(
 
 export const cancelSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => cancelInput.parse(input))
+  .validator((input: unknown) => cancelInput.parse(input))
   .handler(({ data, context }) => cancelSubscriptionFor(context, data));
 
 type AdminRpc = {
@@ -292,12 +292,12 @@ export const reverseCancellationFor = createServerOnlyFn(
 
 export const reverseCancellation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => companyInput.parse(input))
+  .validator((input: unknown) => companyInput.parse(input))
   .handler(({ data, context }) => reverseCancellationFor(context, data));
 
 export const pauseSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => platformInput.parse(input))
+  .validator((input: unknown) => platformInput.parse(input))
   .handler(async ({ data, context }) => {
     await callRpc(context.supabase, "platform_pause_subscription", {
       _company_id: data.companyId,
@@ -308,7 +308,7 @@ export const pauseSubscription = createServerFn({ method: "POST" })
 
 export const resumeSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => platformInput.parse(input))
+  .validator((input: unknown) => platformInput.parse(input))
   .handler(async ({ data, context }) => {
     await callRpc(context.supabase, "platform_resume_subscription", {
       _company_id: data.companyId,

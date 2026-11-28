@@ -3,6 +3,7 @@ import type { SettingsCategory } from "./registry";
 export type SettingsFieldPresentation = {
   label: string;
   description: string;
+  partialReason?: string;
 };
 
 /**
@@ -24,11 +25,12 @@ const FIELDS: Record<string, SettingsFieldPresentation> = {
   },
   "accounting.warn_bank_direct_posting": {
     label: "Warn on direct bank postings",
-    description: "Show a warning before direct posting to a bank ledger account.",
+    description:
+      "Show a non-blocking warning on manual journals that post to a bank or cash account.",
   },
   "accounting.warn_backdated_days": {
     label: "Backdated entry warning (days)",
-    description: "Warn when a transaction is older than this many days.",
+    description: "Show a non-blocking journal warning at this age. Set to 0 to turn it off.",
   },
   "accounting.auto_apply_credits": {
     label: "Automatically apply available credits",
@@ -41,46 +43,63 @@ const FIELDS: Record<string, SettingsFieldPresentation> = {
   "sales.late_fees_enabled": {
     label: "Enable late-fee policy",
     description: "Turn on the late-fee preference for supported sales workflows.",
+    partialReason:
+      "Late-fee calculation and invoice posting are not implemented, so this policy cannot be saved yet.",
   },
   "sales.late_fee_type": {
     label: "Late-fee calculation",
     description: "Select a fixed amount or percentage.",
+    partialReason: "Late-fee calculation is not implemented in invoice workflows.",
   },
   "sales.late_fee_amount": {
     label: "Late-fee amount or percentage",
     description: "Enter the amount or percentage used by the selected late-fee type.",
+    partialReason: "Late-fee calculation is not implemented in invoice workflows.",
   },
   "sales.late_fee_grace_days": {
     label: "Late-fee grace period (days)",
     description: "Days after the due date before a late fee may apply.",
+    partialReason: "Late-fee calculation is not implemented in invoice workflows.",
   },
   "sales.late_fee_compounding": {
     label: "Compound late fees",
     description: "Allow compounding where supported and legally permitted.",
+    partialReason: "Late-fee calculation is not implemented in invoice workflows.",
   },
   "sales.reminders_enabled": {
     label: "Enable reminders",
     description: "Allow supported reminder workflows; delivery requires an email provider.",
+    partialReason:
+      "Scheduled reminder delivery is unavailable. Supported reminders remain manual in Sales.",
   },
   "sales.reminder_days_before": {
     label: "Reminder days before due",
     description: "Enter comma-separated day offsets before the due date.",
+    partialReason:
+      "Scheduled reminder delivery is unavailable. Supported reminders remain manual in Sales.",
   },
   "sales.reminder_days_after": {
     label: "Reminder days after due",
     description: "Enter comma-separated day offsets after the due date.",
+    partialReason:
+      "Scheduled reminder delivery is unavailable. Supported reminders remain manual in Sales.",
   },
   "sales.allow_partial_payments": {
     label: "Allow partial payments",
     description: "Enable receiving part-payments against customer documents.",
+    partialReason:
+      "Payment receipt workflows do not yet enforce this preference; existing supported payments are unchanged.",
   },
   "sales.write_off_threshold_minor": {
     label: "Write-off threshold (minor units)",
     description: "Use the smallest currency unit, such as cents or paise.",
+    partialReason:
+      "No authorized write-off workflow consumes this threshold, so it cannot be saved yet.",
   },
   "sales.retainers_enabled": {
     label: "Enable retainer workflow",
     description: "Make supported customer-retainer workflows available.",
+    partialReason: "A customer retainer workflow is not available yet.",
   },
   "purchases.show_supplier_summary_default": {
     label: "Show supplier summary by default",
@@ -89,14 +108,19 @@ const FIELDS: Record<string, SettingsFieldPresentation> = {
   "purchases.bills_inbox_enabled": {
     label: "Enable bills inbox",
     description: "Enable the document inbox preference; email delivery requires setup.",
+    partialReason: "Bills inbox ingestion and delivery are not implemented yet.",
   },
   "purchases.approval_threshold_minor": {
     label: "Bill approval threshold (minor units)",
     description: "Leave blank for no threshold. Values use cents, pence or paise.",
+    partialReason:
+      "Bill approval routing does not consume an amount threshold yet; existing approval permissions remain in force.",
   },
   "purchases.duplicate_detection": {
     label: "Check for duplicate bills",
     description: "Show supported duplicate-document checks during bill entry.",
+    partialReason:
+      "Duplicate supplier invoice checks are mandatory for bill integrity and cannot be switched off by this preference yet.",
   },
   "purchases.three_way_matching": {
     label: "Enable three-way matching",
@@ -105,6 +129,7 @@ const FIELDS: Record<string, SettingsFieldPresentation> = {
   "purchases.contractor_1099_tracking": {
     label: "Track contractor 1099 details",
     description: "Enable contractor-tracking preferences for relevant US organisations.",
+    partialReason: "Contractor tax classification and reporting are not implemented yet.",
   },
   "banking.auto_apply_rules": {
     label: "Automatically apply banking rules",
@@ -120,7 +145,7 @@ const FIELDS: Record<string, SettingsFieldPresentation> = {
   },
   "banking.import_formats": {
     label: "Allowed statement import formats",
-    description: "Enter the supported import types as a comma-separated list.",
+    description: "Enter supported formats: csv, ofx or qif. TXT and QFX use the matching parser.",
   },
   "notifications.email_from_name": {
     label: "Email sender name",
@@ -181,7 +206,8 @@ const FIELDS: Record<string, SettingsFieldPresentation> = {
   },
   "users.support_access_consent": {
     label: "Require support-access consent",
-    description: "Require explicit consent before supported staff-support access.",
+    description:
+      "Require client approval before support can access organisation data. This control is read-only until its approval flow is available.",
   },
 };
 

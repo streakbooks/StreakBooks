@@ -16,6 +16,13 @@ import {
   importFieldDictionaryCsv,
 } from "@/lib/imports/import-definitions";
 import { listBankAccounts, listStatementImports } from "@/lib/banking/banking.functions";
+import { getOrganisationConfig } from "@/lib/settings/settings-centre.functions";
+import {
+  bankImportAcceptAttribute,
+  bankImportFormatForFilename,
+  bankImportFormatLabel,
+  enabledBankImportFormats,
+} from "@/lib/banking/import-format-preference";
 import {
   AMOUNT_MODES,
   DATE_FORMATS,
@@ -151,6 +158,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   const qc = useQueryClient();
   const fetchAccounts = useServerFn(listBankAccounts);
   const fetchImports = useServerFn(listStatementImports);
+  const fetchOrganisationConfig = useServerFn(getOrganisationConfig);
   const fetchMapping = useServerFn(getBankImportMapping);
   const saveMapping = useServerFn(saveBankImportMapping);
   const preview = useServerFn(previewBankImport);
@@ -170,6 +178,15 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   const [dragOver, setDragOver] = useState(false);
   const [fileError, setFileError] = useState("");
   const [ofxInfo, setOfxInfo] = useState<{ currency: string; accountId: string } | null>(null);
+  const bankingConfigQ = useQuery({
+    queryKey: ["organisation-config", companyId, "banking"],
+    enabled: Boolean(companyId),
+    queryFn: () =>
+      fetchOrganisationConfig({ data: { companyId: companyId!, category: "banking" } }),
+  });
+  const enabledImportFormats = enabledBankImportFormats(
+    bankingConfigQ.isSuccess ? bankingConfigQ.data.document : null,
+  );
   async function loadCsvFile(file: File) {
     setFileError("");
     setCsvText("");
@@ -178,8 +195,17 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
     setQifText(null);
     setQifDateOrder(null);
     setFileRevision((value) => value + 1);
-    if (!/\.(csv|txt|ofx|qfx|qif)$/i.test(file.name)) {
-      setFileError("Use CSV, TXT, OFX, QFX or QIF. PDF and investment files are not supported.");
+    if (!bankingConfigQ.isSuccess) {
+      setFileError("Load the organisation's Banking settings before selecting a statement file.");
+      return;
+    }
+    const format = bankImportFormatForFilename(file.name);
+    if (!format) {
+      setFileError("Use a supported CSV/TXT, OFX/QFX or QIF statement file.");
+      return;
+    }
+    if (!enabledImportFormats.includes(format)) {
+      setFileError(`The ${format.toUpperCase()} statement format is disabled in Banking settings.`);
       return;
     }
     if (file.size > MAX_FILE_CHARS) {
@@ -371,11 +397,11 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   const canImport =
     Boolean(
       bankAccountId &&
-        mapped &&
-        mapped.rows.length > 0 &&
-        dupQ.isSuccess &&
-        dupQ.data &&
-        accountsQ.isSuccess,
+      mapped &&
+      mapped.rows.length > 0 &&
+      dupQ.isSuccess &&
+      dupQ.data &&
+      accountsQ.isSuccess,
     ) &&
     !ofxCurrencyMismatch &&
     rowsToImport > 0 &&
@@ -445,8 +471,12 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
           >
             <UploadCloud className="size-8 text-muted-foreground" />
             <span className="text-sm font-medium">Drag and drop your file or click to browse</span>
-            <span className="text-xs text-muted-foreground">
-              CSV, TXT, OFX, QFX or QIF · Maximum 5 MB
+            <span className="text-xs text-muted-foreground" role="status">
+              {bankingConfigQ.isPending
+                ? "Loading allowed formats…"
+                : bankingConfigQ.isError
+                  ? "Could not load allowed formats. Retry or open Banking settings."
+                  : `${bankImportFormatLabel(enabledImportFormats) || "No supported formats enabled"} · Maximum 5 MB`}
             </span>
             <span className="rounded-md border bg-background px-3 py-1.5 text-sm">
               {csvText || qifText !== null ? filename : "Choose file"}
@@ -455,7 +485,8 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
           <input
             id={`${uiId}-csv-file`}
             type="file"
-            accept=".csv,.txt,.ofx,.qfx,.qif,text/csv,text/plain,application/x-ofx"
+            accept={bankImportAcceptAttribute(enabledImportFormats)}
+            disabled={!bankingConfigQ.isSuccess || enabledImportFormats.length === 0}
             className="sr-only"
             onChange={(e) => {
               const file = e.target.files?.[0];

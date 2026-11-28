@@ -18,7 +18,7 @@ const DOCUMENTS = {
 /** Records provenance after the existing domain save confirms success; cannot save or post. */
 export const recordVoiceDraftOutcome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       recordId: string;

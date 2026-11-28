@@ -13,7 +13,7 @@ import { listDepositAccountRows } from "@/lib/sales/ar-accounts";
  */
 export const getSalesDocumentConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const [treatment, defaults, taxCodes] = await Promise.all([
@@ -33,7 +33,7 @@ export const getSalesDocumentConfig = createServerFn({ method: "GET" })
 /** Bank / cash accounts only (AR-25). */
 export const listDepositAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     return listDepositAccountRows(context.supabase, data.companyId);

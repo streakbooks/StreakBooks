@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
+import { purchasesConfigSchema } from "@/lib/settings/registry";
 
 export type BillSidebarState = "open" | "collapsed" | "closed";
 
@@ -49,6 +50,21 @@ export const DEFAULT_BILL_WORKSPACE_PREFS: BillWorkspacePrefs = {
 
 const KEY = "bill_workspace";
 const LIST_KEY = "bills_list_workspace";
+
+export function resolveBillWorkspacePrefs(
+  stored: Partial<BillWorkspacePrefs> | null | undefined,
+  showSupplierSummaryDefault: boolean,
+): BillWorkspacePrefs {
+  return {
+    ...DEFAULT_BILL_WORKSPACE_PREFS,
+    sidebarState: showSupplierSummaryDefault ? "open" : "closed",
+    ...(stored ?? {}),
+    sidebarWidthPx: Math.min(
+      480,
+      Math.max(260, Number(stored?.sidebarWidthPx ?? DEFAULT_BILL_WORKSPACE_PREFS.sidebarWidthPx)),
+    ),
+  };
+}
 
 export type BillsListColumnId =
   | "select"
@@ -125,18 +141,19 @@ export const DEFAULT_BILLS_LIST_PREFS: BillsListWorkspacePrefs = {
 
 export const getBillsListPrefs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { data: row } = await context.supabase
+    const { data: row, error } = await context.supabase
       .from("user_ui_preferences" as never)
       .select("preference_value" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("user_id" as never, context.userId as never)
       .eq("preference_key" as never, LIST_KEY as never)
       .maybeSingle();
+    if (error) throw new Error(error.message);
     const stored = (row as { preference_value?: Partial<BillsListWorkspacePrefs> } | null)
       ?.preference_value;
     const stripActions = (cols: BillsListColumnId[] | undefined) =>
@@ -156,19 +173,20 @@ export const getBillsListPrefs = createServerFn({ method: "GET" })
 
 export const saveBillsListPrefs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; prefs: Partial<BillsListWorkspacePrefs> }) => ({
+  .validator((input: { companyId: string; prefs: Partial<BillsListWorkspacePrefs> }) => ({
     companyId: assertUuid(input.companyId),
     prefs: input.prefs ?? {},
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { data: existing } = await context.supabase
+    const { data: existing, error: readError } = await context.supabase
       .from("user_ui_preferences" as never)
       .select("preference_value" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("user_id" as never, context.userId as never)
       .eq("preference_key" as never, LIST_KEY as never)
       .maybeSingle();
+    if (readError) throw new Error(readError.message);
     const prev = ((existing as { preference_value?: Partial<BillsListWorkspacePrefs> } | null)
       ?.preference_value ?? {}) as Partial<BillsListWorkspacePrefs>;
     const next: BillsListWorkspacePrefs = {
@@ -197,48 +215,56 @@ export const saveBillsListPrefs = createServerFn({ method: "POST" })
 
 export const getBillWorkspacePrefs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { data: row } = await context.supabase
-      .from("user_ui_preferences" as never)
-      .select("preference_value" as never)
-      .eq("company_id" as never, data.companyId as never)
-      .eq("user_id" as never, context.userId as never)
-      .eq("preference_key" as never, KEY as never)
-      .maybeSingle();
+    const [{ data: row, error: readError }, { data: configRow, error: configError }] =
+      await Promise.all([
+        context.supabase
+          .from("user_ui_preferences" as never)
+          .select("preference_value" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("user_id" as never, context.userId as never)
+          .eq("preference_key" as never, KEY as never)
+          .maybeSingle(),
+        context.supabase
+          .from("organisation_config" as never)
+          .select("document" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("category" as never, "purchases" as never)
+          .maybeSingle(),
+      ]);
+    if (readError) throw new Error(readError.message);
+    if (configError) throw new Error(configError.message);
+    const purchasesConfig = purchasesConfigSchema.safeParse(
+      (configRow as { document?: unknown } | null)?.document ?? {},
+    );
+    const showSupplierSummaryDefault = purchasesConfig.success
+      ? purchasesConfig.data.show_supplier_summary_default
+      : true;
     const stored = (row as { preference_value?: Partial<BillWorkspacePrefs> } | null)
       ?.preference_value;
-    return {
-      ...DEFAULT_BILL_WORKSPACE_PREFS,
-      ...(stored ?? {}),
-      sidebarWidthPx: Math.min(
-        480,
-        Math.max(
-          260,
-          Number(stored?.sidebarWidthPx ?? DEFAULT_BILL_WORKSPACE_PREFS.sidebarWidthPx),
-        ),
-      ),
-    } satisfies BillWorkspacePrefs;
+    return resolveBillWorkspacePrefs(stored, showSupplierSummaryDefault);
   });
 
 export const saveBillWorkspacePrefs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; prefs: Partial<BillWorkspacePrefs> }) => ({
+  .validator((input: { companyId: string; prefs: Partial<BillWorkspacePrefs> }) => ({
     companyId: assertUuid(input.companyId),
     prefs: input.prefs ?? {},
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { data: existing } = await context.supabase
+    const { data: existing, error: readError } = await context.supabase
       .from("user_ui_preferences" as never)
       .select("preference_value" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("user_id" as never, context.userId as never)
       .eq("preference_key" as never, KEY as never)
       .maybeSingle();
+    if (readError) throw new Error(readError.message);
     const prev = ((existing as { preference_value?: Partial<BillWorkspacePrefs> } | null)
       ?.preference_value ?? {}) as Partial<BillWorkspacePrefs>;
     const next: BillWorkspacePrefs = {

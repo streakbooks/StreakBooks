@@ -38,7 +38,7 @@ import {
   previewPriceListApplication,
 } from "@/lib/sales/price-list-draft";
 import { getWorkflowSettings } from "@/lib/settings/workflow-settings.functions";
-import { addDaysIso } from "@/lib/sales/line-helpers";
+import { salesDocumentDefaultMemo, salesDocumentEndDate } from "@/lib/sales/document-defaults";
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { decodeInvoiceReturnContext } from "@/lib/sales/invoice-list-navigation";
@@ -376,14 +376,15 @@ export function SalesDocumentEditor({
     if (defaultsApplied || !config || !settingsQ.isSuccess || !settingsQ.data) return;
     setDocDate(today);
     setCurrency(base);
-    if (kind === "invoice") {
-      setSecondDate(addDaysIso(today, settingsQ.data.sales_default_payment_terms_days ?? 30));
-    } else if (kind === "quote") {
-      setSecondDate(addDaysIso(today, 30));
-    }
-    if (settingsQ.data.sales_default_notes && kind !== "credit_note") {
-      setMemo(settingsQ.data.sales_default_notes);
-    }
+    const endDate = salesDocumentEndDate({
+      kind,
+      documentDate: today,
+      defaultPaymentTermsDays: settingsQ.data.sales_default_payment_terms_days,
+      quoteValidityDays: settingsQ.data.sales_quote_validity_days,
+    });
+    if (endDate) setSecondDate(endDate);
+    const defaultMemo = salesDocumentDefaultMemo(kind, settingsQ.data.sales_default_notes);
+    if (defaultMemo !== undefined) setMemo(defaultMemo);
     setDefaultsApplied(true);
   }, [defaultsApplied, config, settingsQ.isSuccess, settingsQ.data, today, base, kind]);
 
@@ -481,18 +482,28 @@ export function SalesDocumentEditor({
     if (kind === "credit_note") setSourceInvoiceId("");
     if (kind === "invoice") {
       const c = customers.find((x) => x.id === id);
-      const terms = c?.payment_terms_days ?? settingsQ.data?.sales_default_payment_terms_days ?? 30;
-      setSecondDate(addDaysIso(docDate || today, terms));
+      const endDate = salesDocumentEndDate({
+        kind,
+        documentDate: docDate || today,
+        customerPaymentTermsDays: c?.payment_terms_days,
+        defaultPaymentTermsDays: settingsQ.data?.sales_default_payment_terms_days,
+      });
+      if (endDate) setSecondDate(endDate);
     }
   };
 
   const onDocumentDateChange = (date: string) => {
     setDocDate(date);
-    if (kind === "invoice") {
+    if (kind === "invoice" || kind === "quote") {
       const customer = customers.find((c) => c.id === contactId);
-      const terms =
-        customer?.payment_terms_days ?? settingsQ.data?.sales_default_payment_terms_days ?? 30;
-      setSecondDate(addDaysIso(date, terms));
+      const endDate = salesDocumentEndDate({
+        kind,
+        documentDate: date,
+        customerPaymentTermsDays: customer?.payment_terms_days,
+        defaultPaymentTermsDays: settingsQ.data?.sales_default_payment_terms_days,
+        quoteValidityDays: settingsQ.data?.sales_quote_validity_days,
+      });
+      if (endDate) setSecondDate(endDate);
     }
   };
 
@@ -919,7 +930,15 @@ export function SalesDocumentEditor({
                   onCreated={(option) => {
                     if (kind !== "invoice") return;
                     const terms = Number(option.meta);
-                    if (Number.isFinite(terms)) setSecondDate(addDaysIso(docDate || today, terms));
+                    if (Number.isFinite(terms)) {
+                      const endDate = salesDocumentEndDate({
+                        kind,
+                        documentDate: docDate || today,
+                        customerPaymentTermsDays: terms,
+                        defaultPaymentTermsDays: settingsQ.data?.sales_default_payment_terms_days,
+                      });
+                      if (endDate) setSecondDate(endDate);
+                    }
                   }}
                 />
               </FormControlShell>
@@ -1043,10 +1062,7 @@ export function SalesDocumentEditor({
                   <FormControlShell width="contact">
                     <Label htmlFor="sales-price-list">Sales price list</Label>
                     {priceListsQ.isError ? (
-                      <QueryErrorState
-                        queries={[priceListsQ]}
-                        title="Could not load price lists"
-                      />
+                      <QueryErrorState queries={[priceListsQ]} title="Could not load price lists" />
                     ) : (
                       <RecordLookupSelect
                         value={selectedPriceListId || "none"}

@@ -60,7 +60,7 @@ function optionalDate(value: string | null): string | null {
 }
 export const managePurchaseOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       orderId: string;
@@ -117,7 +117,7 @@ export const managePurchaseOrder = createServerFn({ method: "POST" })
   });
 export const receivePurchaseOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       orderId: string;
@@ -165,7 +165,7 @@ export const receivePurchaseOrder = createServerFn({ method: "POST" })
   });
 export const reversePurchaseReceipt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       orderId: string;
@@ -201,7 +201,7 @@ export const reversePurchaseReceipt = createServerFn({ method: "POST" })
   });
 export const getPurchaseOrderActivity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; orderId: string }) => ({
+  .validator((input: { companyId: string; orderId: string }) => ({
     companyId: assertUuid(input.companyId),
     orderId: assertUuid(input.orderId, "order"),
   }))

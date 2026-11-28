@@ -84,7 +84,7 @@ const CASH_KEYS = [
 
 export const getCashSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(rangeInput)
+  .validator(rangeInput)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
@@ -118,7 +118,7 @@ export type GlSummaryRow = {
 
 export const getGlSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(rangeInput)
+  .validator(rangeInput)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
@@ -190,7 +190,7 @@ export type SalesByContactRow = {
 
 export const getSalesByContact = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(rangeInput)
+  .validator(rangeInput)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
@@ -235,7 +235,7 @@ export type SalesByItemRow = {
 
 export const getSalesByItem = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(rangeInput)
+  .validator(rangeInput)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
@@ -277,7 +277,7 @@ export type PurchasesBySupplierRow = {
 
 export const getPurchasesBySupplier = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(rangeInput)
+  .validator(rangeInput)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
@@ -331,7 +331,7 @@ export type BankReconSummaryRow = {
 
 export const getBankReconSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(asOfInput)
+  .validator(asOfInput)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
@@ -412,7 +412,7 @@ async function periodFigures(
 
 export const getExecutiveSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(rangeInput)
+  .validator(rangeInput)
   .handler(async ({ data, context }) => {
     const ctx = await loadCtx(context.supabase as unknown as Sb, data.companyId, data.basis);
     const prior = priorPeriodRange(data.from, data.to);
@@ -437,7 +437,7 @@ export const getExecutiveSummary = createServerFn({ method: "GET" })
 
 export const getCashFlowIndirect = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(rangeInput)
+  .validator(rangeInput)
   .handler(async ({ data, context }) => {
     const ctx = await loadCtx(context.supabase as unknown as Sb, data.companyId, data.basis);
     const base = ctx.meta.baseCurrency;

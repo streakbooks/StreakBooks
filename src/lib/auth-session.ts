@@ -17,6 +17,15 @@ export function rememberNext(destination: string): void {
   }
 }
 
+/** Remove a pending auth return path when an email-change request fails. */
+export function clearNext(): void {
+  try {
+    window.sessionStorage.removeItem(NEXT_KEY);
+  } catch {
+    // Storage can be unavailable; this is only a navigation hint.
+  }
+}
+
 export function takeNext(): string {
   try {
     const value = window.sessionStorage.getItem(NEXT_KEY);

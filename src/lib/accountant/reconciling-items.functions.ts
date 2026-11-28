@@ -87,7 +87,7 @@ const saveInput = z.object({
 
 export const listWorkpaperReconcilingItems = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listInput.parse(input))
+  .validator((input: unknown) => listInput.parse(input))
   .handler(async ({ data, context }): Promise<WorkpaperReconcilingItem[]> => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: rows, error } = await context.supabase
@@ -104,7 +104,7 @@ export const listWorkpaperReconcilingItems = createServerFn({ method: "GET" })
 
 export const listWorkpaperItemEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => eventInput.parse(input))
+  .validator((input: unknown) => eventInput.parse(input))
   .handler(async ({ data, context }): Promise<WorkpaperItemEvent[]> => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: rows, error } = await context.supabase
@@ -121,7 +121,7 @@ export const listWorkpaperItemEvents = createServerFn({ method: "GET" })
 
 export const saveWorkpaperReconcilingItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => saveInput.parse(input))
+  .validator((input: unknown) => saveInput.parse(input))
   .handler(async ({ data, context }): Promise<{ id: string; state: string; version: number }> => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.post");
     const { data: row, error } = await context.supabase.rpc(

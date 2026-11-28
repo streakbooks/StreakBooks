@@ -62,7 +62,7 @@ export type BillingAnalytics = {
 
 export const getBillingAnalytics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ from: z.string().datetime(), to: z.string().datetime() }).strict().parse(input),
   )
   .handler(async ({ data, context }) => {

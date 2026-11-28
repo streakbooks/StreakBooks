@@ -21,7 +21,7 @@ export type AiConversationRow = {
 
 export const listAiConversationHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }): Promise<AiConversationRow[]> => {
@@ -42,7 +42,7 @@ export const listAiConversationHistory = createServerFn({ method: "GET" })
 
 export const deleteAiConversationHistory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; entryId?: string; all?: boolean }) => {
+  .validator((input: { companyId: string; entryId?: string; all?: boolean }) => {
     if (input.all !== true && !input.entryId) {
       throw new Error("Choose a conversation to delete or explicitly select all");
     }

@@ -5,7 +5,11 @@ import { assertUuid } from "@/lib/company-validation";
 import { isRateEffective } from "@/lib/tax/tax-math";
 import { postJournal } from "@/lib/accounting/posting-engine";
 import { requireAccountInCompany } from "@/lib/purchases/accounts";
-import { buildTaxSettingsPatch, type TaxSettingsInput } from "@/lib/tax/tax-settings-patch";
+import {
+  buildTaxSettingsExpected,
+  buildTaxSettingsPatch,
+  type TaxSettingsInput,
+} from "@/lib/tax/tax-settings-patch";
 import {
   isAccountTypeAllowedForTaxRole,
   describeAllowedTypes,
@@ -16,7 +20,7 @@ import { isValidTaxDate, isValidTaxBasisPoints } from "@/lib/tax/tax-input-valid
 
 export const getTaxSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: row, error } = await context.supabase
@@ -32,12 +36,16 @@ export const getTaxSettings = createServerFn({ method: "GET" })
 
 export const updateTaxSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: TaxSettingsInput & { companyId: string }) => {
-    const { companyId, ...fields } = input;
+  .validator((input: TaxSettingsInput & { companyId: string; expected: TaxSettingsInput }) => {
+    const { companyId, expected, ...fields } = input;
     // Validates and keeps only the fields that were actually sent (partial update, TX-02).
     const patch = buildTaxSettingsPatch(fields);
     if (Object.keys(patch).length === 0) throw new Error("Nothing to update");
-    return { companyId: assertUuid(companyId), patch };
+    return {
+      companyId: assertUuid(companyId),
+      patch,
+      expected: buildTaxSettingsExpected(patch, expected),
+    };
   })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "tax.settings");
@@ -61,17 +69,25 @@ export const updateTaxSettings = createServerFn({ method: "POST" })
         throw new Error(`${label} must be a ${describeAllowedTypes(role)} account`);
       }
     }
-    const { error } = await context.supabase
+    let query = context.supabase
       .from("company_tax_settings" as never)
       .update({ ...data.patch, updated_at: new Date().toISOString() } as never)
       .eq("company_id" as never, data.companyId as never);
+    for (const [column, value] of Object.entries(data.expected)) {
+      query =
+        value === null
+          ? query.is(column as never, null as never)
+          : query.eq(column as never, value as never);
+    }
+    const { data: updated, error } = await query.select("company_id" as never).maybeSingle();
     if (error) throw new Error(error.message);
+    if (!updated) throw new Error("Tax settings changed since loaded. Reload before saving.");
     return { ok: true };
   });
 
 export const listTaxRates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; onDate?: string }) => {
+  .validator((input: { companyId: string; onDate?: string }) => {
     if (input.onDate && !isValidTaxDate(input.onDate)) {
       throw new Error("onDate must be a real YYYY-MM-DD calendar date");
     }
@@ -101,7 +117,7 @@ export const listTaxRates = createServerFn({ method: "GET" })
 
 export const saveTaxRate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -171,7 +187,7 @@ export const saveTaxRate = createServerFn({ method: "POST" })
 
 export const listTaxCodes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase
@@ -187,7 +203,7 @@ export const listTaxCodes = createServerFn({ method: "GET" })
 
 export const saveTaxCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       id?: string;
@@ -263,7 +279,7 @@ export const saveTaxCode = createServerFn({ method: "POST" })
 
 export const seedTaxPack = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; packId?: string }) => ({
+  .validator((input: { companyId: string; packId?: string }) => ({
     companyId: assertUuid(input.companyId),
     packId: (input.packId ?? "").trim().slice(0, 60) || null,
   }))
@@ -296,7 +312,7 @@ export const seedTaxPack = createServerFn({ method: "POST" })
 
 export const listTaxCountryPacks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; countryCode?: string }) => ({
+  .validator((input: { companyId: string; countryCode?: string }) => ({
     companyId: assertUuid(input.companyId),
     countryCode: (input.countryCode ?? "").trim().toUpperCase().slice(0, 2),
   }))
@@ -318,7 +334,7 @@ export const listTaxCountryPacks = createServerFn({ method: "GET" })
  */
 export const postTaxAdjustment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       journalDate: string;

@@ -19,7 +19,7 @@ import {
  */
 export const auditFxRevaluationLedger = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId: string }) => ({
+  .validator((input: { companyId: string; runId: string }) => ({
     companyId: assertUuid(input.companyId),
     runId: assertUuid(input.runId, "run"),
   }))

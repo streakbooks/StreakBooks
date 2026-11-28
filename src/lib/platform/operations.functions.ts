@@ -22,7 +22,7 @@ export const getOpsContext = createServerFn({ method: "GET" })
   );
 export const listOps = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => opsListSchema.parse(v))
+  .validator((v: unknown) => opsListSchema.parse(v))
   .handler(async ({ context, data }) =>
     unwrap<{ rows: OpsRecord[]; total: number; pageSize: number }>(
       await context.supabase.rpc("platform_ops_list", {
@@ -36,7 +36,7 @@ export const listOps = createServerFn({ method: "GET" })
   );
 export const getOpsDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => opsDetailSchema.parse(v))
+  .validator((v: unknown) => opsDetailSchema.parse(v))
   .handler(async ({ context, data }) =>
     unwrap<OpsDetail>(
       await context.supabase.rpc("platform_ops_detail", { _module: data.module, _id: data.id }),
@@ -44,7 +44,7 @@ export const getOpsDetail = createServerFn({ method: "GET" })
   );
 export const lookupOps = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => opsLookupSchema.parse(v))
+  .validator((v: unknown) => opsLookupSchema.parse(v))
   .handler(async ({ context, data }) =>
     unwrap<{ rows: OpsOption[]; total: number }>(
       await context.supabase.rpc("platform_ops_lookup", {
@@ -56,7 +56,7 @@ export const lookupOps = createServerFn({ method: "GET" })
   );
 export const listOpsMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => opsMembersSchema.parse(v))
+  .validator((v: unknown) => opsMembersSchema.parse(v))
   .handler(async ({ context, data }) =>
     unwrap<{ rows: OpsOption[]; total: number }>(
       await context.supabase.rpc("platform_ops_members", {
@@ -68,7 +68,7 @@ export const listOpsMembers = createServerFn({ method: "GET" })
   );
 export const applyOps = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => opsApplySchema.parse(v))
+  .validator((v: unknown) => opsApplySchema.parse(v))
   .handler(async ({ context, data }) =>
     unwrap<OpsResult>(
       await context.supabase.rpc("platform_ops_apply", {
@@ -81,7 +81,7 @@ export const applyOps = createServerFn({ method: "POST" })
   );
 export const previewOpsMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) =>
+  .validator((v: unknown) =>
     z
       .object({
         id: z.string().uuid(),

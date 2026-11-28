@@ -165,7 +165,7 @@ async function selectSessions(
 
 export const listReconciliationSessions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; bankAccountId?: string }) => ({
+  .validator((input: { companyId: string; bankAccountId?: string }) => ({
     companyId: assertUuid(input.companyId),
     bankAccountId: input.bankAccountId ? assertUuid(input.bankAccountId) : null,
   }))
@@ -212,7 +212,7 @@ async function clearedLineIds(
  */
 export const getReconciliationWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; bankAccountId: string; statementDate: string }) => {
+  .validator((input: { companyId: string; bankAccountId: string; statementDate: string }) => {
     if (!isIsoDate(input.statementDate)) throw new Error("Statement date must be YYYY-MM-DD");
     return {
       companyId: assertUuid(input.companyId),
@@ -397,7 +397,7 @@ export const getReconciliationWorkspace = createServerFn({ method: "GET" })
  */
 export const completeReconciliation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       bankAccountId: string;
@@ -481,7 +481,7 @@ export const completeReconciliation = createServerFn({ method: "POST" })
 /** Reopen (void) the latest completed reconciliation: ticked statement lines return to "matched". */
 export const voidReconciliationSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; sessionId: string; reason?: string }) => ({
+  .validator((input: { companyId: string; sessionId: string; reason?: string }) => ({
     companyId: assertUuid(input.companyId),
     sessionId: assertUuid(input.sessionId),
     reason: (input.reason ?? "").trim().slice(0, 500) || null,
@@ -507,7 +507,7 @@ export const voidReconciliationSession = createServerFn({ method: "POST" })
  */
 export const getBankReconciliationReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; sessionId: string }) => ({
+  .validator((input: { companyId: string; sessionId: string }) => ({
     companyId: assertUuid(input.companyId),
     sessionId: assertUuid(input.sessionId),
   }))

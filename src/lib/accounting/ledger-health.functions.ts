@@ -10,7 +10,7 @@ import { parseHealthReport, type HealthReport } from "@/lib/accounting/ledger-he
  */
 export const runLedgerHealthCheck = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input?.companyId),
   }))
   .handler(

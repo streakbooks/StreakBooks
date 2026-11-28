@@ -484,7 +484,10 @@ export function JournalsPanel({
                           {detail.isPending ? (
                             <p className="py-2 text-sm text-muted-foreground">Loading lines…</p>
                           ) : detail.isError ? (
-                            <QueryErrorState queries={[detail]} title="Could not load journal lines" />
+                            <QueryErrorState
+                              queries={[detail]}
+                              title="Could not load journal lines"
+                            />
                           ) : detail.data ? (
                             <div className="space-y-3">
                               <JournalLineReviewNotice journal={j} detail={detail.data} />

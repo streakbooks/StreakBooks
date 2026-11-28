@@ -396,11 +396,7 @@ export function HrTransfersPage() {
             <Button
               type="button"
               disabled={
-                !employeeId ||
-                !effectiveOn ||
-                saveM.isPending ||
-                !empQ.isSuccess ||
-                !orgQ.isSuccess
+                !employeeId || !effectiveOn || saveM.isPending || !empQ.isSuccess || !orgQ.isSuccess
               }
               onClick={() => saveM.mutate()}
             >

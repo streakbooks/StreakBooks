@@ -112,7 +112,7 @@ function mapCase(raw: unknown): HrCase {
 
 export const listHrEmployeeDocuments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; employeeId?: string | null; status?: string | null }) => ({
       companyId: companyIdOf(input),
       employeeId: input.employeeId?.trim() || null,
@@ -140,7 +140,7 @@ export const listHrEmployeeDocuments = createServerFn({ method: "GET" })
 
 export const upsertHrEmployeeDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -178,7 +178,7 @@ export const upsertHrEmployeeDocument = createServerFn({ method: "POST" })
 
 export const listHrAssetTypes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.view");
     const raw = await callRpc(
@@ -192,7 +192,7 @@ export const listHrAssetTypes = createServerFn({ method: "GET" })
 
 export const upsertHrAssetType = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -221,7 +221,7 @@ export const upsertHrAssetType = createServerFn({ method: "POST" })
 
 export const listHrAssetAssignments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string | null }) => ({
+  .validator((input: { companyId: string; status?: string | null }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || null,
   }))
@@ -241,7 +241,7 @@ export const listHrAssetAssignments = createServerFn({ method: "GET" })
 
 export const upsertHrAssetAssignment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -280,7 +280,7 @@ export const upsertHrAssetAssignment = createServerFn({ method: "POST" })
 
 export const listHrCases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string | null }) => ({
+  .validator((input: { companyId: string; status?: string | null }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || null,
   }))
@@ -300,7 +300,7 @@ export const listHrCases = createServerFn({ method: "GET" })
 
 export const upsertHrCase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {

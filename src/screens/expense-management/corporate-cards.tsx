@@ -485,10 +485,7 @@ export function ExpenseManagementCorporateCardsPage() {
                 <Button
                   onClick={() => createTxMut.mutate()}
                   disabled={
-                    createTxMut.isPending ||
-                    !txAmount.trim() ||
-                    !cardsQ.isSuccess ||
-                    cardsQ.isError
+                    createTxMut.isPending || !txAmount.trim() || !cardsQ.isSuccess || cardsQ.isError
                   }
                 >
                   {createTxMut.isPending ? "Saving…" : "Add transaction"}
@@ -500,7 +497,10 @@ export function ExpenseManagementCorporateCardsPage() {
           <section className="mb-6 grid max-w-lg gap-2">
             <Label>Claim for matching</Label>
             {claimsQ.isError ? (
-              <QueryErrorState queries={[claimsQ]} title="Could not load card claims for matching" />
+              <QueryErrorState
+                queries={[claimsQ]}
+                title="Could not load card claims for matching"
+              />
             ) : claimsQ.isSuccess ? (
               <RecordLookupSelect value={matchClaimId} onValueChange={setMatchClaimId}>
                 <SelectTrigger>

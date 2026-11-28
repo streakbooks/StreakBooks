@@ -15,7 +15,7 @@ import {
 /** Bound one-journal read, no mutation; original minor units remain exact text. */
 export const auditPostedGlEvidence = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; journalId: string }) => ({
+  .validator((input: { companyId: string; journalId: string }) => ({
     companyId: assertUuid(input?.companyId),
     journalId: assertUuid(input?.journalId, "journal"),
   }))

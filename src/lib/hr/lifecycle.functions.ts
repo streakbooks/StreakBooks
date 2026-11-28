@@ -90,7 +90,7 @@ function mapApplication(raw: unknown): HrApplication {
 
 export const listHrRequisitions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string }) => ({
+  .validator((input: { companyId: string; status?: string }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || null,
   }))
@@ -108,7 +108,7 @@ export const listHrRequisitions = createServerFn({ method: "GET" })
 
 export const upsertHrRequisition = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -146,13 +146,11 @@ export const upsertHrRequisition = createServerFn({ method: "POST" })
 
 export const listHrApplications = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; requisitionId?: string | null; status?: string }) => ({
-      companyId: companyIdOf(input),
-      requisitionId: input.requisitionId || null,
-      status: input.status?.trim() || null,
-    }),
-  )
+  .validator((input: { companyId: string; requisitionId?: string | null; status?: string }) => ({
+    companyId: companyIdOf(input),
+    requisitionId: input.requisitionId || null,
+    status: input.status?.trim() || null,
+  }))
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.view");
     const raw = await callRpc(
@@ -170,7 +168,7 @@ export const listHrApplications = createServerFn({ method: "GET" })
 
 export const upsertHrApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -207,7 +205,7 @@ export const upsertHrApplication = createServerFn({ method: "POST" })
 
 export const upsertHrInterview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -244,7 +242,7 @@ export const upsertHrInterview = createServerFn({ method: "POST" })
 
 export const upsertHrOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -280,7 +278,7 @@ export const upsertHrOffer = createServerFn({ method: "POST" })
 
 export const listHrOnboardingTemplates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.view");
     const raw = await callRpc(
@@ -308,7 +306,7 @@ export const listHrOnboardingTemplates = createServerFn({ method: "GET" })
 
 export const upsertHrOnboardingTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -348,7 +346,7 @@ export const upsertHrOnboardingTemplate = createServerFn({ method: "POST" })
 
 export const listHrOnboardingCases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string }) => ({
+  .validator((input: { companyId: string; status?: string }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || null,
   }))
@@ -418,7 +416,7 @@ function mapOnboardingCaseDetail(raw: unknown): HrOnboardingCaseDetail {
 
 export const getHrOnboardingCase = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; caseId: string }) => ({
+  .validator((input: { companyId: string; caseId: string }) => ({
     companyId: companyIdOf(input),
     caseId: input.caseId,
   }))
@@ -435,7 +433,7 @@ export const getHrOnboardingCase = createServerFn({ method: "GET" })
 
 export const createHrOnboardingCase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -469,7 +467,7 @@ export const createHrOnboardingCase = createServerFn({ method: "POST" })
 
 export const updateHrOnboardingTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; taskId: string; status: string; notes: string | null }) => ({
       companyId: companyIdOf(input),
       taskId: input.taskId,

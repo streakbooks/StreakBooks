@@ -584,6 +584,7 @@ function BillsWorkspace() {
 
   return (
     <TooltipProvider>
+      <QueryErrorState queries={[prefsQ]} title="Could not load bill list preferences" />
       <ListWorkspace
         title="Bills"
         description="Manage supplier bills from draft through payment. Authorising posts Accounts Payable through the shared ledger — drafts never inflate posted AP."

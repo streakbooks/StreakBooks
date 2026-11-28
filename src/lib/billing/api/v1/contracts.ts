@@ -197,7 +197,9 @@ export const API_ROUTES: ApiRoute[] = [
     summary: "Upgrade (after payment) or downgrade (at renewal)",
     auth: "user",
     idempotent: true,
-    body: z.object({ companyId: uuid, planCode, interval: z.enum(["month", "year"]).optional() }).strict(),
+    body: z
+      .object({ companyId: uuid, planCode, interval: z.enum(["month", "year"]).optional() })
+      .strict(),
     response: z.object({
       kind: z.enum(["upgrade", "downgrade"]),
       applies: z.enum(["after_payment", "period_end"]),

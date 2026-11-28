@@ -1,6 +1,6 @@
 import { execFileSync, execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -14,9 +14,27 @@ for (const key of [
 ])
   delete env[key];
 const name = `streakbooks-workflows-${process.pid}`;
-const prefix = ["--host=unix:///var/run/docker.sock"];
+const windowsDocker = path.join(
+  process.env.ProgramFiles ?? "C:\\Program Files",
+  "Docker",
+  "Docker",
+  "resources",
+  "bin",
+  "docker.exe",
+);
+const dockerBinary =
+  process.platform === "win32" &&
+  !process.env.PATH?.split(path.delimiter).some((entry) =>
+    existsSync(path.join(entry, "docker.exe")),
+  ) &&
+  existsSync(windowsDocker)
+    ? windowsDocker
+    : "docker";
+// Windows Docker Desktop selects its named-pipe context from the local CLI config;
+// Linux CI uses the job's isolated Unix socket explicitly.
+const prefix = process.platform === "win32" ? [] : ["--host=unix:///var/run/docker.sock"];
 const docker = (args, input) =>
-  execFileSync("docker", [...prefix, ...args], {
+  execFileSync(dockerBinary, [...prefix, ...args], {
     env,
     input,
     encoding: "utf8",
@@ -79,6 +97,15 @@ try {
   }
   if (!ready) throw Error("Postgres did not become ready");
   sql(read("tests/fixtures/workflows/baseline.sql"));
+  sql(read("supabase/migrations/20261127160000_portal_invitation_mfa_policy.sql"));
+  sql("BEGIN;" + read("tests/integration/portal-invitation-mfa-policy.sql") + "ROLLBACK;");
+  sql(read("supabase/rollback/20261127160000_portal_invitation_mfa_policy.sql"));
+  sql(
+    "DO $$ BEGIN IF has_function_privilege('authenticated','public.invite_portal_user(jsonb)','EXECUTE') THEN RAISE EXCEPTION 'Invitation rollback left execution enabled'; END IF; END $$;",
+  );
+  sql(read("supabase/migrations/20261127160000_portal_invitation_mfa_policy.sql"));
+  sql(read("supabase/migrations/20261127150000_user_global_appearance_preferences.sql"));
+  sql(read("tests/integration/user-global-appearance-preferences.sql"));
   sql(
     fn(
       "supabase/migrations/20261019200000_cross_cutting_settings_fx_demo.sql",
@@ -100,12 +127,108 @@ try {
     throw new Error("Expected exactly one accounting workflow migration");
   sql(read(`supabase/migrations/${migrations[0]}`));
   sql(read("tests/integration/accounting-workflows.sql"));
+  sql(read("tests/fixtures/workflows/organisation-config-baseline.sql"));
+  sql(
+    fn(
+      "supabase/migrations/20261022125237_settings_centre_foundation.sql",
+      "public.upsert_organisation_config",
+    ),
+  );
+  sql(
+    "REVOKE ALL ON FUNCTION public.upsert_organisation_config(uuid,text,jsonb,integer,text,text,text) FROM PUBLIC, anon; " +
+      "GRANT EXECUTE ON FUNCTION public.upsert_organisation_config(uuid,text,jsonb,integer,text,text,text) TO authenticated;",
+  );
+  sql(read("tests/integration/organisation-config-rpc-security.sql"));
   sql(read("tests/fixtures/workflows/settings-currencies-baseline.sql"));
   sql(read("supabase/migrations/20261104115821_settings_currencies_atomic.sql"));
   sql(read("tests/integration/settings-currencies-atomic.sql"));
   sql(read("tests/fixtures/workflows/settings-legacy-cas-baseline.sql"));
   sql(read("supabase/migrations/20261104165209_legacy_settings_cas.sql"));
   sql(read("tests/integration/settings-legacy-cas.sql"));
+  sql(read("tests/fixtures/workflows/settings-company-identity-baseline.sql"));
+  sql(read("supabase/migrations/20261126150000_settings_company_identity_atomic.sql"));
+  sql(read("supabase/migrations/20261126210000_settings_base_currency_posting_guard.sql"));
+  sql(read("supabase/migrations/20261127100000_settings_timezone_guard.sql"));
+  sql(read("supabase/migrations/20261127140000_company_tax_settings_audit.sql"));
+  sql(read("tests/fixtures/workflows/expense-settings-audit-baseline.sql"));
+  sql(read("supabase/migrations/20261127110000_expense_settings_audit.sql"));
+  sql(read("tests/integration/expense-settings-audit.sql"));
+  sql(
+    fn(
+      "supabase/migrations/20261107135000_expense_management_approvals.sql",
+      "private.expense_claim_assert_approver",
+    ),
+  );
+  sql(read("tests/integration/expense-self-approval-settings.sql"));
+  sql(read("tests/fixtures/workflows/payroll-settings-audit-baseline.sql"));
+  sql(read("supabase/migrations/20261127120000_payroll_settings_audit.sql"));
+  sql(read("tests/integration/payroll-settings-audit.sql"));
+  sql(`INSERT INTO public.journals (
+    company_id, journal_number, journal_date, status, source_type, currency_code,
+    created_by, posted_at, posted_by
+  ) VALUES (
+    '10000000-0000-4000-8000-000000000013', 9001, current_date, 'posted', 'manual', 'GBP',
+    '00000000-0000-4000-8000-000000000001', now(), '00000000-0000-4000-8000-000000000001'
+  );`);
+  sql(read("tests/integration/settings-company-identity-atomic.sql"));
+  sql(read("tests/integration/company-tax-settings-audit.sql"));
+  sql(
+    "DELETE FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000013' AND journal_number=9001;",
+  );
+  sql(
+    "DELETE FROM public.journal_lines WHERE journal_id IN (SELECT id FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000011' AND idempotency_key='settings_base_currency_consumer'); DELETE FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000011' AND idempotency_key='settings_base_currency_consumer';",
+  );
+  sql(read("tests/fixtures/workflows/expense-reimbursement-settings-baseline.sql"));
+  sql(
+    fn(
+      "supabase/migrations/20261107152000_expense_management_partial_payroll_reimburse.sql",
+      "public.reimburse_expense_claim",
+    ),
+  );
+  sql(read("tests/integration/expense-reimbursement-settings.sql"));
+  sql(
+    "DELETE FROM public.expense_claim_reimbursement_payments WHERE claim_id='40000000-0000-4000-8000-000000000013'; DELETE FROM public.journal_lines WHERE journal_id IN (SELECT id FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000013' AND idempotency_key LIKE 'expense_claim:40000000-0000-4000-8000-000000000013:reimburse:%'); DELETE FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000013' AND idempotency_key LIKE 'expense_claim:40000000-0000-4000-8000-000000000013:reimburse:%'; DELETE FROM public.expense_claims WHERE id='40000000-0000-4000-8000-000000000013';",
+  );
+  sql(read("tests/fixtures/workflows/expense-multilevel-approval-baseline.sql"));
+  sql(
+    fn(
+      "supabase/migrations/20261107153000_expense_management_multilevel_approvals.sql",
+      "public.save_expense_required_approval_count",
+    ),
+  );
+  sql(
+    fn(
+      "supabase/migrations/20261107153000_expense_management_multilevel_approvals.sql",
+      "public.approve_expense_claim",
+    ),
+  );
+  for (const name of [
+    "public.list_expense_approval_escalations",
+    "public.save_expense_approval_escalation_days",
+  ])
+    sql(fn("supabase/migrations/20261107151000_expense_management_approval_escalation.sql", name));
+  sql(
+    fn(
+      "supabase/migrations/20261107146000_expense_management_risk_duplicates.sql",
+      "public.scan_expense_claim_risks",
+    ),
+  );
+  for (const name of [
+    "public.get_expense_management_settings",
+    "public.save_expense_management_settings",
+  ])
+    sql(fn("supabase/migrations/20261107144000_expense_management_disputes_rebilling.sql", name));
+  sql(read("tests/integration/expense-required-approvals.sql"));
+  sql(read("tests/fixtures/workflows/expense-account-mapping-baseline.sql"));
+  sql(read("supabase/migrations/20261127130000_expense_settings_account_scope.sql"));
+  for (const name of ["private.expense_cash_advance_json", "public.issue_expense_cash_advance"])
+    sql(fn("supabase/migrations/20261107140000_expense_management_cash_advances.sql", name));
+  for (const name of [
+    "private.expense_petty_cash_float_json",
+    "public.fund_expense_petty_cash_float",
+  ])
+    sql(fn("supabase/migrations/20261107141000_expense_management_petty_cash.sql", name));
+  sql(read("tests/integration/expense-account-mapping.sql"));
   sql(read("tests/fixtures/workflows/settings-feature-disable-baseline.sql"));
   sql(
     fn(
@@ -119,6 +242,10 @@ try {
   );
   sql(read("supabase/migrations/20261104181716_multicurrency_feature_disable_guard.sql"));
   sql(read("tests/integration/settings-feature-disable-guard.sql"));
+  sql(read("supabase/migrations/20261126180000_workflow_settings_audit.sql"));
+  sql(read("tests/integration/workflow-settings-audit.sql"));
+  sql(read("supabase/migrations/20261126200000_reminder_settings_audit.sql"));
+  sql(read("tests/integration/reminder-settings-audit.sql"));
   sql(read("tests/fixtures/workflows/settings-lock-policy-cas-baseline.sql"));
   sql(
     fn(
@@ -140,7 +267,7 @@ try {
   // numbers. The RLS-safe trigger locks only the organisation's counter row.
   const contactRace = async (index) =>
     promisify(execFile)(
-      "docker",
+      dockerBinary,
       [
         ...prefix,
         "exec",
@@ -176,11 +303,11 @@ try {
   );
   console.log("Four concurrent contact creates received C1005–C1008, no duplicates or gaps.");
   console.log(
-    "Workflow migration compiled. Atomic rollback, permissions, two-tenant RLS, PO edit/conversion, sales lifecycle, deferrals and real shared posting-engine balance/lock scenarios passed.",
+    "Workflow and reminder audit migrations compiled. Atomic rollback, typed audit, permissions, two-tenant RLS, PO edit/conversion, sales lifecycle, deferrals and real shared posting-engine balance/lock scenarios passed.",
   );
   const race = async () =>
     promisify(execFile)(
-      "docker",
+      dockerBinary,
       [
         ...prefix,
         "exec",
@@ -204,7 +331,7 @@ try {
     );
   await Promise.all([race(), race(), race()]);
   const check = sql(
-    "DO $$ BEGIN IF (SELECT count(*) FROM public.journals)<>2 OR (SELECT count(*) FROM public.journal_lines)<>4 THEN RAISE EXCEPTION 'Concurrent replay created duplicate recognition journals'; END IF; END $$;",
+    "DO $$ BEGIN IF (SELECT count(*) FROM public.journals WHERE company_id='10000000-0000-4000-8000-000000000001')<>2 OR (SELECT count(*) FROM public.journal_lines WHERE company_id='10000000-0000-4000-8000-000000000001')<>4 THEN RAISE EXCEPTION 'Concurrent replay created duplicate recognition journals'; END IF; END $$;",
   );
   sql(
     `UPDATE public.companies SET is_demo=true WHERE id='10000000-0000-4000-8000-000000000001'; SET ROLE authenticated; SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001"}',false); SELECT public.reset_demo_company('10000000-0000-4000-8000-000000000001'); DO $$ BEGIN IF EXISTS(SELECT 1 FROM public.sales_orders) OR EXISTS(SELECT 1 FROM public.deferral_schedules) OR EXISTS(SELECT 1 FROM public.deferral_entries) THEN RAISE EXCEPTION 'Demo reset left workflow dependencies'; END IF; END $$;`,

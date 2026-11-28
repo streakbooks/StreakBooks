@@ -54,7 +54,7 @@ const MIGRATION =
 
 export const getBudgetDimensionAllocations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; budgetId: string }) => ({
+  .validator((input: { companyId: string; budgetId: string }) => ({
     companyId: companyIdOf(input),
     budgetId: assertUuid(input?.budgetId, "budget"),
   }))
@@ -200,7 +200,7 @@ export const getBudgetDimensionAllocations = createServerFn({ method: "GET" })
 
 export const saveBudgetDimensionAllocations = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       budgetId: string;

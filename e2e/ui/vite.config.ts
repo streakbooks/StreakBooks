@@ -13,6 +13,10 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      {
+        find: /^@tanstack\/react-start\/server$/,
+        replacement: path.resolve(import.meta.dirname, "server.ts"),
+      },
       ...[
         "@tanstack/react-start",
         "@/hooks/use-active-company",

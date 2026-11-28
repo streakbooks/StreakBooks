@@ -14,7 +14,7 @@ const companyIdOf = (input: { companyId: string }) => ({
 
 export const listRecurringWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       documentType?: "purchase_bill" | "sales_invoice";
@@ -93,7 +93,7 @@ export const listRecurringWorkspace = createServerFn({ method: "GET" })
 
 export const getRecurringBillWorkspaceDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringBillId: string }) => ({
+  .validator((input: { companyId: string; recurringBillId: string }) => ({
     companyId: assertUuid(input.companyId),
     recurringBillId: assertUuid(input.recurringBillId),
   }))
@@ -119,7 +119,7 @@ export const getRecurringBillWorkspaceDetail = createServerFn({ method: "GET" })
 
 export const updateRecurringBillWorkspace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       recurringBillId: string;
@@ -187,7 +187,7 @@ export const updateRecurringBillWorkspace = createServerFn({ method: "POST" })
 
 export const previewRecurringSchedule = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringBillId: string; count?: number }) => ({
+  .validator((input: { companyId: string; recurringBillId: string; count?: number }) => ({
     companyId: assertUuid(input.companyId),
     recurringBillId: assertUuid(input.recurringBillId),
     count: Math.min(24, Math.max(1, Math.floor(Number(input.count ?? 12)))),
@@ -219,7 +219,7 @@ export const previewRecurringSchedule = createServerFn({ method: "GET" })
 
 export const listRecurringOccurrenceHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringBillId: string }) => ({
+  .validator((input: { companyId: string; recurringBillId: string }) => ({
     companyId: assertUuid(input.companyId),
     recurringBillId: assertUuid(input.recurringBillId),
   }))
@@ -258,7 +258,7 @@ export const listRecurringOccurrenceHistory = createServerFn({ method: "GET" })
 
 export const skipNextRecurringBillOccurrence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringBillId: string }) => ({
+  .validator((input: { companyId: string; recurringBillId: string }) => ({
     companyId: assertUuid(input.companyId),
     recurringBillId: assertUuid(input.recurringBillId),
   }))
@@ -317,7 +317,7 @@ export const skipNextRecurringBillOccurrence = createServerFn({ method: "POST" }
 
 export const listRecurringExceptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyIdOf)
+  .validator(companyIdOf)
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
     const { data: rows, error } = await context.supabase
@@ -335,7 +335,7 @@ export const listRecurringExceptions = createServerFn({ method: "GET" })
 
 export const getRecurringForecast = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; days?: number }) => ({
+  .validator((input: { companyId: string; days?: number }) => ({
     companyId: assertUuid(input.companyId),
     days: Math.min(365, Math.max(7, Math.floor(Number(input.days ?? 90)))),
   }))
@@ -387,7 +387,7 @@ export const getRecurringForecast = createServerFn({ method: "GET" })
 
 export const duplicateRecurringBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringBillId: string }) => ({
+  .validator((input: { companyId: string; recurringBillId: string }) => ({
     companyId: assertUuid(input.companyId),
     recurringBillId: assertUuid(input.recurringBillId),
   }))
@@ -437,7 +437,7 @@ export const duplicateRecurringBill = createServerFn({ method: "POST" })
 /** Hides the template from the active list. Generated bills and journals stay. */
 export const archiveRecurringBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringBillId: string }) => ({
+  .validator((input: { companyId: string; recurringBillId: string }) => ({
     companyId: assertUuid(input.companyId),
     recurringBillId: assertUuid(input.recurringBillId),
   }))

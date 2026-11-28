@@ -313,8 +313,7 @@ export function HrOrganizationPage() {
                 saveMut.isPending ||
                 !code.trim() ||
                 !name.trim() ||
-                ((kind === "department" || kind === "branch") &&
-                  (!orgQ.isSuccess || orgQ.isError))
+                ((kind === "department" || kind === "branch") && (!orgQ.isSuccess || orgQ.isError))
               }
             >
               {saveMut.isPending ? "Saving…" : "Save"}

@@ -11,7 +11,8 @@ describe("razorpay hosted checkout urls", () => {
         origin: "https://streak-books.vercel.app",
         subscriptionId: "sub_abc123",
         checkoutId: "11111111-1111-4111-8111-111111111111",
-        successUrl: "https://streak-books.vercel.app/settings?section=subscription&checkout=success",
+        successUrl:
+          "https://streak-books.vercel.app/settings?section=subscription&checkout=success",
         cancelUrl: "https://streak-books.vercel.app/settings?section=subscription&checkout=cancel",
         planName: "Standard",
         email: "rohit@streakbooks.com",

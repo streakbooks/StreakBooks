@@ -35,7 +35,7 @@ import { companyIdOf, isoDate } from "@/lib/planning/rpc";
  */
 export const getBudgetDimensionVariance = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; budgetId: string; categoryId: string; through?: string }) => ({
       companyId: companyIdOf(input),
       budgetId: assertUuid(input?.budgetId, "budget"),

@@ -252,8 +252,7 @@ function CashCoding() {
   });
 
   const requiredQueries = [accountsQ, optionsQ];
-  if (requiredQueries.some((query) => query.isPending))
-    return <LoadingState />;
+  if (requiredQueries.some((query) => query.isPending)) return <LoadingState />;
   if (requiredQueries.some((query) => query.isError))
     return <QueryErrorState queries={requiredQueries} title="Could not load cash coding options" />;
 

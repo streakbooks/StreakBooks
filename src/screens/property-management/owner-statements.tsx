@@ -217,74 +217,74 @@ export function PmOwnerStatementsPage() {
                   title="Could not load statement generate options"
                 />
               ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Generate</CardTitle>
-                  <CardDescription>
-                    Pulls rent charges and reservation owner shares for the period.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                  {owners.isSuccess && properties.isSuccess ? (
-                    <>
-                  <div className="grid gap-2">
-                    <Label>Owner</Label>
-                    <RecordLookupSelect value={ownerId} onValueChange={setOwnerId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select owner" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(owners.data ?? []).map((owner) => (
-                          <SelectItem key={owner.id} value={owner.id}>
-                            {owner.displayName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </RecordLookupSelect>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Property scope</Label>
-                    <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All owned properties</SelectItem>
-                        {(properties.data ?? []).map((property) => (
-                          <SelectItem key={property.id} value={property.id}>
-                            {property.code} — {property.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </RecordLookupSelect>
-                  </div>
-                    </>
-                  ) : (
-                    <LoadingState />
-                  )}
-                  <div className="grid gap-2">
-                    <Label htmlFor="pm-stmt-month">Period</Label>
-                    <Input
-                      id="pm-stmt-month"
-                      type="month"
-                      value={month}
-                      onChange={(e) => setMonth(e.target.value)}
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    disabled={
-                      !ownerId ||
-                      generateMutation.isPending ||
-                      !owners.isSuccess ||
-                      !properties.isSuccess
-                    }
-                    onClick={() => generateMutation.mutate()}
-                  >
-                    {generateMutation.isPending ? "Calculating…" : "Calculate statement"}
-                  </Button>
-                </CardContent>
-              </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Generate</CardTitle>
+                    <CardDescription>
+                      Pulls rent charges and reservation owner shares for the period.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-4">
+                    {owners.isSuccess && properties.isSuccess ? (
+                      <>
+                        <div className="grid gap-2">
+                          <Label>Owner</Label>
+                          <RecordLookupSelect value={ownerId} onValueChange={setOwnerId}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select owner" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(owners.data ?? []).map((owner) => (
+                                <SelectItem key={owner.id} value={owner.id}>
+                                  {owner.displayName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </RecordLookupSelect>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Property scope</Label>
+                          <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All owned properties</SelectItem>
+                              {(properties.data ?? []).map((property) => (
+                                <SelectItem key={property.id} value={property.id}>
+                                  {property.code} — {property.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </RecordLookupSelect>
+                        </div>
+                      </>
+                    ) : (
+                      <LoadingState />
+                    )}
+                    <div className="grid gap-2">
+                      <Label htmlFor="pm-stmt-month">Period</Label>
+                      <Input
+                        id="pm-stmt-month"
+                        type="month"
+                        value={month}
+                        onChange={(e) => setMonth(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      disabled={
+                        !ownerId ||
+                        generateMutation.isPending ||
+                        !owners.isSuccess ||
+                        !properties.isSuccess
+                      }
+                      onClick={() => generateMutation.mutate()}
+                    >
+                      {generateMutation.isPending ? "Calculating…" : "Calculate statement"}
+                    </Button>
+                  </CardContent>
+                </Card>
               )
             ) : null}
 

@@ -105,11 +105,7 @@ export function BillingDocuments({ companyId }: { companyId: string }) {
           <p className="text-sm text-muted-foreground">No open or failed Stripe invoices.</p>
         ) : null}
         {outstanding.length ? (
-          <ProviderInvoiceTable
-            invoices={outstanding}
-            emptyLabel=""
-            showPay
-          />
+          <ProviderInvoiceTable invoices={outstanding} emptyLabel="" showPay />
         ) : null}
       </div>
 
@@ -129,7 +125,9 @@ export function BillingDocuments({ companyId }: { companyId: string }) {
 
       <div className="space-y-2">
         <h3 className="text-sm font-medium">Issued StreakBooks invoices</h3>
-        {query.isLoading ? <p className="text-sm text-muted-foreground">Loading invoices…</p> : null}
+        {query.isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading invoices…</p>
+        ) : null}
         {query.isSuccess && invoices.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Tax invoices appear here after each successful payment is recorded.

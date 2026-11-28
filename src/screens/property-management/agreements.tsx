@@ -155,114 +155,117 @@ export function PmAgreementsPage() {
             properties.isError ? (
               <QueryErrorState queries={[properties]} title="Could not load properties" />
             ) : (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle>Management agreement</CardTitle>
-                <CardDescription>
-                  Commission calculation engines land in PM-06. This record stores effective-dated
-                  terms only.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2 sm:col-span-2">
-                  <Label>Property</Label>
-                  {properties.isSuccess ? (
-                    <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>Management agreement</CardTitle>
+                  <CardDescription>
+                    Commission calculation engines land in PM-06. This record stores effective-dated
+                    terms only.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2 sm:col-span-2">
+                    <Label>Property</Label>
+                    {properties.isSuccess ? (
+                      <RecordLookupSelect value={propertyId} onValueChange={setPropertyId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select property" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(properties.data ?? []).map((property) => (
+                            <SelectItem key={property.id} value={property.id}>
+                              {property.code} — {property.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </RecordLookupSelect>
+                    ) : (
+                      <LoadingState />
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Business model</Label>
+                    <Select
+                      value={businessModel}
+                      onValueChange={(value) => setBusinessModel(value as PmBusinessModel)}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select property" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {(properties.data ?? []).map((property) => (
-                          <SelectItem key={property.id} value={property.id}>
-                            {property.code} — {property.name}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="agency">Agency</SelectItem>
+                        <SelectItem value="principal">Principal</SelectItem>
+                        <SelectItem value="owner_direct">Owner-direct</SelectItem>
                       </SelectContent>
-                    </RecordLookupSelect>
-                  ) : (
-                    <LoadingState />
-                  )}
-                </div>
-                <div className="grid gap-2">
-                  <Label>Business model</Label>
-                  <Select
-                    value={businessModel}
-                    onValueChange={(value) => setBusinessModel(value as PmBusinessModel)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="agency">Agency</SelectItem>
-                      <SelectItem value="principal">Principal</SelectItem>
-                      <SelectItem value="owner_direct">Owner-direct</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label>Fee type</Label>
-                  <Select value={feeType} onValueChange={(value) => setFeeType(value as PmFeeType)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="percent_gross">Percent of gross</SelectItem>
-                      <SelectItem value="percent_net">Percent of net</SelectItem>
-                      <SelectItem value="percent_accommodation">
-                        Percent of accommodation
-                      </SelectItem>
-                      <SelectItem value="percent_collected">Percent of collected</SelectItem>
-                      <SelectItem value="fixed_monthly">Fixed monthly</SelectItem>
-                      <SelectItem value="fixed_per_booking">Fixed per booking</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-fee-rate">Fee rate %</Label>
-                  <Input
-                    id="pm-fee-rate"
-                    type="number"
-                    min={0}
-                    max={100}
-                    step="0.01"
-                    value={feeRatePct}
-                    onChange={(event) => setFeeRatePct(event.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pm-start">Start date</Label>
-                  <Input
-                    id="pm-start"
-                    type="date"
-                    value={startDate}
-                    onChange={(event) => setStartDate(event.target.value)}
-                  />
-                </div>
-                <div className="flex items-center gap-2 sm:col-span-2">
-                  <input
-                    id="pm-activate"
-                    type="checkbox"
-                    checked={activate}
-                    onChange={(event) => setActivate(event.target.checked)}
-                    className="size-4"
-                  />
-                  <Label htmlFor="pm-activate">
-                    Activate now (supersedes prior active agreement)
-                  </Label>
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    disabled={
-                      !propertyId || !startDate || mutation.isPending || !properties.isSuccess
-                    }
-                    onClick={() => mutation.mutate()}
-                  >
-                    {mutation.isPending ? "Saving…" : "Save agreement"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Fee type</Label>
+                    <Select
+                      value={feeType}
+                      onValueChange={(value) => setFeeType(value as PmFeeType)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percent_gross">Percent of gross</SelectItem>
+                        <SelectItem value="percent_net">Percent of net</SelectItem>
+                        <SelectItem value="percent_accommodation">
+                          Percent of accommodation
+                        </SelectItem>
+                        <SelectItem value="percent_collected">Percent of collected</SelectItem>
+                        <SelectItem value="fixed_monthly">Fixed monthly</SelectItem>
+                        <SelectItem value="fixed_per_booking">Fixed per booking</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-fee-rate">Fee rate %</Label>
+                    <Input
+                      id="pm-fee-rate"
+                      type="number"
+                      min={0}
+                      max={100}
+                      step="0.01"
+                      value={feeRatePct}
+                      onChange={(event) => setFeeRatePct(event.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="pm-start">Start date</Label>
+                    <Input
+                      id="pm-start"
+                      type="date"
+                      value={startDate}
+                      onChange={(event) => setStartDate(event.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 sm:col-span-2">
+                    <input
+                      id="pm-activate"
+                      type="checkbox"
+                      checked={activate}
+                      onChange={(event) => setActivate(event.target.checked)}
+                      className="size-4"
+                    />
+                    <Label htmlFor="pm-activate">
+                      Activate now (supersedes prior active agreement)
+                    </Label>
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      disabled={
+                        !propertyId || !startDate || mutation.isPending || !properties.isSuccess
+                      }
+                      onClick={() => mutation.mutate()}
+                    >
+                      {mutation.isPending ? "Saving…" : "Save agreement"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )
           ) : null}
           {agreements.isLoading ? <LoadingState /> : null}

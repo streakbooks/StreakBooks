@@ -149,10 +149,7 @@ export function ExpenseManagementReportsPage() {
           <Button
             size="sm"
             disabled={
-              exportMut.isPending ||
-              !reportQ.isSuccess ||
-              reportQ.isError ||
-              reportQ.isFetching
+              exportMut.isPending || !reportQ.isSuccess || reportQ.isError || reportQ.isFetching
             }
             onClick={() => exportMut.mutate()}
           >

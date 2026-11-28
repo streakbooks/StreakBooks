@@ -44,7 +44,7 @@ async function auditMetadata(
 
 export const listDocumentTags = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -67,7 +67,7 @@ export const listDocumentTags = createServerFn({ method: "GET" })
 
 export const createDocumentTag = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; name: string }) => ({
+  .validator((input: { companyId: string; name: string }) => ({
     companyId: assertUuid(input.companyId),
     name: validateDocumentTagName(input.name),
   }))
@@ -88,7 +88,7 @@ export const createDocumentTag = createServerFn({ method: "POST" })
 
 export const deleteDocumentTag = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; tagId: string }) => ({
+  .validator((input: { companyId: string; tagId: string }) => ({
     companyId: assertUuid(input.companyId),
     tagId: assertUuid(input.tagId, "tag"),
   }))
@@ -138,7 +138,7 @@ async function visibleFile(
 
 export const getFileClassification = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+  .validator((input: { companyId: string; attachmentId: string }) => ({
     companyId: assertUuid(input.companyId),
     attachmentId: assertUuid(input.attachmentId, "file"),
   }))
@@ -160,7 +160,7 @@ export const getFileClassification = createServerFn({ method: "GET" })
 
 export const updateFileCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       attachmentId: string;
@@ -208,7 +208,7 @@ export const updateFileCategory = createServerFn({ method: "POST" })
 
 export const setDocumentFileTag = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId: string; attachmentId: string; tagId: string; enabled: boolean }) => ({
       companyId: assertUuid(input.companyId),
       attachmentId: assertUuid(input.attachmentId, "file"),

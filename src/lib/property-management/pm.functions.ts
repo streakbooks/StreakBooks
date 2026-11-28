@@ -41,7 +41,7 @@ async function requirePmMember(supabase: unknown, companyId: string) {
 
 export const getPmSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<PmSettings> => {
     await requirePmMember(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(
@@ -55,7 +55,7 @@ export const getPmSettings = createServerFn({ method: "GET" })
 
 export const upsertPmSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       enabled: boolean;
@@ -96,7 +96,7 @@ export const upsertPmSettings = createServerFn({ method: "POST" })
 
 export const getPmDashboardKpis = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<PmDashboardKpis> => {
     await requirePmMember(context.supabase, data.companyId);
     try {
@@ -115,13 +115,11 @@ export const getPmDashboardKpis = createServerFn({ method: "GET" })
 
 export const listPmProperties = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; search?: string | null; status?: string | null }) => ({
-      companyId: companyIdOf(input),
-      search: input.search?.trim() || null,
-      status: input.status?.trim() || null,
-    }),
-  )
+  .validator((input: { companyId: string; search?: string | null; status?: string | null }) => ({
+    companyId: companyIdOf(input),
+    search: input.search?.trim() || null,
+    status: input.status?.trim() || null,
+  }))
   .handler(async ({ data, context }): Promise<PmProperty[]> => {
     await requirePmMember(context.supabase, data.companyId);
     const raw = await callRpc<unknown>(
@@ -140,7 +138,7 @@ export const listPmProperties = createServerFn({ method: "GET" })
 
 export const upsertPmProperty = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; draft: PmPropertyDraft }) => ({
+  .validator((input: { companyId: string; draft: PmPropertyDraft }) => ({
     companyId: companyIdOf(input),
     draft: input.draft,
   }))
@@ -183,7 +181,7 @@ export const upsertPmProperty = createServerFn({ method: "POST" })
 
 export const listPmUnits = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; propertyId?: string | null }) => ({
+  .validator((input: { companyId: string; propertyId?: string | null }) => ({
     companyId: companyIdOf(input),
     propertyId: input.propertyId ?? null,
   }))
@@ -201,7 +199,7 @@ export const listPmUnits = createServerFn({ method: "GET" })
 
 export const upsertPmUnit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; draft: PmUnitDraft }) => ({
+  .validator((input: { companyId: string; draft: PmUnitDraft }) => ({
     companyId: companyIdOf(input),
     draft: input.draft,
   }))
@@ -233,7 +231,7 @@ export const upsertPmUnit = createServerFn({ method: "POST" })
 
 export const listPmOwners = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; search?: string | null }) => ({
+  .validator((input: { companyId: string; search?: string | null }) => ({
     companyId: companyIdOf(input),
     search: input.search?.trim() || null,
   }))
@@ -251,7 +249,7 @@ export const listPmOwners = createServerFn({ method: "GET" })
 
 export const upsertPmOwner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; draft: PmOwnerDraft }) => ({
+  .validator((input: { companyId: string; draft: PmOwnerDraft }) => ({
     companyId: companyIdOf(input),
     draft: input.draft,
   }))
@@ -278,7 +276,7 @@ export const upsertPmOwner = createServerFn({ method: "POST" })
 
 export const listPmOwnership = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; propertyId: string }) => ({
+  .validator((input: { companyId: string; propertyId: string }) => ({
     companyId: companyIdOf(input),
     propertyId: String(input.propertyId),
   }))
@@ -296,7 +294,7 @@ export const listPmOwnership = createServerFn({ method: "GET" })
 
 export const upsertPmOwnership = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; draft: PmOwnershipDraft }) => ({
+  .validator((input: { companyId: string; draft: PmOwnershipDraft }) => ({
     companyId: companyIdOf(input),
     draft: input.draft,
   }))
@@ -324,7 +322,7 @@ export const upsertPmOwnership = createServerFn({ method: "POST" })
 
 export const listPmManagementAgreements = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; propertyId?: string | null }) => ({
+  .validator((input: { companyId: string; propertyId?: string | null }) => ({
     companyId: companyIdOf(input),
     propertyId: input.propertyId ?? null,
   }))
@@ -342,7 +340,7 @@ export const listPmManagementAgreements = createServerFn({ method: "GET" })
 
 export const upsertPmManagementAgreement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; draft: PmManagementAgreementDraft }) => ({
+  .validator((input: { companyId: string; draft: PmManagementAgreementDraft }) => ({
     companyId: companyIdOf(input),
     draft: input.draft,
   }))

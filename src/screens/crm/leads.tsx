@@ -398,10 +398,7 @@ export function CrmLeadsPage() {
                   ) : null}
                   {dupQuery.isError ? (
                     <div className="mb-3">
-                      <QueryErrorState
-                        queries={[dupQuery]}
-                        title="Duplicate check unavailable"
-                      />
+                      <QueryErrorState queries={[dupQuery]} title="Duplicate check unavailable" />
                     </div>
                   ) : null}
                   <Button

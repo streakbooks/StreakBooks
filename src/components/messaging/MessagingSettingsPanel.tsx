@@ -76,9 +76,7 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
   if (!companyId) return null;
   if (settings.isPending) return <LoadingState />;
   if (settings.isError) {
-    return (
-      <QueryErrorState queries={[settings]} title="Messaging settings unavailable" />
-    );
+    return <QueryErrorState queries={[settings]} title="Messaging settings unavailable" />;
   }
   if (!settings.isSuccess) return <LoadingState />;
 

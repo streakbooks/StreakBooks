@@ -19,4 +19,22 @@ describe("settings field presentation", () => {
     expect(threshold.description).toContain("Leave blank");
     expect(threshold.label).toContain("minor units");
   });
+
+  it("explains the specific backend gap for unsupported Sales and Purchases policies", () => {
+    expect(settingsFieldPresentation("sales", "late_fees_enabled").partialReason).toContain(
+      "calculation and invoice posting are not implemented",
+    );
+    expect(settingsFieldPresentation("sales", "reminders_enabled").partialReason).toContain(
+      "Scheduled reminder delivery is unavailable",
+    );
+    expect(
+      settingsFieldPresentation("purchases", "approval_threshold_minor").partialReason,
+    ).toContain("does not consume an amount threshold");
+    expect(settingsFieldPresentation("purchases", "duplicate_detection").partialReason).toContain(
+      "mandatory for bill integrity",
+    );
+    expect(
+      settingsFieldPresentation("purchases", "contractor_1099_tracking").partialReason,
+    ).toContain("not implemented");
+  });
 });

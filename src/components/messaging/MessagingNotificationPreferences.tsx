@@ -96,9 +96,7 @@ export function MessagingNotificationPreferences({ companyId }: { companyId: str
   if (!companyId) return null;
   if (query.isPending || !draft) return <LoadingState rows={3} />;
   if (query.isError) {
-    return (
-      <QueryErrorState queries={[query]} title="Could not load notification preferences" />
-    );
+    return <QueryErrorState queries={[query]} title="Could not load notification preferences" />;
   }
 
   return (

@@ -31,6 +31,15 @@ describe("validateCompanyInput", () => {
     expect(result.name).toBe("Northgate Consulting");
   });
 
+  it("accepts supported IANA time zones and rejects unknown zones", () => {
+    expect(validateCompanyInput({ ...valid, timezone: "Asia/Kolkata" }).timezone).toBe(
+      "Asia/Kolkata",
+    );
+    expect(() => validateCompanyInput({ ...valid, timezone: "Mars/Olympus" })).toThrow(
+      /valid IANA time zone/,
+    );
+  });
+
   it("rejects short names", () => {
     expect(() => validateCompanyInput({ ...valid, name: "A" })).toThrow(/company name/);
   });

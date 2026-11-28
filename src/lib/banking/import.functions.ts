@@ -22,7 +22,7 @@ export type { ImportRowInput } from "./import-validation";
 /** Saved column mapping for this bank account (null when none, or when the table is not installed yet). */
 export const getBankImportMapping = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; bankAccountId: string }) => ({
+  .validator((input: { companyId: string; bankAccountId: string }) => ({
     companyId: assertUuid(input.companyId),
     bankAccountId: assertUuid(input.bankAccountId),
   }))
@@ -46,7 +46,7 @@ export const getBankImportMapping = createServerFn({ method: "GET" })
 
 export const saveBankImportMapping = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; bankAccountId: string; mapping: ImportMapping }) => {
+  .validator((input: { companyId: string; bankAccountId: string; mapping: ImportMapping }) => {
     const mapping = coerceMapping(input.mapping);
     if (!mapping) throw new Error("Invalid column mapping");
     return {
@@ -80,13 +80,11 @@ export const saveBankImportMapping = createServerFn({ method: "POST" })
 /** Which rows of this file look like they were already imported (same id, or same date+amount+description). */
 export const previewBankImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; bankAccountId: string; rows: ImportRowInput[] }) => ({
-      companyId: assertUuid(input.companyId),
-      bankAccountId: assertUuid(input.bankAccountId),
-      rows: validateBankImportRows(input.rows),
-    }),
-  )
+  .validator((input: { companyId: string; bankAccountId: string; rows: ImportRowInput[] }) => ({
+    companyId: assertUuid(input.companyId),
+    bankAccountId: assertUuid(input.bankAccountId),
+    rows: validateBankImportRows(input.rows),
+  }))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as AnyClient;
     await assertCompanyPermission(supabase, data.companyId, "banking.import");
@@ -153,7 +151,7 @@ export const previewBankImport = createServerFn({ method: "POST" })
 
 export const importBankStatement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       bankAccountId: string;

@@ -30,7 +30,12 @@ export function allowedCheckoutOrigins(input?: {
   requestProto?: string | null;
 }): Set<string> {
   const allowed = new Set(LOCAL_ORIGINS);
-  for (const key of ["APP_ORIGIN", "SITE_URL", "VITE_SITE_URL", "BILLING_ALLOWED_ORIGINS"] as const) {
+  for (const key of [
+    "APP_ORIGIN",
+    "SITE_URL",
+    "VITE_SITE_URL",
+    "BILLING_ALLOWED_ORIGINS",
+  ] as const) {
     pushOrigin(allowed, process.env[key]);
   }
   pushOrigin(allowed, process.env["VERCEL_URL"]);

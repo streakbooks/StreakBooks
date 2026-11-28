@@ -331,10 +331,7 @@ export function ExpenseManagementTravelPage() {
                 <Button
                   onClick={() => createTripMut.mutate()}
                   disabled={
-                    createTripMut.isPending ||
-                    !tripRateId ||
-                    dayCount == null ||
-                    !ratesQ.isSuccess
+                    createTripMut.isPending || !tripRateId || dayCount == null || !ratesQ.isSuccess
                   }
                 >
                   {createTripMut.isPending ? "Creating…" : "Create draft claim"}

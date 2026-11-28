@@ -65,7 +65,7 @@ async function loadService(serviceCode: "bookkeeping" | "coaching") {
 }
 
 export const startAdvisorChat = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => startSchema.parse(input))
+  .validator((input: unknown) => startSchema.parse(input))
   .handler(async ({ data }) => {
     setResponseHeader("Cache-Control", "private, no-store");
     const service = await loadService(data.serviceCode);
@@ -114,7 +114,7 @@ export const startAdvisorChat = createServerFn({ method: "POST" })
   });
 
 export const sendAdvisorChatMessage = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => messageSchema.parse(input))
+  .validator((input: unknown) => messageSchema.parse(input))
   .handler(async ({ data }) => {
     setResponseHeader("Cache-Control", "private, no-store");
     if (!isAdvisorServiceCode(data.serviceCode)) throw new Error("Invalid service.");

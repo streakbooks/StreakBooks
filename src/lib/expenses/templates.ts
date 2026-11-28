@@ -11,6 +11,14 @@ export type ExpenseClaimTemplate = {
   defaultLines: ExpenseClaimLineInput[];
 };
 
+export function isExpenseClaimTemplateCompatible(
+  template: Pick<ExpenseClaimTemplate, "claimCurrency">,
+  claimCurrency: string,
+  baseCurrency: string,
+): boolean {
+  return (template.claimCurrency ?? baseCurrency).toUpperCase() === claimCurrency.toUpperCase();
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }

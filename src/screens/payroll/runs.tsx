@@ -1,6 +1,6 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -11,6 +11,7 @@ import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
+import { defaultActivePayrollScheduleId } from "@/lib/payroll/default-schedule";
 import { suggestNextRunPeriod } from "@/lib/payroll/suggest-run-period";
 import { normalizePayrollRunSearch } from "@/lib/payroll/run-search";
 import { createPayrollRun, listPayrollRuns } from "@/lib/payroll/runs.functions";
@@ -117,6 +118,15 @@ export function PayrollRunsPage({
     enabled: Boolean(company?.id) && canView,
   });
 
+  const openCreate = useCallback(() => {
+    setScheduleId("");
+    setPeriodStart("");
+    setPeriodEnd("");
+    setPaymentDate("");
+    setUserEditedDates(false);
+    setCreateOpen(true);
+  }, []);
+
   const createMut = useMutation({
     mutationFn: () =>
       createRun({
@@ -152,10 +162,18 @@ export function PayrollRunsPage({
   }
 
   useEffect(() => {
+    if (!createOpen || scheduleId || !settingsQ.data) return;
+    const defaultScheduleId = defaultActivePayrollScheduleId(
+      settingsQ.data.settings?.default_pay_schedule_id,
+      settingsQ.data.schedules,
+    );
+    if (defaultScheduleId) setScheduleId(defaultScheduleId);
+  }, [createOpen, scheduleId, settingsQ.data]);
+
+  useEffect(() => {
     if (!forceCreate || !canPrepare || createOpen) return;
-    setUserEditedDates(false);
-    setCreateOpen(true);
-  }, [forceCreate, canPrepare, createOpen]);
+    openCreate();
+  }, [forceCreate, canPrepare, createOpen, openCreate]);
 
   useEffect(() => {
     if (!createOpen || !scheduleId || userEditedDates) return;
@@ -196,14 +214,10 @@ export function PayrollRunsPage({
   }
   if (settingsQ.isPending || listQ.isPending) return renderRunState(<LoadingState />);
   if (settingsQ.isError) {
-    return renderRunState(
-      <QueryErrorState queries={[settingsQ]} title="Could not load payroll" />,
-    );
+    return renderRunState(<QueryErrorState queries={[settingsQ]} title="Could not load payroll" />);
   }
   if (listQ.isError) {
-    return renderRunState(
-      <QueryErrorState queries={[listQ]} title="Could not load runs" />,
-    );
+    return renderRunState(<QueryErrorState queries={[listQ]} title="Could not load runs" />);
   }
   if (!settingsQ.isSuccess || !listQ.isSuccess || !settingsQ.data || !listQ.data) {
     return null;
@@ -366,13 +380,7 @@ export function PayrollRunsPage({
       description="Create pay runs, calculate amounts, review and approve."
       actions={
         canPrepare && list.available ? (
-          <Button
-            size="sm"
-            onClick={() => {
-              setUserEditedDates(false);
-              setCreateOpen(true);
-            }}
-          >
+          <Button size="sm" onClick={openCreate}>
             <Plus className="mr-2 h-4 w-4" />
             New run
           </Button>
@@ -458,13 +466,7 @@ export function PayrollRunsPage({
                       Clear filters
                     </Button>
                   ) : canPrepare ? (
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setUserEditedDates(false);
-                        setCreateOpen(true);
-                      }}
-                    >
+                    <Button size="sm" onClick={openCreate}>
                       <Plus className="mr-2 h-4 w-4" />
                       Create run
                     </Button>

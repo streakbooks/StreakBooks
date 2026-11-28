@@ -1,3 +1,4 @@
+import { reportQueryUsesAccountingDefaults } from "@/lib/settings/report-defaults";
 import { useEffect, useMemo, useState } from "react";
 import { useBlocker } from "@tanstack/react-router";
 import { SettingsDestinationLink } from "./ModuleSettingsLinks";
@@ -22,6 +23,7 @@ import {
 } from "@/lib/settings/registry";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { settingsFieldPresentation } from "@/lib/settings/field-presentation";
+import { isSettingsFieldComplete } from "@/lib/settings/capability-registry";
 import { CheckCircle2, CircleAlert, Loader2 } from "lucide-react";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -34,6 +36,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,7 +67,6 @@ type DraftState = {
 const ENUM_OPTIONS: Record<string, readonly string[]> = {
   "accounting.reporting_basis": ["accrual", "cash"],
   "sales.late_fee_type": ["fixed", "percentage"],
-  "reports.default_basis": ["accrual", "cash"],
   "reports.default_comparison": ["none", "prior_period", "prior_year"],
   "products.valuation_method": ["fifo", "average", "standard"],
   "automation.ai_mode": ["off", "read_only", "suggest", "draft", "execute_with_approval"],
@@ -152,6 +154,11 @@ export function SettingsCategoryConfigPanel({
         updated_at: new Date().toISOString(),
       });
       await qc.invalidateQueries({ queryKey });
+      if (category === "accounting") {
+        await qc.invalidateQueries({
+          predicate: (query) => reportQueryUsesAccountingDefaults(query.queryKey, companyId),
+        });
+      }
       await qc.invalidateQueries({ queryKey: ["organisation-features", companyId] });
       toast.success("Settings saved");
     },
@@ -274,8 +281,26 @@ export function SettingsCategoryConfigPanel({
 
                 <div className="grid gap-3 lg:grid-cols-2">
                   {Object.entries(draft).map(([key, value]) => {
+                    if (category === "reports" && key === "default_basis") {
+                      return (
+                        <div key={key} className="space-y-1 rounded-lg border bg-card p-4">
+                          <SettingsDestinationLink
+                            destination={{ to: "/settings", section: "accounting" }}
+                            className="font-medium text-primary underline"
+                          >
+                            Default reporting basis
+                          </SettingsDestinationLink>
+                          <p className="text-sm text-muted-foreground">
+                            Choose cash or accrual in Accounting settings. Individual reports can
+                            override this default.
+                          </p>
+                        </div>
+                      );
+                    }
                     const id = "settings-" + category + "-" + key;
                     const field = settingsFieldPresentation(category, key);
+                    const fieldComplete = isSettingsFieldComplete(`${category}.${key}`);
+                    const fieldDisabled = disabled || !fieldComplete;
                     const options = ENUM_OPTIONS[category + "." + key];
                     const error = fieldErrors[key];
                     const isNumeric =
@@ -296,13 +321,20 @@ export function SettingsCategoryConfigPanel({
                               className="text-xs leading-relaxed text-muted-foreground"
                             >
                               {field.description}
+                              {!fieldComplete ? (
+                                <span className="mt-2 flex items-center gap-2">
+                                  <Badge variant="secondary">Partial</Badge>
+                                  {field.partialReason ??
+                                    "Editing is paused until this setting’s effect and access checks are verified."}
+                                </span>
+                              ) : null}
                             </p>
                           </div>
                           <Switch
                             id={id}
                             checked={value}
                             aria-describedby={id + "-description"}
-                            disabled={disabled}
+                            disabled={fieldDisabled}
                             onCheckedChange={(checked) => updateField(key, checked)}
                           />
                         </div>
@@ -314,10 +346,17 @@ export function SettingsCategoryConfigPanel({
                           <Label htmlFor={id}>{field.label}</Label>
                           <p id={id + "-description"} className="text-xs text-muted-foreground">
                             {field.description}
+                            {!fieldComplete ? (
+                              <span className="mt-2 flex items-center gap-2">
+                                <Badge variant="secondary">Partial</Badge>
+                                {field.partialReason ??
+                                  "Editing is paused until this setting’s effect and access checks are verified."}
+                              </span>
+                            ) : null}
                           </p>
                           <Select
                             value={value}
-                            disabled={disabled}
+                            disabled={fieldDisabled}
                             onValueChange={(selected) => updateField(key, selected)}
                           >
                             {/* lookup-fixed-enum: Settings values come from the fixed ENUM_OPTIONS schema. */}
@@ -351,11 +390,18 @@ export function SettingsCategoryConfigPanel({
                           <Label htmlFor={id}>{field.label}</Label>
                           <p id={id + "-description"} className="text-xs text-muted-foreground">
                             {field.description}
+                            {!fieldComplete ? (
+                              <span className="mt-2 flex items-center gap-2">
+                                <Badge variant="secondary">Partial</Badge>
+                                {field.partialReason ??
+                                  "Editing is paused until this setting’s effect and access checks are verified."}
+                              </span>
+                            ) : null}
                           </p>
                           <Input
                             id={id}
                             value={value.join(", ")}
-                            disabled={disabled}
+                            disabled={fieldDisabled}
                             aria-invalid={Boolean(error)}
                             aria-describedby={`${id}-description${error ? ` ${id}-error` : ""}`}
                             onChange={(event) => {
@@ -394,11 +440,18 @@ export function SettingsCategoryConfigPanel({
                           <Label htmlFor={id}>{field.label}</Label>
                           <p id={id + "-description"} className="text-xs text-muted-foreground">
                             {field.description}
+                            {!fieldComplete ? (
+                              <span className="mt-2 flex items-center gap-2">
+                                <Badge variant="secondary">Partial</Badge>
+                                {field.partialReason ??
+                                  "Editing is paused until this setting’s effect and access checks are verified."}
+                              </span>
+                            ) : null}
                           </p>
                           <Input
                             id={id}
                             value={value === null ? "" : String(value)}
-                            disabled={disabled}
+                            disabled={fieldDisabled}
                             inputMode={isNumeric ? "decimal" : undefined}
                             aria-invalid={Boolean(error)}
                             aria-describedby={`${id}-description${error ? ` ${id}-error` : ""}`}

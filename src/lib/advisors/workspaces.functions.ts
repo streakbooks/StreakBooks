@@ -45,7 +45,7 @@ const reasonSchema = z.string().trim().min(3).max(500);
 
 export const listAdvisorsWorkspaces = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         status: z.enum(["active", "paused", "closed"]).optional(),
@@ -73,7 +73,7 @@ export const listAdvisorsDeliveryCandidates = createServerFn({ method: "GET" })
 
 export const upsertAdvisorsWorkspace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         engagementId: z.string().uuid(),
@@ -103,9 +103,7 @@ export const upsertAdvisorsWorkspace = createServerFn({ method: "POST" })
 
 export const getAdvisorsWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ workspaceId: z.string().uuid() }).strict().parse(input),
-  )
+  .validator((input: unknown) => z.object({ workspaceId: z.string().uuid() }).strict().parse(input))
   .handler(async ({ data, context }): Promise<AdvisorsWorkspaceDetail> => {
     return mapWorkspaceDetail(
       await callRpc(context.supabase, "platform_advisors_get_workspace", {
@@ -116,7 +114,7 @@ export const getAdvisorsWorkspace = createServerFn({ method: "GET" })
 
 export const openAdvisorsWorkPeriod = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         workspaceId: z.string().uuid(),
@@ -154,7 +152,7 @@ export const openAdvisorsWorkPeriod = createServerFn({ method: "POST" })
 
 export const setAdvisorsDeliveryTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         taskId: z.string().uuid(),
@@ -184,7 +182,7 @@ export const setAdvisorsDeliveryTask = createServerFn({ method: "POST" })
 
 export const upsertAdvisorsDocumentRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         id: z.string().uuid().optional(),
@@ -226,7 +224,7 @@ export const upsertAdvisorsDocumentRequest = createServerFn({ method: "POST" })
 
 export const addAdvisorsWorkspaceNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         workspaceId: z.string().uuid(),
@@ -256,7 +254,7 @@ export const addAdvisorsWorkspaceNote = createServerFn({ method: "POST" })
 
 export const listAdvisorsDocumentRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         status: z.enum(["requested", "received", "reviewed", "cancelled"]).optional(),

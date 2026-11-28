@@ -136,15 +136,20 @@ describe("appearance modes and palettes", () => {
         documentElement: {
           classList: { toggle: () => {} },
           setAttribute: () => {},
-          style: { setProperty: (key: string, value: string) => { variables[key] = value; } },
+          style: {
+            setProperty: (key: string, value: string) => {
+              variables[key] = value;
+            },
+          },
         },
       },
       localStorage: {
-        getItem: (key: string) => key === PALETTE_STORAGE_KEY
-          ? "custom"
-          : key === CUSTOM_PALETTE_STORAGE_KEY
-            ? JSON.stringify({ primary: "#4f7df3" })
-            : "light",
+        getItem: (key: string) =>
+          key === PALETTE_STORAGE_KEY
+            ? "custom"
+            : key === CUSTOM_PALETTE_STORAGE_KEY
+              ? JSON.stringify({ primary: "#4f7df3" })
+              : "light",
       },
       window: { matchMedia: () => ({ matches: false }) },
     });

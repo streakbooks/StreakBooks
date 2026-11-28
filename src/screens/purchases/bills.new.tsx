@@ -36,6 +36,12 @@ import {
 } from "@/lib/settings/dimensions.functions";
 import { getOrgExtendedSettings } from "@/lib/settings/org-settings.functions";
 import { getWorkflowSettings } from "@/lib/settings/workflow-settings.functions";
+import { getOrganisationConfig } from "@/lib/settings/settings-centre.functions";
+import {
+  purchaseDuplicateDetectionEnabled,
+  shouldShowDuplicateSupplierBillWarning,
+} from "@/lib/purchases/duplicate-detection-preference";
+import { purchaseOrderPreferenceNotice } from "@/lib/purchases/purchase-order-preference";
 import { listOrganisationFeatures } from "@/lib/settings/settings-centre.functions";
 import {
   getBillWorkspacePrefs,
@@ -71,6 +77,8 @@ import {
   CANCEL_UNSAVED_MESSAGE,
   canPreviewAttachment,
   computeBillTotals,
+  defaultPurchaseBillMemo,
+  defaultPurchaseBillDueDate,
   hasUnsavedBillChanges,
   MAX_ATTACHMENT_BYTES,
   validateAttachmentFile,
@@ -243,6 +251,7 @@ export function NewBill({
   const fetchAccounts = useServerFn(listAccounts);
   const fetchProducts = useServerFn(listProducts);
   const fetchSettings = useServerFn(getWorkflowSettings);
+  const fetchOrganisationConfig = useServerFn(getOrganisationConfig);
   const fetchOrg = useServerFn(getOrgExtendedSettings);
   const fetchTaxCodes = useServerFn(listTaxCodes);
   const fetchDimensions = useServerFn(listTrackingDimensions);
@@ -297,6 +306,15 @@ export function NewBill({
     enabled: Boolean(companyId),
     queryFn: () => fetchSettings({ data: { companyId: companyId! } }),
   });
+  const purchaseConfigQ = useQuery({
+    queryKey: ["organisation-config", companyId, "purchases"],
+    enabled: Boolean(companyId),
+    queryFn: () =>
+      fetchOrganisationConfig({ data: { companyId: companyId!, category: "purchases" } }),
+  });
+  const duplicateDetectionEnabled = purchaseConfigQ.isSuccess
+    ? purchaseDuplicateDetectionEnabled(purchaseConfigQ.data.document)
+    : true;
   const orgQ = useQuery({
     queryKey: ["org-settings", companyId],
     enabled: Boolean(companyId),
@@ -571,7 +589,13 @@ export function NewBill({
 
   const dupQ = useQuery({
     queryKey: ["bill-dup", companyId, contactId, supplierInvoiceNumber, billId],
-    enabled: Boolean(companyId && contactId && supplierInvoiceNumber.trim()),
+    enabled: Boolean(
+      companyId &&
+      contactId &&
+      supplierInvoiceNumber.trim() &&
+      purchaseConfigQ.isSuccess &&
+      duplicateDetectionEnabled,
+    ),
     queryFn: () =>
       checkDup({
         data: {
@@ -604,15 +628,28 @@ export function NewBill({
 
   useEffect(() => {
     if (defaultsApplied || !settingsQ.isSuccess || !settingsQ.data) return;
-    const days = settingsQ.data.purchases_default_payment_terms_days ?? 30;
     if (!dueDateManualOverride) {
-      setDueDate(calculateDueDate(today, { days, calculation_method: "days_after_bill_date" }));
+      setDueDate(
+        defaultPurchaseBillDueDate(
+          today,
+          undefined,
+          settingsQ.data.purchases_default_payment_terms_days,
+        ),
+      );
     }
     // Optional fields stay blank — only apply org default notes when configured
-    if (settingsQ.data.purchases_default_notes) setMemo(settingsQ.data.purchases_default_notes);
+    const defaultMemo = defaultPurchaseBillMemo(settingsQ.data.purchases_default_notes);
+    if (defaultMemo) setMemo(defaultMemo);
     setCurrencyCode(baseCurrency);
     setDefaultsApplied(true);
-  }, [settingsQ.isSuccess, settingsQ.data, defaultsApplied, today, dueDateManualOverride, baseCurrency]);
+  }, [
+    settingsQ.isSuccess,
+    settingsQ.data,
+    defaultsApplied,
+    today,
+    dueDateManualOverride,
+    baseCurrency,
+  ]);
 
   // Capture baseline after first paint so opening alone is not "dirty"
   useEffect(() => {
@@ -745,8 +782,8 @@ export function NewBill({
       if (patch.visibleColumns) setLineVisibleColumns(patch.visibleColumns as LineColumnKey[]);
       try {
         await persistPrefs({ data: { companyId, prefs: patch } });
-      } catch {
-        /* non-blocking preference save */
+      } catch (error) {
+        toast.error("Bill workspace preference could not be saved. " + friendlyAuthError(error));
       }
     },
     [companyId, persistPrefs],
@@ -813,8 +850,13 @@ export function NewBill({
         setDueDate(calculateDueDate(date, term));
         return;
       }
-      const days = settingsQ.data?.purchases_default_payment_terms_days ?? 30;
-      setDueDate(calculateDueDate(date, { days, calculation_method: "days_after_bill_date" }));
+      setDueDate(
+        defaultPurchaseBillDueDate(
+          date,
+          undefined,
+          settingsQ.data?.purchases_default_payment_terms_days,
+        ),
+      );
     },
     [dueDateManualOverride, terms, settingsQ.data],
   );
@@ -842,11 +884,11 @@ export function NewBill({
         applyDueFromTerms(billDate, match.id);
       } else if (!dueDateManualOverride) {
         setDueDate(
-          calculateDueDate(billDate, {
-            days:
-              s.payment_terms_days ?? settingsQ.data?.purchases_default_payment_terms_days ?? 30,
-            calculation_method: "days_after_bill_date",
-          }),
+          defaultPurchaseBillDueDate(
+            billDate,
+            s.payment_terms_days,
+            settingsQ.data?.purchases_default_payment_terms_days,
+          ),
         );
       }
     }
@@ -912,7 +954,16 @@ export function NewBill({
         "No exchange rate available for this currency and date. Add a rate in Settings before saving.",
       );
     }
-    if (dupQ.data?.duplicate && !acknowledgeDuplicate) {
+    if (!purchaseConfigQ.isSuccess) {
+      throw new Error("Could not load Purchases policies. Reload before saving this bill.");
+    }
+    if (
+      shouldShowDuplicateSupplierBillWarning(
+        duplicateDetectionEnabled,
+        Boolean(dupQ.data?.duplicate),
+      ) &&
+      !acknowledgeDuplicate
+    ) {
       throw new Error(
         "A bill with this supplier invoice number may already exist. Review it and acknowledge to continue.",
       );
@@ -1199,7 +1250,7 @@ export function NewBill({
     setDueDateManualOverride(false);
     setPaymentTermId("");
     setSupplierInvoiceNumber("");
-    setMemo(settingsQ.data?.purchases_default_notes ?? "");
+    setMemo(defaultPurchaseBillMemo(settingsQ.data?.purchases_default_notes));
     setCurrencyCode(baseCurrency);
     setTaxCalculation("exclusive");
     setAcknowledgeDuplicate(false);
@@ -1208,8 +1259,13 @@ export function NewBill({
     setPendingAttachments([]);
     setInternalNoteDraft("");
     setFormError(null);
-    const days = settingsQ.data?.purchases_default_payment_terms_days ?? 30;
-    setDueDate(calculateDueDate(today, { days, calculation_method: "days_after_bill_date" }));
+    setDueDate(
+      defaultPurchaseBillDueDate(
+        today,
+        undefined,
+        settingsQ.data?.purchases_default_payment_terms_days,
+      ),
+    );
     window.setTimeout(() => setBaseline(snapshot()), 0);
   }
 
@@ -1423,14 +1479,10 @@ export function NewBill({
     );
   }
   if (dimsQ.isError) {
-    return (
-      <QueryErrorState queries={[dimsQ]} title="Could not load tracking dimensions" />
-    );
+    return <QueryErrorState queries={[dimsQ]} title="Could not load tracking dimensions" />;
   }
   const billOptionsReady =
-    billOptionQueries.every((query) => query.isSuccess) &&
-    dimsQ.isSuccess &&
-    settingsQ.isSuccess;
+    billOptionQueries.every((query) => query.isSuccess) && dimsQ.isSuccess && settingsQ.isSuccess;
 
   const headerBar: ReactNode = (
     <div className="flex flex-wrap items-center gap-2">
@@ -1569,6 +1621,7 @@ export function NewBill({
 
   return (
     <VoiceFields token={voiceToken}>
+      <QueryErrorState queries={[prefsQ]} title="Could not load bill workspace preferences" />
       <BillWorkspaceLayout
         companyId={companyId}
         contactId={contactId || null}
@@ -1610,16 +1663,18 @@ export function NewBill({
         }}
         header={headerBar}
       >
-        {settingsQ.data?.purchases_require_po ? (
+        {purchaseOrderPreferenceNotice(Boolean(settingsQ.data?.purchases_require_po)) ? (
           <Alert className="mb-4">
             <AlertDescription>
-              Organisation policy prefers a purchase order before bills. Link a PO from Orders when
-              converting, or continue if this bill is independent.
+              {purchaseOrderPreferenceNotice(Boolean(settingsQ.data?.purchases_require_po))}
             </AlertDescription>
           </Alert>
         ) : null}
 
-        {dupQ.data?.duplicate ? (
+        {shouldShowDuplicateSupplierBillWarning(
+          duplicateDetectionEnabled,
+          Boolean(dupQ.data?.duplicate),
+        ) ? (
           <Alert variant="destructive" className="mb-4">
             <AlertTitle>Possible duplicate supplier bill</AlertTitle>
             <AlertDescription className="space-y-2">
@@ -1628,7 +1683,7 @@ export function NewBill({
                 this supplier.
               </p>
               <ul className="list-disc pl-5 text-sm">
-                {dupQ.data.matches.map((m) => (
+                {(dupQ.data?.matches ?? []).map((m) => (
                   <li key={m.id}>
                     <Link
                       to="/purchases/bills/$billId"

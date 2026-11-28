@@ -27,7 +27,7 @@ function asError(error: { message: string } | null): never {
 
 export const getMessagingSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input?.companyId),
   }))
   .handler(async ({ data, context }): Promise<MessagingSettings> => {
@@ -120,7 +120,7 @@ export const getMessagingSettings = createServerFn({ method: "GET" })
 
 export const setMessagingEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; enabled: boolean }) => ({
+  .validator((input: { companyId: string; enabled: boolean }) => ({
     companyId: assertUuid(input?.companyId),
     enabled: Boolean(input?.enabled),
   }))
@@ -143,7 +143,7 @@ export const setMessagingEnabled = createServerFn({ method: "POST" })
 
 export const setMessagingCollaborationFlags = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       allowAiAssist?: boolean;
@@ -188,7 +188,7 @@ export const setMessagingCollaborationFlags = createServerFn({ method: "POST" })
 
 export const previewMessagingDigest = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; frequency?: "daily" | "weekly" }) => ({
+  .validator((input: { companyId: string; frequency?: "daily" | "weekly" }) => ({
     companyId: assertUuid(input?.companyId),
     frequency: input?.frequency === "weekly" ? ("weekly" as const) : ("daily" as const),
   }))
@@ -253,7 +253,7 @@ export const previewMessagingDigest = createServerFn({ method: "GET" })
 
 export const getMessagingUnreadCount = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input?.companyId),
   }))
   .handler(async ({ data, context }): Promise<number> => {
@@ -271,7 +271,7 @@ export const getMessagingUnreadCount = createServerFn({ method: "GET" })
 
 export const listEligibleMessagingParticipants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; search?: string }) => ({
+  .validator((input: { companyId: string; search?: string }) => ({
     companyId: assertUuid(input?.companyId),
     search: typeof input?.search === "string" ? input.search.trim().slice(0, 80) : "",
   }))
@@ -312,7 +312,7 @@ export const listEligibleMessagingParticipants = createServerFn({ method: "GET" 
 
 export const listMessagingConversations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; filter?: MessagingInboxFilter; q?: string }) => ({
+  .validator((input: { companyId: string; filter?: MessagingInboxFilter; q?: string }) => ({
     companyId: assertUuid(input?.companyId),
     filter: (input?.filter ?? "inbox") as MessagingInboxFilter,
     q: typeof input?.q === "string" ? input.q.trim().slice(0, 120) : "",
@@ -456,7 +456,7 @@ export const listMessagingConversations = createServerFn({ method: "GET" })
 
 export const listMessagingMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       conversationId: string;
@@ -525,17 +525,15 @@ export const listMessagingMessages = createServerFn({ method: "GET" })
 /** In-conversation message search (authorised membership only). */
 export const searchMessagingMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; conversationId: string; q: string; limit?: number }) => ({
-      companyId: assertUuid(input?.companyId),
-      conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
-      q: typeof input?.q === "string" ? input.q.trim().slice(0, 120) : "",
-      limit:
-        typeof input?.limit === "number" && input.limit > 0 && input.limit <= 100
-          ? Math.floor(input.limit)
-          : 40,
-    }),
-  )
+  .validator((input: { companyId: string; conversationId: string; q: string; limit?: number }) => ({
+    companyId: assertUuid(input?.companyId),
+    conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+    q: typeof input?.q === "string" ? input.q.trim().slice(0, 120) : "",
+    limit:
+      typeof input?.limit === "number" && input.limit > 0 && input.limit <= 100
+        ? Math.floor(input.limit)
+        : 40,
+  }))
   .handler(async ({ data, context }): Promise<MessagingMessage[]> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.view");
@@ -566,7 +564,7 @@ export type MessagingGlobalSearchHit = MessagingMessage & {
 /** Cross-conversation search limited to the caller's active memberships. */
 export const searchMessagingAcrossConversations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; q: string; limit?: number }) => ({
+  .validator((input: { companyId: string; q: string; limit?: number }) => ({
     companyId: assertUuid(input?.companyId),
     q: typeof input?.q === "string" ? input.q.trim().slice(0, 120) : "",
     limit:
@@ -641,7 +639,7 @@ export const searchMessagingAcrossConversations = createServerFn({ method: "GET"
 
 export const createDirectConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; peerUserId: string }) => ({
+  .validator((input: { companyId: string; peerUserId: string }) => ({
     companyId: assertUuid(input?.companyId),
     peerUserId: assertMessagingUuid(input?.peerUserId, "peerUserId"),
   }))
@@ -661,7 +659,7 @@ export const createDirectConversation = createServerFn({ method: "POST" })
 
 export const createGroupConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       title: string;
@@ -695,7 +693,7 @@ export const createGroupConversation = createServerFn({ method: "POST" })
 
 export const createChannelConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       title: string;
@@ -729,7 +727,7 @@ export const createChannelConversation = createServerFn({ method: "POST" })
 
 export const listStarredMessagingMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input?.companyId),
   }))
   .handler(async ({ data, context }): Promise<MessagingMessage[]> => {
@@ -769,7 +767,7 @@ function isFiniteUuid(value: unknown): value is string {
 
 export const sendMessagingMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       conversationId: string;
@@ -806,7 +804,7 @@ export const sendMessagingMessage = createServerFn({ method: "POST" })
 
 export const markMessagingRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; conversationId: string; seq: number }) => ({
+  .validator((input: { companyId: string; conversationId: string; seq: number }) => ({
     companyId: assertUuid(input?.companyId),
     conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
     seq: Number.isFinite(input?.seq) ? Math.max(0, Math.floor(input.seq)) : 0,
@@ -828,7 +826,7 @@ export const markMessagingRead = createServerFn({ method: "POST" })
 
 export const updateMessagingMembership = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       conversationId: string;
@@ -868,7 +866,7 @@ export const updateMessagingMembership = createServerFn({ method: "POST" })
 
 export const renameMessagingConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; conversationId: string; title: string }) => ({
+  .validator((input: { companyId: string; conversationId: string; title: string }) => ({
     companyId: assertUuid(input?.companyId),
     conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
     title: normaliseGroupTitle(input?.title),
@@ -890,7 +888,7 @@ export const renameMessagingConversation = createServerFn({ method: "POST" })
 
 export const removeMessagingInternalMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; conversationId: string; memberUserId: string }) => ({
+  .validator((input: { companyId: string; conversationId: string; memberUserId: string }) => ({
     companyId: assertUuid(input?.companyId),
     conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
     memberUserId: assertMessagingUuid(input?.memberUserId, "memberUserId"),
@@ -912,7 +910,7 @@ export const removeMessagingInternalMember = createServerFn({ method: "POST" })
 
 export const openPortalDiscussion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       portalRole: "customer" | "supplier";
@@ -955,7 +953,7 @@ export const openPortalDiscussion = createServerFn({ method: "POST" })
 
 export const openRecordDiscussion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       recordType: string;
@@ -1005,7 +1003,7 @@ export const openRecordDiscussion = createServerFn({ method: "POST" })
 
 export const registerMessagingAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       conversationId: string;
@@ -1050,7 +1048,7 @@ export const registerMessagingAttachment = createServerFn({ method: "POST" })
 
 export const listMessagingAttachments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; conversationId: string }) => ({
+  .validator((input: { companyId: string; conversationId: string }) => ({
     companyId: assertUuid(input?.companyId),
     conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
   }))
@@ -1071,7 +1069,7 @@ export const listMessagingAttachments = createServerFn({ method: "GET" })
 
 export const editMessagingMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; messageId: string; body: string }) => ({
+  .validator((input: { companyId: string; messageId: string; body: string }) => ({
     companyId: assertUuid(input?.companyId),
     messageId: assertMessagingUuid(input?.messageId, "messageId"),
     body: normaliseMessageBody(input?.body),
@@ -1092,7 +1090,7 @@ export const editMessagingMessage = createServerFn({ method: "POST" })
 
 export const redactMessagingMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; messageId: string }) => ({
+  .validator((input: { companyId: string; messageId: string }) => ({
     companyId: assertUuid(input?.companyId),
     messageId: assertMessagingUuid(input?.messageId, "messageId"),
   }))
@@ -1111,7 +1109,7 @@ export const redactMessagingMessage = createServerFn({ method: "POST" })
 
 export const reactMessagingMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; messageId: string; emoji: string }) => ({
+  .validator((input: { companyId: string; messageId: string; emoji: string }) => ({
     companyId: assertUuid(input?.companyId),
     messageId: assertMessagingUuid(input?.messageId, "messageId"),
     emoji: String(input?.emoji ?? "")
@@ -1135,7 +1133,7 @@ export const reactMessagingMessage = createServerFn({ method: "POST" })
 
 export const openHrPrivateConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; title: string; peerUserId?: string }) => ({
+  .validator((input: { companyId: string; title: string; peerUserId?: string }) => ({
     companyId: assertUuid(input?.companyId),
     title: normaliseGroupTitle(input?.title || "Private HR discussion"),
     peerUserId: input?.peerUserId ? assertMessagingUuid(input.peerUserId, "peerUserId") : null,
@@ -1156,7 +1154,7 @@ export const openHrPrivateConversation = createServerFn({ method: "POST" })
 
 export const openAccountantClientConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; title: string; peerUserId: string }) => ({
+  .validator((input: { companyId: string; title: string; peerUserId: string }) => ({
     companyId: assertUuid(input?.companyId),
     title: normaliseGroupTitle(input?.title || "Accountant discussion"),
     peerUserId: assertMessagingUuid(input?.peerUserId, "peerUserId"),
@@ -1177,7 +1175,7 @@ export const openAccountantClientConversation = createServerFn({ method: "POST" 
 
 export const requestMessagingFormalApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       conversationId: string;
@@ -1232,7 +1230,7 @@ function looksLikeInformalOnly(note: string): boolean {
 
 export const portalOpenInvoiceDiscussion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { membershipId: string; invoiceId: string }) => ({
+  .validator((input: { membershipId: string; invoiceId: string }) => ({
     membershipId: assertMessagingUuid(input?.membershipId, "membershipId"),
     invoiceId: assertMessagingUuid(input?.invoiceId, "invoiceId"),
   }))
@@ -1251,7 +1249,7 @@ export const portalOpenInvoiceDiscussion = createServerFn({ method: "POST" })
 
 export const portalOpenPurchaseOrderDiscussion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { membershipId: string; orderId: string }) => ({
+  .validator((input: { membershipId: string; orderId: string }) => ({
     membershipId: assertMessagingUuid(input?.membershipId, "membershipId"),
     orderId: assertMessagingUuid(input?.orderId, "orderId"),
   }))
@@ -1270,7 +1268,7 @@ export const portalOpenPurchaseOrderDiscussion = createServerFn({ method: "POST"
 
 export const portalSendMessagingMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       membershipId: string;
       conversationId: string;
@@ -1300,7 +1298,7 @@ export const portalSendMessagingMessage = createServerFn({ method: "POST" })
 
 export const openAdvisorEngagementConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; title: string; peerUserId: string }) => ({
+  .validator((input: { companyId: string; title: string; peerUserId: string }) => ({
     companyId: assertUuid(input?.companyId),
     title: normaliseGroupTitle(input?.title || "Advisor engagement"),
     peerUserId: assertMessagingUuid(input?.peerUserId, "peerUserId"),
@@ -1321,7 +1319,7 @@ export const openAdvisorEngagementConversation = createServerFn({ method: "POST"
 
 export const markMessagingUnread = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; conversationId: string }) => ({
+  .validator((input: { companyId: string; conversationId: string }) => ({
     companyId: assertUuid(input?.companyId),
     conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
   }))
@@ -1341,7 +1339,7 @@ export const markMessagingUnread = createServerFn({ method: "POST" })
 /** Mark every active membership as read up to the conversation max seq. */
 export const markAllMessagingRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input?.companyId),
   }))
   .handler(async ({ data, context }): Promise<{ marked: number }> => {
@@ -1399,7 +1397,7 @@ export type MessagingRecordLink = {
 
 export const getMessagingConversationRecordLink = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; conversationId: string }) => ({
+  .validator((input: { companyId: string; conversationId: string }) => ({
     companyId: assertUuid(input?.companyId),
     conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
   }))
@@ -1419,7 +1417,7 @@ export const getMessagingConversationRecordLink = createServerFn({ method: "GET"
 
 export const getMessagingNotificationPreferences = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input?.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -1451,7 +1449,7 @@ export const getMessagingNotificationPreferences = createServerFn({ method: "GET
 
 export const saveMessagingNotificationPreferences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       emailEnabled?: boolean;
@@ -1500,7 +1498,7 @@ export const saveMessagingNotificationPreferences = createServerFn({ method: "PO
 
 export const pinMessagingMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; messageId: string; pinned?: boolean }) => ({
+  .validator((input: { companyId: string; messageId: string; pinned?: boolean }) => ({
     companyId: assertUuid(input?.companyId),
     messageId: assertMessagingUuid(input?.messageId, "messageId"),
     pinned: input?.pinned !== false,
@@ -1521,7 +1519,7 @@ export const pinMessagingMessage = createServerFn({ method: "POST" })
 
 export const starMessagingMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; messageId: string; starred?: boolean }) => ({
+  .validator((input: { companyId: string; messageId: string; starred?: boolean }) => ({
     companyId: assertUuid(input?.companyId),
     messageId: assertMessagingUuid(input?.messageId, "messageId"),
     starred: input?.starred !== false,
@@ -1542,15 +1540,13 @@ export const starMessagingMessage = createServerFn({ method: "POST" })
 
 export const addMessagingInternalMembers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; conversationId: string; memberUserIds: string[] }) => ({
-      companyId: assertUuid(input?.companyId),
-      conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
-      memberUserIds: Array.isArray(input?.memberUserIds)
-        ? input.memberUserIds.slice(0, 40).map((id) => assertMessagingUuid(id, "memberUserId"))
-        : [],
-    }),
-  )
+  .validator((input: { companyId: string; conversationId: string; memberUserIds: string[] }) => ({
+    companyId: assertUuid(input?.companyId),
+    conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
+    memberUserIds: Array.isArray(input?.memberUserIds)
+      ? input.memberUserIds.slice(0, 40).map((id) => assertMessagingUuid(id, "memberUserId"))
+      : [],
+  }))
   .handler(async ({ data, context }): Promise<{ added: number }> => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "messaging.invite_internal");
@@ -1569,7 +1565,7 @@ export const addMessagingInternalMembers = createServerFn({ method: "POST" })
 
 export const listPinnedMessagingMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; conversationId: string }) => ({
+  .validator((input: { companyId: string; conversationId: string }) => ({
     companyId: assertUuid(input?.companyId),
     conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
   }))
@@ -1596,7 +1592,7 @@ export const listPinnedMessagingMessages = createServerFn({ method: "GET" })
 
 export const listMessagingConversationMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; conversationId: string }) => ({
+  .validator((input: { companyId: string; conversationId: string }) => ({
     companyId: assertUuid(input?.companyId),
     conversationId: assertMessagingUuid(input?.conversationId, "conversationId"),
   }))
@@ -1644,7 +1640,7 @@ export const listMessagingConversationMembers = createServerFn({ method: "GET" }
 
 export const listMessagingMessageReceipts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; messageId: string }) => ({
+  .validator((input: { companyId: string; messageId: string }) => ({
     companyId: assertUuid(input?.companyId),
     messageId: assertMessagingUuid(input?.messageId, "messageId"),
   }))
@@ -1682,7 +1678,7 @@ export const listMessagingMessageReceipts = createServerFn({ method: "GET" })
 
 export const blockMessagingUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; blockedUserId: string; reason?: string }) => ({
+  .validator((input: { companyId: string; blockedUserId: string; reason?: string }) => ({
     companyId: assertUuid(input?.companyId),
     blockedUserId: assertMessagingUuid(input?.blockedUserId, "blockedUserId"),
     reason: typeof input?.reason === "string" ? input.reason.trim().slice(0, 500) : "",
@@ -1704,7 +1700,7 @@ export const blockMessagingUser = createServerFn({ method: "POST" })
 
 export const unblockMessagingUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; blockedUserId: string }) => ({
+  .validator((input: { companyId: string; blockedUserId: string }) => ({
     companyId: assertUuid(input?.companyId),
     blockedUserId: assertMessagingUuid(input?.blockedUserId, "blockedUserId"),
   }))
@@ -1724,7 +1720,7 @@ export const unblockMessagingUser = createServerFn({ method: "POST" })
 
 export const setMessagingRetentionDays = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; retentionDays: number | null }) => ({
+  .validator((input: { companyId: string; retentionDays: number | null }) => ({
     companyId: assertUuid(input?.companyId),
     retentionDays:
       input?.retentionDays == null
@@ -1749,7 +1745,7 @@ export const setMessagingRetentionDays = createServerFn({ method: "POST" })
 
 export const reportMessagingMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; messageId: string; reason?: string }) => ({
+  .validator((input: { companyId: string; messageId: string; reason?: string }) => ({
     companyId: assertUuid(input?.companyId),
     messageId: assertMessagingUuid(input?.messageId, "messageId"),
     reason: typeof input?.reason === "string" ? input.reason.trim().slice(0, 500) : "reported",
@@ -1771,7 +1767,7 @@ export const reportMessagingMessage = createServerFn({ method: "POST" })
 
 export const listBlockedMessagingUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input?.companyId),
   }))
   .handler(
@@ -1823,7 +1819,7 @@ export const listBlockedMessagingUsers = createServerFn({ method: "GET" })
 
 export const previewMessagingRetentionPurge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .validator((input: { companyId: string }) => ({
     companyId: assertUuid(input?.companyId),
   }))
   .handler(async ({ data, context }) => {
@@ -1854,7 +1850,7 @@ export const previewMessagingRetentionPurge = createServerFn({ method: "POST" })
 
 export const getMessagingAnalyticsSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; days?: number }) => ({
+  .validator((input: { companyId: string; days?: number }) => ({
     companyId: assertUuid(input?.companyId),
     days:
       typeof input?.days === "number" && input.days > 0 && input.days <= 90

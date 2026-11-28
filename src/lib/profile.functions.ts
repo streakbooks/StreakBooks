@@ -30,7 +30,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
 
 export const updateMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { full_name: string; job_title: string }) => {
+  .validator((input: { full_name: string; job_title: string }) => {
     const full_name = input.full_name?.trim() ?? "";
     if (full_name.length < 2) throw new Error("Please enter your full name.");
     if (full_name.length > 120) throw new Error("Name is too long.");

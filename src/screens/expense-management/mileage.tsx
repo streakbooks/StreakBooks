@@ -37,6 +37,7 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   EXPENSE_MILEAGE_MIGRATION,
+  getExpenseManagementSettings,
   listExpenseMileageRates,
   saveExpenseClaim,
   saveExpenseMileageRate,
@@ -45,6 +46,7 @@ import {
   buildMileageClaimLine,
   calculateMileageNetMinor,
   isMileageRateEffectiveOn,
+  resolveMileageRateUnit,
   type ExpenseMileageRate,
 } from "@/lib/expenses/mileage";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
@@ -61,7 +63,10 @@ export function ExpenseManagementMileagePage() {
   const canView = canSubmit || canAdmin || can("expenses.view" as Permission);
 
   const [rateName, setRateName] = useState("Standard car");
-  const [rateUnit, setRateUnit] = useState<"km" | "mi">("km");
+  const [rateUnitSelection, setRateUnitSelection] = useState<{
+    companyId: string;
+    unit: "km" | "mi";
+  } | null>(null);
   const [rateAmount, setRateAmount] = useState("0.67");
   const [rateAccountId, setRateAccountId] = useState("");
   const [rateFrom, setRateFrom] = useState(today);
@@ -73,6 +78,7 @@ export function ExpenseManagementMileagePage() {
   const [tripDestination, setTripDestination] = useState("");
 
   const fetchRates = useServerFn(listExpenseMileageRates);
+  const fetchSettings = useServerFn(getExpenseManagementSettings);
   const fetchAccounts = useServerFn(listAccounts);
   const saveRate = useServerFn(saveExpenseMileageRate);
   const saveClaim = useServerFn(saveExpenseClaim);
@@ -82,6 +88,18 @@ export function ExpenseManagementMileagePage() {
     queryFn: () => fetchRates({ data: { companyId: company!.id, activeOnly: false } }),
     enabled: Boolean(company?.id) && canView,
   });
+
+  const settingsQ = useQuery({
+    queryKey: ["expense-management-settings", company?.id],
+    queryFn: () => fetchSettings({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canView,
+  });
+
+  const savedRateUnit =
+    rateUnitSelection && company?.id && rateUnitSelection.companyId === company.id
+      ? rateUnitSelection.unit
+      : null;
+  const rateUnit = resolveMileageRateUnit(settingsQ.data?.defaultDistanceUnit, savedRateUnit);
 
   const accountsQ = useQuery({
     queryKey: ["accounts", company?.id, "expense-mileage"],
@@ -364,7 +382,14 @@ export function ExpenseManagementMileagePage() {
             </div>
             <div className="grid gap-2">
               <Label>Distance unit</Label>
-              <Select value={rateUnit} onValueChange={(v) => setRateUnit(v as "km" | "mi")}>
+              <Select
+                value={rateUnit}
+                onValueChange={(v) => {
+                  if (company) {
+                    setRateUnitSelection({ companyId: company.id, unit: v as "km" | "mi" });
+                  }
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

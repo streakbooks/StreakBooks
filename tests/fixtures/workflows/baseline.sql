@@ -12,6 +12,44 @@ CREATE FUNCTION private.platform_write_guard() RETURNS trigger LANGUAGE plpgsql 
 CREATE TABLE public.accounts(id uuid PRIMARY KEY,company_id uuid NOT NULL REFERENCES public.companies(id),code text,account_type text,is_active boolean NOT NULL DEFAULT true,is_postable boolean NOT NULL DEFAULT true,archived_at timestamptz);
 CREATE TABLE public.contacts(id uuid PRIMARY KEY,company_id uuid NOT NULL REFERENCES public.companies(id),name text,kind text,is_active boolean DEFAULT true,payment_terms_days integer DEFAULT 14);
 CREATE TABLE public.company_tax_settings(company_id uuid PRIMARY KEY,prices_include_tax boolean);
+CREATE TABLE public.company_workflow_settings(
+ company_id uuid PRIMARY KEY REFERENCES public.companies(id) ON DELETE CASCADE,
+ sales_default_payment_terms_days integer NOT NULL DEFAULT 30,
+ sales_default_notes text,
+ sales_payment_instructions text,
+ sales_quote_validity_days integer NOT NULL DEFAULT 30,
+ sales_prices_include_tax boolean NOT NULL DEFAULT false,
+ purchases_default_payment_terms_days integer NOT NULL DEFAULT 30,
+ purchases_default_notes text,
+ purchases_require_po boolean NOT NULL DEFAULT false,
+ banking_csv_date_format text NOT NULL DEFAULT 'YYYY-MM-DD',
+ accounting_require_journal_memo boolean NOT NULL DEFAULT false,
+ updated_at timestamptz NOT NULL DEFAULT now(),
+ updated_by uuid REFERENCES auth.users(id) ON DELETE SET NULL
+);
+ALTER TABLE public.company_workflow_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY workflow_settings_select ON public.company_workflow_settings FOR SELECT TO authenticated
+ USING(public.is_company_member(company_id));
+CREATE POLICY workflow_settings_write ON public.company_workflow_settings FOR ALL TO authenticated
+ USING(public.has_company_permission(company_id,'company.settings.edit') OR public.has_company_permission(company_id,'accounts.manage'))
+ WITH CHECK(public.has_company_permission(company_id,'company.settings.edit') OR public.has_company_permission(company_id,'accounts.manage'));
+GRANT SELECT,INSERT,UPDATE ON public.company_workflow_settings TO authenticated;
+CREATE TABLE public.company_reminder_settings(
+ company_id uuid PRIMARY KEY REFERENCES public.companies(id) ON DELETE CASCADE,
+ first_after_days integer NOT NULL DEFAULT 7 CHECK(first_after_days BETWEEN 0 AND 365),
+ repeat_every_days integer NOT NULL DEFAULT 14 CHECK(repeat_every_days BETWEEN 1 AND 365),
+ max_reminders integer NOT NULL DEFAULT 3 CHECK(max_reminders BETWEEN 1 AND 12),
+ include_bank_details boolean NOT NULL DEFAULT true,
+ updated_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+ updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.company_reminder_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY reminder_settings_select ON public.company_reminder_settings FOR SELECT TO authenticated
+ USING(public.is_company_member(company_id));
+CREATE POLICY reminder_settings_write ON public.company_reminder_settings FOR ALL TO authenticated
+ USING(public.has_company_permission(company_id,'company.settings.edit'))
+ WITH CHECK(public.has_company_permission(company_id,'company.settings.edit'));
+GRANT SELECT,INSERT,UPDATE ON public.company_reminder_settings TO authenticated;
 CREATE TABLE public.document_sequences(company_id uuid,document_type text,prefix text,next_number bigint,padding integer,UNIQUE(company_id,document_type));
 CREATE TABLE public.audit_events(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),company_id uuid,actor_user_id uuid,action text,entity_type text,entity_id uuid,details jsonb);
 CREATE FUNCTION public.test_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF current_setting('test.fail_audit',true)='on' THEN RAISE EXCEPTION 'Injected audit failure'; END IF; RETURN NEW; END $$;

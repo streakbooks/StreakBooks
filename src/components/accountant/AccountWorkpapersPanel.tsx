@@ -185,14 +185,10 @@ export function AccountWorkpapersPanel({
 
   if (trial.isPending || papers.isPending) return <LoadingState />;
   if (trial.isError) {
-    return (
-      <QueryErrorState queries={[trial]} title="Trial balance unavailable" />
-    );
+    return <QueryErrorState queries={[trial]} title="Trial balance unavailable" />;
   }
   if (papers.isError) {
-    return (
-      <QueryErrorState queries={[papers]} title="Workpaper register unavailable" />
-    );
+    return <QueryErrorState queries={[papers]} title="Workpaper register unavailable" />;
   }
   const reviewed = rows.filter(
     (row) => row.live !== null && workpaperReviewState(row.paper, row.live) === "reviewed",

@@ -40,7 +40,7 @@ export type AccountantExceptionEvent = {
 /** Only findings for the selected company and scanned journal set are returned. */
 export const listAccountantExceptionReviews = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listInput.parse(input))
+  .validator((input: unknown) => listInput.parse(input))
   .handler(async ({ data, context }): Promise<AccountantExceptionReview[]> => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: rows, error } = await context.supabase
@@ -64,9 +64,7 @@ export const listAccountantExceptionReviews = createServerFn({ method: "GET" })
 
 export const listAccountantExceptionEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ companyId, reviewId: z.string().uuid() }).parse(input),
-  )
+  .validator((input: unknown) => z.object({ companyId, reviewId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<AccountantExceptionEvent[]> => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: rows, error } = await context.supabase
@@ -101,7 +99,7 @@ const mutationInput = z
 
 export const saveAccountantExceptionReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => mutationInput.parse(input))
+  .validator((input: unknown) => mutationInput.parse(input))
   .handler(async ({ data, context }): Promise<{ id: string; status: string; version: number }> => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.post");
     const { data: result, error } = await context.supabase.rpc(

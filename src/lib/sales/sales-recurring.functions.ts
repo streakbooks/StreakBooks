@@ -34,7 +34,7 @@ export type RecurringListRow = {
 
 export const listRecurringInvoices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .validator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const cols =
@@ -82,7 +82,7 @@ export type RecurringDetail = RecurringListRow & {
 
 export const getRecurringInvoice = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringId: string }) => ({
+  .validator((input: { companyId: string; recurringId: string }) => ({
     companyId: assertUuid(input.companyId),
     recurringId: assertUuid(input.recurringId, "recurring invoice"),
   }))
@@ -124,7 +124,7 @@ async function assertCustomer(supabase: SalesClient, companyId: string, contactI
 
 export const saveRecurringInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       recurringId?: string;
@@ -320,7 +320,7 @@ export const saveRecurringInvoice = createServerFn({ method: "POST" })
 
 export const generateRecurringInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringId: string }) => ({
+  .validator((input: { companyId: string; recurringId: string }) => ({
     companyId: assertUuid(input.companyId),
     recurringId: assertUuid(input.recurringId),
   }))
@@ -334,7 +334,7 @@ export const generateRecurringInvoice = createServerFn({ method: "POST" })
 
 export const setRecurringActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringId: string; isActive: boolean }) => ({
+  .validator((input: { companyId: string; recurringId: string; isActive: boolean }) => ({
     companyId: assertUuid(input.companyId),
     recurringId: assertUuid(input.recurringId),
     isActive: Boolean(input.isActive),
@@ -360,7 +360,7 @@ export const setRecurringActive = createServerFn({ method: "POST" })
 /** Delete a template that has never generated an invoice; otherwise deactivate it instead. */
 export const deleteRecurringInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; recurringId: string }) => ({
+  .validator((input: { companyId: string; recurringId: string }) => ({
     companyId: assertUuid(input.companyId),
     recurringId: assertUuid(input.recurringId),
   }))

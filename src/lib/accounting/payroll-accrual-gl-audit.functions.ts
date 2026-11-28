@@ -20,7 +20,7 @@ import {
  */
 export const auditPayrollAccrualGl = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId: string; journalId: string }) => ({
+  .validator((input: { companyId: string; runId: string; journalId: string }) => ({
     companyId: assertUuid(input?.companyId),
     runId: assertUuid(input?.runId, "payroll run"),
     journalId: assertUuid(input?.journalId, "journal"),

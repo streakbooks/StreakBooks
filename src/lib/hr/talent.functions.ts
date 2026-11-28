@@ -48,7 +48,7 @@ async function requireHr(
 
 export const listHrPerformanceCycles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.view");
     const raw = await callRpc(
@@ -74,7 +74,7 @@ export const listHrPerformanceCycles = createServerFn({ method: "GET" })
 
 export const upsertHrPerformanceCycle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -108,7 +108,7 @@ export const upsertHrPerformanceCycle = createServerFn({ method: "POST" })
 
 export const listHrPerformanceGoals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; cycleId?: string | null }) => ({
+  .validator((input: { companyId: string; cycleId?: string | null }) => ({
     companyId: companyIdOf(input),
     cycleId: input.cycleId?.trim() || null,
   }))
@@ -144,7 +144,7 @@ export const listHrPerformanceGoals = createServerFn({ method: "GET" })
 
 export const upsertHrPerformanceGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -182,7 +182,7 @@ export const upsertHrPerformanceGoal = createServerFn({ method: "POST" })
 
 export const listHrTraining = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.view");
     const raw = await callRpc(
@@ -223,7 +223,7 @@ export const listHrTraining = createServerFn({ method: "GET" })
 
 export const upsertHrTrainingCourse = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -252,7 +252,7 @@ export const upsertHrTrainingCourse = createServerFn({ method: "POST" })
 
 export const upsertHrTrainingEnrollment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {
@@ -284,7 +284,7 @@ export const upsertHrTrainingEnrollment = createServerFn({ method: "POST" })
 
 export const listHrCompensationChanges = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }) => {
     await requireHr(context.supabase, data.companyId, "hr.employees.sensitive");
     const raw = await callRpc(
@@ -316,7 +316,7 @@ export const listHrCompensationChanges = createServerFn({ method: "GET" })
 
 export const upsertHrCompensationChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId: string;
       payload: {

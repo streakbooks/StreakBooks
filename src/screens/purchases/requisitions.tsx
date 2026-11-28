@@ -504,9 +504,7 @@ function RequisitionEditor({
   });
   const requiredQueries = [suppliers, accounts];
   if (requiredQueries.some((query) => query.isError))
-    return (
-      <QueryErrorState queries={requiredQueries} title="Could not load purchasing options" />
-    );
+    return <QueryErrorState queries={requiredQueries} title="Could not load purchasing options" />;
   if (suppliers.isPending || accounts.isPending) return <LoadingState />;
   const optionsReady = suppliers.isSuccess && accounts.isSuccess;
   return (

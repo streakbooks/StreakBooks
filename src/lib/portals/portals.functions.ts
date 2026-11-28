@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { z } from "zod";
 import { assertUuid } from "@/lib/company-validation";
 import { callSalesRpc, requireRpc, type SalesClient } from "@/lib/sales/rpc";
 
@@ -33,7 +34,7 @@ export const listPortalAccess = createServerFn({ method: "GET" })
 
 export const acceptPortalInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { token?: string }) => {
+  .validator((input: { token?: string }) => {
     const token = (input?.token ?? "").trim().toLowerCase();
     if (!/^[0-9a-f]{64}$/.test(token)) throw new Error("This invitation link is not valid");
     return { token };
@@ -44,23 +45,21 @@ export const acceptPortalInvite = createServerFn({ method: "POST" })
 
 export const getPortalHome = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(membershipInput)
+  .validator(membershipInput)
   .handler(async ({ data, context }) =>
     rpc(context.supabase, "portal_home", { membership_id: data.membershipId }),
   );
 
 export const listPortalInvoices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { membershipId?: string; q?: string; status?: string; page?: number }) => ({
-      ...membershipInput(input),
-      q: (input.q ?? "").slice(0, 80),
-      status: ["all", "open", "paid", "void", "overdue"].includes(input.status ?? "")
-        ? input.status
-        : "all",
-      page: Math.max(1, Math.floor(Number(input.page) || 1)),
-    }),
-  )
+  .validator((input: { membershipId?: string; q?: string; status?: string; page?: number }) => ({
+    ...membershipInput(input),
+    q: (input.q ?? "").slice(0, 80),
+    status: ["all", "open", "paid", "void", "overdue"].includes(input.status ?? "")
+      ? input.status
+      : "all",
+    page: Math.max(1, Math.floor(Number(input.page) || 1)),
+  }))
   .handler(async ({ data, context }) =>
     rpc(context.supabase, "portal_list_invoices", {
       membership_id: data.membershipId,
@@ -72,7 +71,7 @@ export const listPortalInvoices = createServerFn({ method: "GET" })
 
 export const getPortalInvoice = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { membershipId?: string; invoiceId?: string }) => ({
+  .validator((input: { membershipId?: string; invoiceId?: string }) => ({
     ...membershipInput(input),
     invoiceId: assertUuid(input?.invoiceId, "invoice"),
   }))
@@ -89,14 +88,14 @@ export const getPortalInvoice = createServerFn({ method: "GET" })
 
 export const listPortalCredits = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(membershipInput)
+  .validator(membershipInput)
   .handler(async ({ data, context }) =>
     rpc(context.supabase, "portal_list_credits", { membership_id: data.membershipId }),
   );
 
 export const getPortalStatement = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { membershipId?: string; from?: string; to?: string }) => ({
+  .validator((input: { membershipId?: string; from?: string; to?: string }) => ({
     ...membershipInput(input),
     from: /^\d{4}-\d{2}-\d{2}$/.test(input.from ?? "") ? input.from : null,
     to: /^\d{4}-\d{2}-\d{2}$/.test(input.to ?? "") ? input.to : null,
@@ -111,14 +110,14 @@ export const getPortalStatement = createServerFn({ method: "GET" })
 
 export const listPortalReceipts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(membershipInput)
+  .validator(membershipInput)
   .handler(async ({ data, context }) =>
     rpc(context.supabase, "portal_list_receipts", { membership_id: data.membershipId }),
   );
 
 export const startPortalPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       membershipId?: string;
       invoiceId?: string;
@@ -192,7 +191,7 @@ export const startPortalPayment = createServerFn({ method: "POST" })
 
 export const completeSandboxPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { membershipId?: string; intentId?: string }) => ({
+  .validator((input: { membershipId?: string; intentId?: string }) => ({
     ...membershipInput(input),
     intentId: assertUuid(input?.intentId, "payment"),
   }))
@@ -216,14 +215,14 @@ export const completeSandboxPayment = createServerFn({ method: "POST" })
 
 export const getSupplierWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(membershipInput)
+  .validator(membershipInput)
   .handler(async ({ data, context }) =>
     rpc(context.supabase, "portal_supplier_workspace", { membership_id: data.membershipId }),
   );
 
 export const submitSupplierDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       membershipId?: string;
       kind?: string;
@@ -278,7 +277,7 @@ export const submitSupplierDocument = createServerFn({ method: "POST" })
 
 export const acknowledgePurchaseOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { membershipId?: string; orderId?: string; note?: string }) => ({
+  .validator((input: { membershipId?: string; orderId?: string; note?: string }) => ({
     ...membershipInput(input),
     orderId: assertUuid(input?.orderId, "order"),
     note: (input.note ?? "").slice(0, 500),
@@ -293,7 +292,7 @@ export const acknowledgePurchaseOrder = createServerFn({ method: "POST" })
 
 export const requestBankChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       membershipId?: string;
       accountName?: string;
@@ -323,7 +322,7 @@ export const requestBankChange = createServerFn({ method: "POST" })
 
 export const listPortalFiles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { membershipId?: string; companyId?: string; contactId?: string }) => {
+  .validator((input: { membershipId?: string; companyId?: string; contactId?: string }) => {
     if (input.membershipId)
       return {
         membershipId: assertUuid(input.membershipId, "portal"),
@@ -346,7 +345,7 @@ export const listPortalFiles = createServerFn({ method: "GET" })
 
 export const uploadPortalFile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       membershipId?: string;
       companyId?: string;
@@ -382,7 +381,7 @@ export const uploadPortalFile = createServerFn({ method: "POST" })
 
 export const downloadPortalFile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { membershipId?: string; companyId?: string; fileId?: string }) => ({
+  .validator((input: { membershipId?: string; companyId?: string; fileId?: string }) => ({
     membershipId: input.membershipId ? assertUuid(input.membershipId, "portal") : null,
     companyId: input.companyId ? assertUuid(input.companyId, "company") : null,
     fileId: assertUuid(input?.fileId, "file"),
@@ -397,7 +396,7 @@ export const downloadPortalFile = createServerFn({ method: "POST" })
 
 export const listPortalMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { membershipId?: string; companyId?: string; contactId?: string }) => ({
+  .validator((input: { membershipId?: string; companyId?: string; contactId?: string }) => ({
     membershipId: input.membershipId ? assertUuid(input.membershipId, "portal") : null,
     companyId: input.companyId ? assertUuid(input.companyId, "company") : null,
     contactId: input.contactId ? assertUuid(input.contactId, "contact") : null,
@@ -412,7 +411,7 @@ export const listPortalMessages = createServerFn({ method: "GET" })
 
 export const postPortalMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       membershipId?: string;
       companyId?: string;
@@ -439,7 +438,7 @@ export const postPortalMessage = createServerFn({ method: "POST" })
 
 export const listPortalNotifications = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { membershipId?: string; markRead?: boolean }) => ({
+  .validator((input: { membershipId?: string; markRead?: boolean }) => ({
     ...membershipInput(input),
     markRead: Boolean(input.markRead),
   }))
@@ -452,14 +451,14 @@ export const listPortalNotifications = createServerFn({ method: "POST" })
 
 export const getPortalSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId?: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId?: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }) =>
     rpc(context.supabase, "get_portal_settings", { company_id: data.companyId }),
   );
 
 export const savePortalSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId?: string;
       settlementAccountId?: string | null;
@@ -483,7 +482,7 @@ export const savePortalSettings = createServerFn({ method: "POST" })
         : null,
       allowSandbox: Boolean(input.allowSandbox),
       requireMfa: Boolean(input.requireMfa),
-      inviteDays: Math.min(90, Math.max(1, Math.floor(Number(input.inviteDays) || 14))),
+      inviteDays: z.number().int().min(1).max(90).default(14).parse(input.inviteDays),
     }),
   )
   .handler(async ({ data, context }) =>
@@ -501,7 +500,7 @@ export const savePortalSettings = createServerFn({ method: "POST" })
 
 export const invitePortalUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: {
       companyId?: string;
       contactId?: string;
@@ -550,7 +549,7 @@ export const invitePortalUser = createServerFn({ method: "POST" })
 
 export const revokePortalAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId?: string; membershipId?: string }) => ({
+  .validator((input: { companyId?: string; membershipId?: string }) => ({
     companyId: assertUuid(input?.companyId),
     membershipId: assertUuid(input?.membershipId, "portal"),
   }))
@@ -563,7 +562,7 @@ export const revokePortalAccess = createServerFn({ method: "POST" })
 
 export const listContactPortalAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId?: string; contactId?: string }) => ({
+  .validator((input: { companyId?: string; contactId?: string }) => ({
     companyId: assertUuid(input?.companyId),
     contactId: assertUuid(input?.contactId, "contact"),
   }))
@@ -576,14 +575,14 @@ export const listContactPortalAccess = createServerFn({ method: "GET" })
 
 export const listStaffSubmissions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId?: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId?: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }) =>
     rpc(context.supabase, "staff_list_portal_submissions", { company_id: data.companyId }),
   );
 
 export const decideStaffSubmission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId?: string; submissionId?: string; decision?: string; reason?: string }) => {
       if (input.decision !== "approve" && input.decision !== "reject")
         throw new Error("Choose approve or reject");
@@ -606,14 +605,14 @@ export const decideStaffSubmission = createServerFn({ method: "POST" })
 
 export const listBankRequests = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId?: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId?: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }) =>
     rpc(context.supabase, "staff_list_bank_requests", { company_id: data.companyId }),
   );
 
 export const decideBankRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { companyId?: string; requestId?: string; decision?: string; note?: string }) => {
       if (input.decision !== "approve" && input.decision !== "reject")
         throw new Error("Choose approve or reject");
@@ -636,7 +635,7 @@ export const decideBankRequest = createServerFn({ method: "POST" })
 
 export const deliverInvoiceToPortal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId?: string; invoiceId?: string }) => ({
+  .validator((input: { companyId?: string; invoiceId?: string }) => ({
     companyId: assertUuid(input?.companyId),
     invoiceId: assertUuid(input?.invoiceId, "invoice"),
   }))
@@ -667,7 +666,7 @@ export const deliverInvoiceToPortal = createServerFn({ method: "POST" })
 
 export const runPortalReminders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId?: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId?: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }) => {
     const result = await rpc<{
       is_demo: boolean;
@@ -703,14 +702,14 @@ export const runPortalReminders = createServerFn({ method: "POST" })
 
 export const listPortalAlerts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId?: string }) => ({ companyId: assertUuid(input?.companyId) }))
+  .validator((input: { companyId?: string }) => ({ companyId: assertUuid(input?.companyId) }))
   .handler(async ({ data, context }) =>
     rpc(context.supabase, "portal_list_alerts", { company_id: data.companyId }),
   );
 
 export const resolvePortalAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId?: string; alertId?: string }) => ({
+  .validator((input: { companyId?: string; alertId?: string }) => ({
     companyId: assertUuid(input?.companyId),
     alertId: assertUuid(input?.alertId, "alert"),
   }))
@@ -723,7 +722,7 @@ export const resolvePortalAlert = createServerFn({ method: "POST" })
 
 export const retryPortalPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId?: string; intentId?: string }) => ({
+  .validator((input: { companyId?: string; intentId?: string }) => ({
     companyId: assertUuid(input?.companyId),
     intentId: assertUuid(input?.intentId, "payment"),
   }))

@@ -1,3 +1,5 @@
+import { organisationKind } from "@/lib/nonprofit/terminology";
+
 export type Cell = string | number | boolean | null;
 
 export type NonprofitRecord = {
@@ -36,6 +38,11 @@ export type NonprofitRecord = {
   receipt_number: Cell;
   wording: Cell;
   donation_id: Cell;
+  giving_kind: Cell;
+  location: Cell;
+  role: Cell;
+  present_count: Cell;
+  event_on: Cell;
 };
 
 export type NonprofitSettings = {
@@ -46,6 +53,7 @@ export type NonprofitSettings = {
   allow_unrestricted_deficit: boolean;
   enforce_segregation: boolean;
   gateway_configured: boolean;
+  organisation_kind: string;
 };
 
 export type NonprofitWorkspace = {
@@ -65,6 +73,11 @@ export type NonprofitWorkspace = {
   disbursements: NonprofitRecord[] | null;
   board: NonprofitRecord[];
   compliance: NonprofitRecord[];
+  events: NonprofitRecord[];
+  congregations: NonprofitRecord[];
+  households: NonprofitRecord[];
+  collections: NonprofitRecord[];
+  schedules: NonprofitRecord[];
   actions: NonprofitRecord[];
 };
 
@@ -119,6 +132,11 @@ const RECORD_KEYS = [
   "receipt_number",
   "wording",
   "donation_id",
+  "giving_kind",
+  "location",
+  "role",
+  "present_count",
+  "event_on",
 ] as const satisfies readonly (keyof NonprofitRecord)[];
 
 function pick(value: unknown, key: string): unknown {
@@ -180,6 +198,11 @@ export function mapNonprofitWorkspace(value: unknown): NonprofitWorkspace {
       allow_unrestricted_deficit: pick(settings, "allow_unrestricted_deficit") === true,
       enforce_segregation: pick(settings, "enforce_segregation") === true,
       gateway_configured: pick(settings, "gateway_configured") === true,
+      organisation_kind: organisationKind(
+        typeof pick(settings, "organisation_kind") === "string"
+          ? String(pick(settings, "organisation_kind"))
+          : null,
+      ),
     },
     funds: mapList(pick(value, "funds")),
     donors: mapList(pick(value, "donors")),
@@ -196,6 +219,11 @@ export function mapNonprofitWorkspace(value: unknown): NonprofitWorkspace {
     disbursements: disbursements == null ? null : mapList(disbursements),
     board: mapList(pick(value, "board")),
     compliance: mapList(pick(value, "compliance")),
+    events: mapList(pick(value, "events")),
+    congregations: mapList(pick(value, "congregations")),
+    households: mapList(pick(value, "households")),
+    collections: mapList(pick(value, "collections")),
+    schedules: mapList(pick(value, "schedules")),
     actions: mapList(pick(value, "actions")),
   };
 }
@@ -476,6 +504,60 @@ export function mapNonprofitDonorStatement(value: unknown): DonorStatement {
           statement_kind: textOf(pick(row, "statement_kind"), ""),
           delivery_status: textOf(pick(row, "delivery_status"), ""),
         }))
+      : [],
+  };
+}
+
+export type HouseholdStatement = {
+  statutory_filing: boolean;
+  government_approved: boolean;
+  tax_certificate: boolean;
+  wording: string;
+  household_id: string;
+  name: string;
+  period_from: string;
+  as_of: string;
+  currencies: {
+    currency_code: string;
+    net_minor: number;
+    journal_support_minor: number;
+    reconciled: boolean;
+  }[];
+  members: { donor_id: string; display_name: string; net_minor: number }[];
+};
+
+export function mapHouseholdStatement(value: unknown): HouseholdStatement {
+  const currencies = pick(value, "currencies");
+  const members = pick(value, "members");
+  return {
+    statutory_filing: pick(value, "statutory_filing") === true,
+    government_approved: pick(value, "government_approved") === true,
+    tax_certificate: pick(value, "tax_certificate") === true,
+    wording: textOf(pick(value, "wording"), ""),
+    household_id: textOf(pick(value, "household_id"), ""),
+    name: textOf(pick(value, "name"), ""),
+    period_from: textOf(pick(value, "period_from"), ""),
+    as_of: textOf(pick(value, "as_of"), ""),
+    currencies: Array.isArray(currencies)
+      ? currencies.map((row) => ({
+          currency_code: textOf(pick(row, "currency_code"), ""),
+          net_minor: minorOf(pick(row, "net_minor")),
+          journal_support_minor: minorOf(pick(row, "journal_support_minor")),
+          reconciled: pick(row, "reconciled") === true,
+        }))
+      : [],
+    members: Array.isArray(members)
+      ? members.map((row) => {
+          const nested = pick(row, "currencies");
+          const net = Array.isArray(nested)
+            ? nested.reduce((sum, item) => sum + minorOf(pick(item, "net_minor")), 0)
+            : 0;
+          return {
+            donor_id: textOf(pick(row, "donor_id"), ""),
+            display_name: textOf(pick(row, "display_name"), ""),
+            net_minor: net,
+          };
+        })
       : [],
   };
 }

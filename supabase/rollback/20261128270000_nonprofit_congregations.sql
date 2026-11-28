@@ -1,0 +1,17 @@
+DROP FUNCTION IF EXISTS public.nonprofit_schedule_volunteer(UUID, JSONB);
+DROP FUNCTION IF EXISTS public.nonprofit_record_attendance(UUID, UUID, UUID, BOOLEAN);
+DROP FUNCTION IF EXISTS public.nonprofit_household_statement(UUID, UUID, DATE, DATE);
+DROP FUNCTION IF EXISTS public.nonprofit_post_collection_batch(UUID, JSONB);
+DROP FUNCTION IF EXISTS public.nonprofit_add_household_member(UUID, UUID, UUID, TEXT);
+DROP FUNCTION IF EXISTS public.nonprofit_create_household(UUID, JSONB);
+DROP FUNCTION IF EXISTS public.nonprofit_create_congregation(UUID, JSONB);
+DROP FUNCTION IF EXISTS public.nonprofit_set_organisation_kind(UUID, TEXT);
+DROP TABLE IF EXISTS public.nonprofit_volunteer_assignments;
+DROP TABLE IF EXISTS public.nonprofit_attendance;
+DROP TABLE IF EXISTS public.nonprofit_gift_designations;
+DROP TABLE IF EXISTS public.nonprofit_collection_batches;
+DROP TABLE IF EXISTS public.nonprofit_household_members;
+DROP TABLE IF EXISTS public.nonprofit_households;
+DROP TABLE IF EXISTS public.nonprofit_congregations;
+ALTER TABLE public.nonprofit_settings DROP CONSTRAINT IF EXISTS nonprofit_settings_organisation_kind_check;
+ALTER TABLE public.nonprofit_settings DROP COLUMN IF EXISTS organisation_kind;

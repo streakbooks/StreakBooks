@@ -47,6 +47,12 @@ import {
   submitNonprofitDonation,
   transferNonprofitFunds,
 } from "@/lib/nonprofit/nonprofit.functions";
+import {
+  CollectionBatchForm,
+  CongregationPanel,
+  OrganisationKindForm,
+  RecurringGiftForm,
+} from "@/screens/nonprofit/congregation";
 import { isNpSectionKey, npSection, type NpSectionKey } from "@/lib/nonprofit/sections";
 import { donationAllocations } from "@/lib/nonprofit/donation-entry";
 import {
@@ -57,6 +63,7 @@ import {
   type StatementPreset,
 } from "@/lib/nonprofit/donor-statement";
 import { explainFundUtilisation } from "@/lib/nonprofit/insights";
+import { organisationTerms } from "@/lib/nonprofit/terminology";
 import type {
   DonorStatement,
   NonprofitRecord,
@@ -128,17 +135,19 @@ export function NonprofitPage({ sectionKey }: { sectionKey: NpSectionKey }) {
   const data = workspace.data;
   if (!data) return <LoadingState />;
   const enabled = data.settings.enabled;
+  const terms = organisationTerms(data.settings.organisation_kind);
+  const sectionLabel = terms.sections[sectionKey];
 
   return (
     <ListWorkspace
-      title={section.label}
+      title={sectionLabel}
       description="Posts through the StreakBooks ledger. Conditional amounts stay unrecognised until their conditions are met."
       breadcrumbs={
         sectionKey === "overview"
           ? [{ label: "Nonprofit" }]
-          : [{ label: "Nonprofit", to: "/nonprofit" }, { label: section.label }]
+          : [{ label: "Nonprofit", to: "/nonprofit" }, { label: sectionLabel }]
       }
-      subnav={<NonprofitSubnav current={sectionKey} />}
+      subnav={<NonprofitSubnav current={sectionKey} kind={data.settings.organisation_kind} />}
     >
       {!enabled && sectionKey !== "settings" ? (
         <EmptyState
@@ -156,6 +165,7 @@ export function NonprofitPage({ sectionKey }: { sectionKey: NpSectionKey }) {
         <SectionBody
           sectionKey={sectionKey}
           companyId={company.id}
+          companyName={company.name}
           currency={company.base_currency || "USD"}
           data={data}
         />
@@ -167,11 +177,13 @@ export function NonprofitPage({ sectionKey }: { sectionKey: NpSectionKey }) {
 function SectionBody({
   sectionKey,
   companyId,
+  companyName,
   currency,
   data,
 }: {
   sectionKey: NpSectionKey;
   companyId: string;
+  companyName: string;
   currency: string;
   data: NonprofitWorkspace;
 }) {
@@ -224,14 +236,29 @@ function SectionBody({
   }
   if (sectionKey === "donations") {
     return (
-      <DonationForm
-        companyId={companyId}
-        currency={currency}
-        donors={donors}
-        funds={funds}
-        donations={donations}
-        receipts={rows(data.receipts)}
-      />
+      <div className="grid gap-4">
+        <DonationForm
+          companyId={companyId}
+          currency={currency}
+          donors={donors}
+          funds={funds}
+          donations={donations}
+          receipts={rows(data.receipts)}
+        />
+        <CollectionBatchForm
+          companyId={companyId}
+          currency={currency}
+          donors={donors}
+          funds={funds}
+          collections={rows(data.collections)}
+        />
+        <RecurringGiftForm
+          companyId={companyId}
+          currency={currency}
+          donors={donors}
+          funds={funds}
+        />
+      </div>
     );
   }
   if (sectionKey === "pledges")
@@ -260,7 +287,12 @@ function SectionBody({
     return <TransferForm companyId={companyId} currency={currency} funds={funds} />;
   if (sectionKey === "reports") return <ReportTable companyId={companyId} currency={currency} />;
   if (sectionKey === "settings")
-    return <SettingsForm companyId={companyId} settings={data.settings} />;
+    return (
+      <div className="grid gap-6">
+        <OrganisationKindForm companyId={companyId} kind={data.settings.organisation_kind} />
+        <SettingsForm companyId={companyId} settings={data.settings} />
+      </div>
+    );
   if (sectionKey === "campaigns")
     return (
       <RecordForm
@@ -276,7 +308,7 @@ function SectionBody({
       <RecordForm
         companyId={companyId}
         kind="programme"
-        title="Programme"
+        title={organisationTerms(data.settings.organisation_kind).ministry}
         rows={rows(data.programmes)}
         fields={["name", "objective"]}
       />
@@ -328,6 +360,18 @@ function SectionBody({
           title="Compliance reminder"
           rows={rows(data.compliance)}
           fields={["pack_id", "title", "due_on"]}
+        />
+        <CongregationPanel
+          companyId={companyId}
+          currency={currency}
+          organisationName={companyName}
+          kind={data.settings.organisation_kind}
+          donors={donors}
+          volunteers={rows(data.volunteers)}
+          events={rows(data.events)}
+          congregations={rows(data.congregations)}
+          households={rows(data.households)}
+          schedules={rows(data.schedules)}
         />
       </div>
     );
@@ -413,6 +457,7 @@ function FundForm({ companyId, funds }: { companyId: string; funds: Row[] }) {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [restriction, setRestriction] = useState("unrestricted");
+  const [category, setCategory] = useState("general");
   const mutation = useMutation({
     mutationFn: () =>
       save({
@@ -423,7 +468,7 @@ function FundForm({ companyId, funds }: { companyId: string; funds: Row[] }) {
             name,
             classification: restriction === "unrestricted" ? "unrestricted" : "donor_restricted",
             restriction,
-            category: restriction === "unrestricted" ? "general" : "emergency",
+            category,
           },
         },
       }),
@@ -459,6 +504,25 @@ function FundForm({ companyId, funds }: { companyId: string; funds: Row[] }) {
             <option value="unrestricted">Unrestricted</option>
             <option value="donor_restricted">Donor restricted</option>
             <option value="board_designated">Board designated</option>
+          </select>
+        </Field>
+        <Field label="Category">
+          {/* lookup-fixed-enum: fund categories including building, mission and welfare */}
+          <select
+            className="h-10 rounded-md border bg-background px-2"
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+          >
+            <option value="general">General</option>
+            <option value="programme">Programme</option>
+            <option value="project">Project</option>
+            <option value="emergency">Emergency</option>
+            <option value="capital">Capital</option>
+            <option value="building">Building</option>
+            <option value="mission">Mission</option>
+            <option value="welfare">Welfare</option>
+            <option value="endowment">Endowment</option>
+            <option value="custom">Custom</option>
           </select>
         </Field>
         <Button type="submit" disabled={mutation.isPending}>
@@ -556,7 +620,7 @@ function DonorStatementPanel({
       </CardHeader>
       <CardContent className="grid gap-3">
         <div className="flex flex-wrap gap-2">
-          {(["month", "quarter", "year", "custom"] as const).map((item) => (
+          {(["week", "month", "quarter", "year", "custom"] as const).map((item) => (
             <Button
               key={item}
               type="button"

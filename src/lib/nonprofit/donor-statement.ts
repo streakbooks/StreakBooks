@@ -1,4 +1,4 @@
-export type StatementPreset = "month" | "quarter" | "year" | "custom";
+export type StatementPreset = "week" | "month" | "quarter" | "year" | "custom";
 
 export type DeliveryDecision = "not_requested" | "not_configured" | "withheld" | "ready";
 
@@ -35,6 +35,18 @@ export function statementPeriod(
     return { from: custom.from, asOf: custom.asOf };
   }
   const { year, month } = parts(anchor);
+  if (preset === "week") {
+    const day = Number(/^(\d{4})-(\d{2})-(\d{2})$/.exec(anchor)?.[3]);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    const start = new Date(date);
+    start.setUTCDate(date.getUTCDate() - date.getUTCDay());
+    const end = new Date(start);
+    end.setUTCDate(start.getUTCDate() + 6);
+    return {
+      from: iso(start.getUTCFullYear(), start.getUTCMonth() + 1, start.getUTCDate()),
+      asOf: iso(end.getUTCFullYear(), end.getUTCMonth() + 1, end.getUTCDate()),
+    };
+  }
   if (preset === "month")
     return { from: iso(year, month, 1), asOf: iso(year, month, lastDay(year, month)) };
   if (preset === "year") return { from: iso(year, 1, 1), asOf: iso(year, 12, 31) };

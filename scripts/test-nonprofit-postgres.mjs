@@ -61,6 +61,7 @@ try {
   sql(read("supabase/migrations/20261128240000_nonprofit_disbursements.sql"));
   sql(read("supabase/migrations/20261128250000_nonprofit_fund_statements.sql"));
   sql(read("supabase/migrations/20261128260000_nonprofit_donor_statements.sql"));
+  sql(read("supabase/migrations/20261128270000_nonprofit_congregations.sql"));
   sql(read("tests/integration/nonprofit-fund-accounting.sql"));
 
   const fund = sql(

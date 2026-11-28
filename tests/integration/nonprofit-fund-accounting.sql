@@ -25,6 +25,16 @@ DECLARE
   donor_statement JSONB;
   currency JSONB;
   recorded JSONB;
+  member_a UUID;
+  member_b UUID;
+  household_id UUID;
+  building UUID;
+  congregation_id UUID;
+  batch JSONB;
+  family JSONB;
+  journal_count BIGINT;
+  event_id UUID;
+  volunteer_id UUID;
 BEGIN
   PERFORM public.nonprofit_upsert_settings(c, jsonb_build_object(
     'enabled', true,
@@ -452,6 +462,73 @@ BEGIN
     'each generated statement is stored in the organisation history'
   );
 
+  PERFORM public.test_assert(
+    (public.nonprofit_set_organisation_kind(c, 'church')->>'organisation_kind') = 'church'
+      AND (public.nonprofit_set_organisation_kind(c, 'church')->>'tax_certificate')::BOOLEAN = false,
+    'a church uses the existing ledger and does not issue a tax certificate'
+  );
+  building := (public.nonprofit_create_fund(c, jsonb_build_object(
+    'code', 'BUILD', 'name', 'Building', 'classification', 'donor_restricted',
+    'restriction', 'donor_restricted', 'category', 'building'
+  ))->>'id')::UUID;
+  PERFORM public.test_assert((SELECT category FROM public.nonprofit_funds WHERE id = building) = 'building', 'building fund uses the existing fund table');
+  congregation_id := (public.nonprofit_create_congregation(c, jsonb_build_object('name', 'Central', 'location', 'North'))->>'id')::UUID;
+  member_a := (public.nonprofit_create_donor(c, jsonb_build_object('donor_kind', 'individual', 'display_name', 'Ada Church', 'email', 'ada.church@example.test'))->>'id')::UUID;
+  member_b := (public.nonprofit_create_donor(c, jsonb_build_object('donor_kind', 'individual', 'display_name', 'Ben Church', 'email', 'ben.church@example.test'))->>'id')::UUID;
+  household_id := (public.nonprofit_create_household(c, jsonb_build_object('name', 'Church family', 'congregation_id', congregation_id))->>'id')::UUID;
+  PERFORM public.nonprofit_add_household_member(c, household_id, member_a, 'head');
+  PERFORM public.nonprofit_add_household_member(c, household_id, member_b, 'adult');
+  SELECT count(*) INTO journal_count FROM public.journals WHERE company_id = c;
+  batch := public.nonprofit_post_collection_batch(c, jsonb_build_object(
+    'fund_id', building,
+    'congregation_id', congregation_id,
+    'collected_on', '2026-11-28',
+    'giving_kind', 'tithe',
+    'currency_code', 'USD',
+    'idempotency_key', 'collection-1',
+    'lines', jsonb_build_array(
+      jsonb_build_object('donor_id', member_a, 'amount_minor', 400, 'anonymous', false),
+      jsonb_build_object('donor_id', member_b, 'amount_minor', 250, 'anonymous', false),
+      jsonb_build_object('amount_minor', 100, 'anonymous', true)
+    )
+  ));
+  PERFORM public.test_assert((batch->>'posted')::INTEGER = 3 AND (batch->>'anonymous')::INTEGER = 1 AND (batch->>'tax_certificate')::BOOLEAN = false, 'collection batch posts named and anonymous gifts');
+  PERFORM public.test_assert((SELECT count(*) FROM public.journals WHERE company_id = c) = journal_count + 3, 'each collection line posts one journal');
+  PERFORM public.test_assert((SELECT count(*) FROM public.nonprofit_gift_designations WHERE giving_kind = 'tithe') = 3, 'tithe designation is stored beside the donation');
+  batch := public.nonprofit_post_collection_batch(c, jsonb_build_object(
+    'fund_id', building, 'collected_on', '2026-11-28', 'giving_kind', 'tithe', 'currency_code', 'USD',
+    'idempotency_key', 'collection-1',
+    'lines', jsonb_build_array(jsonb_build_object('amount_minor', 100, 'anonymous', true))
+  ));
+  PERFORM public.test_assert((batch->>'replayed')::BOOLEAN AND (SELECT count(*) FROM public.journals WHERE company_id = c) = journal_count + 3, 'replaying a collection batch does not post again');
+  family := public.nonprofit_household_statement(c, household_id, '2026-11-01', '2026-11-30');
+  PERFORM public.test_assert((family->>'tax_certificate')::BOOLEAN = false AND family->>'wording' ILIKE '%not a tax certificate%', 'family statement is not a tax certificate');
+  PERFORM public.test_assert((
+    SELECT (row->>'net_minor')::BIGINT = 650 AND (row->>'journal_support_minor')::BIGINT = 650 AND (row->>'reconciled')::BOOLEAN
+    FROM jsonb_array_elements(family->'currencies') row
+    WHERE row->>'currency_code' = 'USD'
+  ), 'family statement sums member gifts and reconciles to contribution revenue');
+  PERFORM public.test_assert(jsonb_array_length(family->'members') = 2, 'anonymous collection lines stay off the family statement');
+  PERFORM public.test_assert((
+    SELECT (row->>'net_minor')::BIGINT = 400 AND (row->>'reconciled')::BOOLEAN
+    FROM jsonb_array_elements(public.nonprofit_donor_statement(c, '2026-11-01', '2026-11-30', member_a)->'currencies') row
+    WHERE row->>'currency_code' = 'USD'
+  ), 'a member statement shows only that member');
+  PERFORM public.nonprofit_create_record(c, 'recurring', jsonb_build_object(
+    'donor_id', member_a, 'fund_id', building, 'amount_minor', 100, 'method', 'bank_transfer', 'next_on', '2026-12-06'
+  ));
+  PERFORM public.test_assert((SELECT count(*) FROM public.journals WHERE company_id = c) = journal_count + 3, 'a recurring gift schedule does not post a journal');
+  event_id := (public.nonprofit_create_record(c, 'event', jsonb_build_object('name', 'Sunday service', 'event_on', '2026-11-29'))->>'id')::UUID;
+  volunteer_id := (public.nonprofit_create_record(c, 'volunteer', jsonb_build_object('display_name', 'Choir lead'))->>'id')::UUID;
+  PERFORM public.nonprofit_record_attendance(c, event_id, member_a, true);
+  PERFORM public.test_assert((public.nonprofit_schedule_volunteer(c, jsonb_build_object('volunteer_id', volunteer_id, 'event_id', event_id, 'role_name', 'Usher'))->>'journal_id') IS NULL, 'scheduling a volunteer does not post a journal');
+  PERFORM public.test_assert((
+    SELECT (item->>'present_count')::INTEGER = 1
+    FROM jsonb_array_elements(public.nonprofit_workspace(c)->'events') item
+    WHERE item->>'id' = event_id::TEXT
+  ), 'attendance is counted on the existing event');
+  PERFORM public.test_assert((public.nonprofit_workspace(c)->'settings'->>'organisation_kind') = 'church', 'workspace keeps the church organisation kind');
+
   BEGIN
     PERFORM public.nonprofit_fund_statement(c, '2026-11-30', '2026-11-01');
     RAISE EXCEPTION 'FAIL: inverted statement period was accepted';
@@ -505,6 +582,11 @@ SELECT public.test_raises(
   'do not have access',
   'cross-tenant donor statement is denied'
 );
+SELECT public.test_raises(
+  $sql$SELECT public.nonprofit_set_organisation_kind('20000000-0000-4000-8000-000000000001', 'church')$sql$,
+  'do not have access',
+  'cross-tenant organisation kind is denied'
+);
 
 SELECT set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000003"}', false);
 SELECT public.test_assert(
@@ -544,6 +626,11 @@ SELECT public.test_raises(
   'Missing permission',
   'portal donor cannot generate organisation statements'
 );
+SELECT public.test_raises(
+  $sql$SELECT public.nonprofit_household_statement('20000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000099', '2026-11-01', '2026-11-30')$sql$,
+  'Missing permission',
+  'portal donor cannot read a family statement'
+);
 SELECT set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000003"}', false);
 SELECT public.test_assert(
   (SELECT (s->>'statutory_filing')::BOOLEAN = false AND NOT (s ? 'beneficiaries')
@@ -554,6 +641,11 @@ SELECT public.test_raises(
   $sql$SELECT public.nonprofit_record_donor_statement('20000000-0000-4000-8000-000000000001', '2026-11-01', '2026-11-30', NULL, 'not_requested')$sql$,
   'Missing permission',
   'a viewer without export cannot generate donor statements'
+);
+SELECT public.test_raises(
+  $sql$SELECT public.nonprofit_set_organisation_kind('20000000-0000-4000-8000-000000000001', 'mosque')$sql$,
+  'Missing permission',
+  'a manager without nonprofit.admin cannot change organisation kind'
 );
 SELECT public.test_assert(
   (SELECT count(*) FROM public.nonprofit_statement_runs) = 3,

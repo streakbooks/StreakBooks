@@ -20,6 +20,8 @@ DECLARE
   disbursement JSONB;
   restricted_credits BIGINT;
   liability_credits BIGINT;
+  statement JSONB;
+  line JSONB;
 BEGIN
   PERFORM public.nonprofit_upsert_settings(c, jsonb_build_object(
     'enabled', true,
@@ -340,6 +342,71 @@ BEGIN
   ));
   PERFORM public.test_assert(jsonb_array_length(public.nonprofit_workspace(c)->'actions') >= 1, 'smart actions include an outstanding pledge');
   PERFORM public.test_assert(public.nonprofit_workspace(c)->'beneficiaries' IS NOT NULL, 'authorised user receives beneficiary records');
+
+  statement := public.nonprofit_fund_statement(c, '2026-10-01', '2026-10-31');
+  PERFORM public.test_assert((statement->>'statutory_filing')::BOOLEAN = false, 'fund statement is not a statutory filing');
+  PERFORM public.test_assert((statement->>'government_approved')::BOOLEAN = false, 'fund statement is not government approved');
+  PERFORM public.test_assert(statement->>'wording' ILIKE '%not a government filing%', 'fund statement says it is not a government filing');
+  PERFORM public.test_assert(NOT (statement ? 'beneficiaries'), 'fund statement does not include beneficiary records');
+  PERFORM public.test_assert((
+    SELECT bool_and((fund->>'opening_net_assets_minor')::BIGINT = 0 AND (fund->>'closing_net_assets_minor')::BIGINT = 0)
+    FROM jsonb_array_elements(statement->'funds') fund
+  ), 'statement before activity is zero');
+
+  statement := public.nonprofit_fund_statement(c, '2026-11-01', '2026-11-01');
+  SELECT value INTO line FROM jsonb_array_elements(statement->'funds') WHERE value->>'code' = 'GEN';
+  PERFORM public.test_assert((line->>'support_minor')::BIGINT = 6000, 'general fund support on the split donation day');
+  PERFORM public.test_assert((line->>'expenses_minor')::BIGINT = 180, 'general fund processing fee on the split donation day');
+  PERFORM public.test_assert((line->>'closing_net_assets_minor')::BIGINT = 5820, 'general fund closing net assets on the split donation day');
+  PERFORM public.test_assert((line->>'spendable_minor')::BIGINT = 5820, 'general fund spendable matches cash on the split donation day');
+  SELECT value INTO line FROM jsonb_array_elements(statement->'funds') WHERE value->>'code' = 'RELIEF';
+  PERFORM public.test_assert((line->>'support_minor')::BIGINT = 4000, 'restricted fund support on the split donation day');
+  PERFORM public.test_assert((line->>'expenses_minor')::BIGINT = 120, 'restricted fund processing fee on the split donation day');
+  PERFORM public.test_assert((line->>'closing_net_assets_minor')::BIGINT = 3880, 'restricted fund closing net assets on the split donation day');
+  SELECT value INTO line FROM jsonb_array_elements(statement->'funds') WHERE value->>'code' = 'EMPTY';
+  PERFORM public.test_assert((line->>'closing_net_assets_minor')::BIGINT = 0 AND line->>'status' = 'closed', 'closed fund stays on the historical statement at zero');
+
+  statement := public.nonprofit_fund_statement(c, '2026-11-08', '2026-11-08');
+  SELECT value INTO line FROM jsonb_array_elements(statement->'funds') WHERE value->>'code' = 'RELIEF';
+  PERFORM public.test_assert((line->>'transfers_minor')::BIGINT = -500, 'source fund transfer reduces net assets');
+  SELECT value INTO line FROM jsonb_array_elements(statement->'funds') WHERE value->>'code' = 'GEN';
+  PERFORM public.test_assert((line->>'transfers_minor')::BIGINT = 500, 'destination fund transfer increases net assets');
+
+  statement := public.nonprofit_fund_statement(c, '2026-11-09', '2026-11-09');
+  SELECT value INTO line FROM jsonb_array_elements(statement->'funds') WHERE value->>'code' = 'RELIEF';
+  PERFORM public.test_assert((line->>'releases_minor')::BIGINT = -250, 'restricted fund release reduces net assets');
+  SELECT value INTO line FROM jsonb_array_elements(statement->'funds') WHERE value->>'code' = 'GEN';
+  PERFORM public.test_assert((line->>'releases_minor')::BIGINT = 250, 'unrestricted fund release increases net assets');
+
+  statement := public.nonprofit_fund_statement(c, '2026-11-01', '2026-11-30');
+  PERFORM public.test_assert((
+    SELECT bool_and(
+      (fund->>'opening_net_assets_minor')::BIGINT
+      + (fund->>'support_minor')::BIGINT
+      - (fund->>'expenses_minor')::BIGINT
+      + (fund->>'transfers_minor')::BIGINT
+      + (fund->>'releases_minor')::BIGINT
+      + (fund->>'other_equity_minor')::BIGINT
+      = (fund->>'closing_net_assets_minor')::BIGINT
+    )
+    FROM jsonb_array_elements(statement->'funds') fund
+  ), 'each fund statement explains the change in net assets');
+  PERFORM public.test_assert(
+    (statement->'totals'->>'opening_net_assets_minor')::BIGINT
+    + (statement->'totals'->>'support_minor')::BIGINT
+    - (statement->'totals'->>'expenses_minor')::BIGINT
+    + (statement->'totals'->>'transfers_minor')::BIGINT
+    + (statement->'totals'->>'releases_minor')::BIGINT
+    + (statement->'totals'->>'other_equity_minor')::BIGINT
+    = (statement->'totals'->>'closing_net_assets_minor')::BIGINT,
+    'organisation statement totals explain the change in net assets'
+  );
+  BEGIN
+    PERFORM public.nonprofit_fund_statement(c, '2026-11-30', '2026-11-01');
+    RAISE EXCEPTION 'FAIL: inverted statement period was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM !~* 'starts after' THEN RAISE; END IF;
+  END;
 END $$;
 
 RESET ROLE;
@@ -377,6 +444,11 @@ SELECT public.test_raises(
   'do not have access',
   'cross-tenant workspace is denied'
 );
+SELECT public.test_raises(
+  $sql$SELECT public.nonprofit_fund_statement('20000000-0000-4000-8000-000000000001', '2026-11-01', '2026-11-30')$sql$,
+  'do not have access',
+  'cross-tenant fund statement is denied'
+);
 
 SELECT set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000003"}', false);
 SELECT public.test_assert(
@@ -391,6 +463,17 @@ SELECT set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-0000000
 SELECT public.test_assert(
   (SELECT count(*) = 1 AND bool_and(amount_minor = 111) FROM public.nonprofit_donations),
   'donor portal user sees only their own donation'
+);
+SELECT public.test_raises(
+  $sql$SELECT public.nonprofit_fund_statement('20000000-0000-4000-8000-000000000001', '2026-11-01', '2026-11-30')$sql$,
+  'Missing permission',
+  'donor portal user cannot read the fund statement'
+);
+SELECT set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000003"}', false);
+SELECT public.test_assert(
+  (SELECT (s->>'statutory_filing')::BOOLEAN = false AND NOT (s ? 'beneficiaries')
+   FROM (SELECT public.nonprofit_fund_statement('20000000-0000-4000-8000-000000000001', '2026-11-01', '2026-11-01') AS s) statement),
+  'a viewer can read the management statement without beneficiary records'
 );
 RESET ROLE;
 INSERT INTO public.nonprofit_gateway_events (company_id, gateway, event_id, status)

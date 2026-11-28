@@ -200,6 +200,88 @@ export function mapNonprofitWorkspace(value: unknown): NonprofitWorkspace {
   };
 }
 
+export type NonprofitStatementTotals = {
+  opening_net_assets_minor: number;
+  support_minor: number;
+  expenses_minor: number;
+  transfers_minor: number;
+  releases_minor: number;
+  other_equity_minor: number;
+  closing_net_assets_minor: number;
+  spendable_minor: number;
+};
+
+export type NonprofitStatementLine = NonprofitStatementTotals & {
+  fund_id: string;
+  code: string;
+  name: string;
+  restriction: string;
+  category: string;
+  status: string;
+};
+
+export type NonprofitStatement = {
+  statutory_filing: boolean;
+  government_approved: boolean;
+  wording: string;
+  period_from: string;
+  as_of: string;
+  funds: NonprofitStatementLine[];
+  totals: NonprofitStatementTotals;
+};
+
+const STATEMENT_WORDING =
+  "This management report summarises tagged fund activity for the selected dates. It is not a government filing and it is not a statutory financial statement.";
+
+function textOf(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim() !== "" ? value : fallback;
+}
+
+function minorOf(value: unknown): number {
+  if (typeof value === "number" && Number.isSafeInteger(value)) return value;
+  if (typeof value === "string" && /^-?\d+$/.test(value)) {
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function mapStatementTotals(value: unknown): NonprofitStatementTotals {
+  return {
+    opening_net_assets_minor: minorOf(pick(value, "opening_net_assets_minor")),
+    support_minor: minorOf(pick(value, "support_minor")),
+    expenses_minor: minorOf(pick(value, "expenses_minor")),
+    transfers_minor: minorOf(pick(value, "transfers_minor")),
+    releases_minor: minorOf(pick(value, "releases_minor")),
+    other_equity_minor: minorOf(pick(value, "other_equity_minor")),
+    closing_net_assets_minor: minorOf(pick(value, "closing_net_assets_minor")),
+    spendable_minor: minorOf(pick(value, "spendable_minor")),
+  };
+}
+
+export function mapNonprofitStatement(value: unknown): NonprofitStatement {
+  const funds = pick(value, "funds");
+  return {
+    statutory_filing: pick(value, "statutory_filing") === true,
+    government_approved: pick(value, "government_approved") === true,
+    wording: textOf(pick(value, "wording"), STATEMENT_WORDING),
+    period_from: textOf(pick(value, "period_from"), ""),
+    as_of: textOf(pick(value, "as_of"), ""),
+    funds: Array.isArray(funds)
+      ? funds.map((fund) => ({
+          fund_id: textOf(pick(fund, "fund_id"), ""),
+          code: textOf(pick(fund, "code"), ""),
+          name: textOf(pick(fund, "name"), ""),
+          restriction: textOf(pick(fund, "restriction"), ""),
+          category: textOf(pick(fund, "category"), ""),
+          status: textOf(pick(fund, "status"), ""),
+          ...mapStatementTotals(fund),
+        }))
+      : [],
+    totals: mapStatementTotals(pick(value, "totals")),
+  };
+}
+
 export function mapPortal(value: unknown): PortalEntry[] {
   if (!Array.isArray(value)) return [];
   return value.map((entry) => {

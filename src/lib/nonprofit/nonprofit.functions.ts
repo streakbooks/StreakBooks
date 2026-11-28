@@ -5,15 +5,17 @@ import { companyIdOf, callRpc } from "@/lib/planning/rpc";
 import type { Permission } from "@/lib/permissions";
 import {
   mapNonprofitResult,
+  mapNonprofitStatement,
   mapNonprofitWorkspace,
   mapPortal,
   type NonprofitResult,
+  type NonprofitStatement,
   type NonprofitWorkspace,
   type PortalEntry,
 } from "@/lib/nonprofit/types";
 
 export const NONPROFIT_MIGRATION =
-  "Nonprofit Management needs database updates 20261128220000, 20261128221000, 20261128233000 and 20261128240000.";
+  "Nonprofit Management needs database updates 20261128220000, 20261128221000, 20261128233000, 20261128240000 and 20261128250000.";
 
 async function posted(
   supabase: Parameters<typeof assertCompanyMember>[0],
@@ -428,4 +430,30 @@ export const decideNonprofitDisbursement = createServerFn({ method: "POST" })
       _decision: data.decision,
       _on: data.on,
     });
+  });
+
+function statementDate(value: unknown, label: string): string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`${label} must be a calendar date`);
+  }
+  return value;
+}
+
+export const getNonprofitStatement = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string; from: string; asOf: string }) => ({
+    companyId: companyIdOf(input),
+    from: statementDate(input.from, "The statement start"),
+    asOf: statementDate(input.asOf, "The statement as-of date"),
+  }))
+  .handler(async ({ data, context }): Promise<NonprofitStatement> => {
+    await guard(context.supabase, data.companyId, "nonprofit.view");
+    return mapNonprofitStatement(
+      await callRpc<unknown>(
+        context.supabase,
+        "nonprofit_fund_statement",
+        { _company_id: data.companyId, _from: data.from, _as_of: data.asOf },
+        NONPROFIT_MIGRATION,
+      ),
+    );
   });

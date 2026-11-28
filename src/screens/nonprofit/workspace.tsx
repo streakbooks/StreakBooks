@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
-import { toMinorUnits } from "@/lib/accounting/money";
+import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   allocateNonprofitExpense,
@@ -27,6 +27,7 @@ import {
   createNonprofitRecord,
   decideNonprofitDisbursement,
   getNonprofitPortal,
+  getNonprofitStatement,
   getNonprofitWorkspace,
   grantNonprofitPortal,
   impairNonprofitPledge,
@@ -233,7 +234,7 @@ function SectionBody({
     );
   if (sectionKey === "transfers")
     return <TransferForm companyId={companyId} currency={currency} funds={funds} />;
-  if (sectionKey === "reports") return <ReportTable funds={funds} currency={currency} />;
+  if (sectionKey === "reports") return <ReportTable companyId={companyId} currency={currency} />;
   if (sectionKey === "settings")
     return <SettingsForm companyId={companyId} settings={data.settings} />;
   if (sectionKey === "campaigns")
@@ -1209,23 +1210,115 @@ function TransferForm({
   );
 }
 
-function ReportTable({ funds, currency }: { funds: Row[]; currency: string }) {
+function ReportTable({ companyId, currency }: { companyId: string; currency: string }) {
+  const fetchStatement = useServerFn(getNonprofitStatement);
+  const today = isoDate(new Date());
+  const [from, setFrom] = useState(`${today.slice(0, 4)}-01-01`);
+  const [asOf, setAsOf] = useState(today);
+  const periodReady =
+    /^\d{4}-\d{2}-\d{2}$/.test(from) && /^\d{4}-\d{2}-\d{2}$/.test(asOf) && from <= asOf;
+  const statement = useQuery({
+    queryKey: ["nonprofit-statement", companyId, from, asOf],
+    queryFn: () => fetchStatement({ data: { companyId, from, asOf } }),
+    enabled: periodReady,
+    retry: false,
+  });
+  const data = statement.data;
   const insight = explainFundUtilisation(
-    funds.map((fund) => ({
-      fundId: text(fund.id),
-      fundCode: text(fund.code),
-      incomeMinor: 0,
-      expenseMinor: 0,
-      availableMinor: Number(fund.spendable_minor ?? 0),
+    (data?.funds ?? []).map((fund) => ({
+      fundId: fund.fund_id,
+      fundCode: fund.code,
+      incomeMinor: fund.support_minor,
+      expenseMinor: fund.expenses_minor,
+      availableMinor: fund.spendable_minor,
       currency,
     })),
   );
+  const columns = [
+    ["code", "Fund"],
+    ["opening_net_assets_minor", "Opening"],
+    ["support_minor", "Support"],
+    ["expenses_minor", "Expenses"],
+    ["transfers_minor", "Transfers"],
+    ["releases_minor", "Releases"],
+    ["other_equity_minor", "Other"],
+    ["closing_net_assets_minor", "Closing"],
+    ["spendable_minor", "Spendable"],
+  ] as const;
   return (
     <div className="grid gap-3">
-      <p className="text-sm">{insight.text}</p>
-      <Table rows={funds} columns={["code", "name", "restriction", "status", "spendable_minor"]} />
+      <form className="grid gap-3 md:grid-cols-2" onSubmit={(event) => event.preventDefault()}>
+        <Field label="From">
+          <Input
+            type="date"
+            value={from}
+            onChange={(event) => setFrom(event.target.value)}
+            required
+          />
+        </Field>
+        <Field label="As of">
+          <Input
+            type="date"
+            value={asOf}
+            onChange={(event) => setAsOf(event.target.value)}
+            required
+          />
+        </Field>
+      </form>
+      {!periodReady ? (
+        <p className="text-sm text-muted-foreground">The statement period starts after it ends.</p>
+      ) : null}
+      <QueryErrorState queries={[statement]} title="Could not load the fund statement" />
+      {statement.isPending && periodReady ? <LoadingState /> : null}
+      {data && periodReady ? (
+        <>
+          <p className="text-sm">{data.wording} Nothing in this report posts a journal.</p>
+          <p className="text-sm">{insight.text}</p>
+          {data.funds.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No funds yet.</p>
+          ) : (
+            <div className="overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-background">
+                  <tr>
+                    {columns.map(([, label]) => (
+                      <th key={label} className="px-2 py-1 text-left font-medium">
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.funds.map((fund) => (
+                    <tr key={fund.fund_id} className="border-t">
+                      {columns.map(([key]) => (
+                        <td key={key} className="px-2 py-1">
+                          {key === "code" ? fund.code : fromMinorUnits(fund[key], currency)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr className="border-t font-medium">
+                    {columns.map(([key]) => (
+                      <td key={key} className="px-2 py-1">
+                        {key === "code" ? "Total" : fromMinorUnits(data.totals[key], currency)}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      ) : null}
     </div>
   );
+}
+
+function isoDate(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 const ACCOUNT_ROLES = [

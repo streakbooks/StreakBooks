@@ -7,6 +7,8 @@ import { CompanyEmptyState } from "@/components/common/company-empty";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { AccountLookup } from "@/components/lookup/variants";
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -1121,20 +1123,16 @@ function SettingsForm({ companyId, settings }: { companyId: string; settings: No
       <div className="grid gap-3 md:grid-cols-2">
         {ACCOUNT_ROLES.map((role) => (
           <Field key={role} label={role}>
-            <select
-              className="h-10 rounded-md border bg-background px-2"
+            <AccountLookup
+              accounts={postable}
               value={map[role] ?? ""}
-              onChange={(event) =>
-                setMap((current) => ({ ...current, [role]: event.target.value }))
-              }
-            >
-              <option value="">Not mapped</option>
-              {postable.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.code} {account.name}
-                </option>
-              ))}
-            </select>
+              onChange={(accountId) => setMap((current) => ({ ...current, [role]: accountId }))}
+              companyId={companyId}
+              purpose="posting"
+              placeholder="Not mapped"
+              allowClear
+              ariaLabel={role}
+            />
           </Field>
         ))}
       </div>
@@ -1327,18 +1325,18 @@ function SelectRows({
   allowEmpty?: boolean;
 }) {
   return (
-    <select
-      className="h-10 rounded-md border bg-background px-2"
+    <RecordLookupSelect
       value={value}
-      onChange={(event) => onChange(event.target.value)}
+      onValueChange={onChange}
       required={!allowEmpty}
+      placeholder={allowEmpty ? "None" : "Select"}
+      aria-label={labelKey}
     >
-      <option value="">{allowEmpty ? "None" : "Select"}</option>
       {rows.map((row) => (
         <option key={text(row.id)} value={text(row.id)}>
           {text(row[labelKey])}
         </option>
       ))}
-    </select>
+    </RecordLookupSelect>
   );
 }

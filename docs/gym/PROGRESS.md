@@ -35,3 +35,5 @@ Recorded on 2026-11-28 in `D:\StreakBooks-Cursor` on `feature/gym-fitness-manage
 - `npm run test:gym:postgres` — disposable Postgres 17, network none. Passed, including annual deferral of 120000, one recognition of 10000, recognition retry, statement totals, session liability, class waitlist promotion, check-in, gateway refusal, keep-deferred cancellation, disable keeps journals, budget upsert without a journal, cross-organisation denial, and dashboard recognised revenue from rows.
 
 Hosted Supabase project `qugoaaizclvkzesptovm` was not migrated by this work. Authenticated browser coverage was not run. Port 8081 was already in use and was left alone.
+
+GitHub: commit `15f1d0fb` on `feature/gym-fitness-management`, pull request https://github.com/streakbooks/StreakBooks/pull/113. Not merged. At first check, GitHub Actions were still running. The Cloudflare Workers Builds check failed in the same second it started and returned no build log. Supabase Preview was skipped because preview branches are disabled. Production readiness remains not ready.

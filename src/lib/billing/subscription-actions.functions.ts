@@ -195,7 +195,7 @@ function assertPreviewFresh(prorationDateUnix: number | null | undefined): void 
 }
 
 export type PlanChangeAppliesMode =
-  "immediate" | "period_end" | "unsupported" | "migration_required";
+  "immediate" | "period_end" | "unsupported" | "migration_required" | "migration";
 
 export type PlanChangePreview = {
   kind: "upgrade" | "downgrade";
@@ -343,9 +343,71 @@ export const previewOrganisationPlanChange = createServerFn({ method: "POST" })
       }
 
       if (!razorpaySupportsImmediatePlanChange(mandate)) {
+        const { upiMigrationFeatureEnabled } = await import("@/lib/billing/upi-migration-states");
+        const canMigrate =
+          upiMigrationFeatureEnabled() &&
+          change.kind === "upgrade" &&
+          (mandate === "upi" || mandate === "emandate");
+
+        if (canMigrate) {
+          const { buildUpiMigrationPreviewAmounts } =
+            await import("@/lib/billing/upi-migration.server");
+          const amounts = buildUpiMigrationPreviewAmounts({
+            currentAmountMinor: change.currentAmountMinor,
+            targetAmountMinor: change.amountMinor,
+            periodStartIso,
+            periodEndIso,
+            currency: change.currency,
+          });
+          const due = amounts.upfrontAddonMinor;
+          return {
+            kind: "upgrade",
+            provider: "razorpay",
+            planCode: change.planCode,
+            planName: change.planName,
+            interval: change.interval,
+            currency: change.currency,
+            listAmountMinor: change.amountMinor,
+            currentListAmountMinor: change.currentAmountMinor,
+            amountDueMinor: due,
+            creditMinor: 0,
+            chargeMinor: due,
+            taxMinor: 0,
+            totalDueMinor: due,
+            remainingDays: amounts.remainingDays,
+            nextRenewalAt: amounts.nextRenewalAt,
+            newRecurringMinor: amounts.newRecurringMinor,
+            paymentMethodLabel: mandateLabel(mandate),
+            appliesMode: "migration",
+            prorationDateUnix: Math.floor(Date.now() / 1000),
+            previewIssuedAt: new Date().toISOString(),
+            effectiveAt: null,
+            paymentRequired: due > 0,
+            changeSupported: true,
+            unsupportedReason: null,
+            lines: [
+              {
+                description:
+                  "Razorpay cannot update a UPI/e-mandate in place. We create a new AutoPay mandate for the higher plan, then cancel the old one after confirmation — so you are not charged twice.",
+                amountMinor: 0,
+              },
+              {
+                description: amounts.upfrontEnabled
+                  ? `Estimated one-time upgrade difference for remaining ${amounts.remainingDays ?? "—"} day(s) (not a provider invoice). Collected as a one-time addon when you authorise.`
+                  : "No one-time difference is collected (upfront addon disabled). Recurring Pro price starts on the new mandate.",
+                amountMinor: due,
+              },
+            ],
+            currentPlanCode: change.currentPlanCode,
+            currentInterval: change.currentInterval,
+          };
+        }
+
         const reason =
           mandate === "upi" || mandate === "emandate"
-            ? "UPI AutoPay and bank e-mandate subscriptions cannot change plan mid-cycle on Razorpay. Cancel at period end, then subscribe to the new plan. Your current mandate is not charged for this preview."
+            ? change.kind === "downgrade"
+              ? "UPI AutoPay and bank e-mandate cannot downgrade mid-mandate. Cancel at period end, then subscribe to the lower plan."
+              : "UPI AutoPay plan migration is unavailable right now. Cancel at period end, then subscribe to the new plan."
             : "This Razorpay subscription’s payment method does not support in-place plan changes. Cancel at period end, then subscribe to the new plan.";
         return emptyUnsupportedPreview(
           { ...change, periodEnd: periodEndIso },
@@ -585,8 +647,51 @@ export const changePlanFor = createServerOnlyFn(
       const inspected = await razorpayInspectSubscription(razorpay, change.providerSubscriptionId);
       const mandate = razorpayMandateKindFromNotes(inspected.notes, inspected.payment_method);
       if (!razorpaySupportsImmediatePlanChange(mandate)) {
+        const { upiMigrationFeatureEnabled } = await import("@/lib/billing/upi-migration-states");
+        if (
+          upiMigrationFeatureEnabled() &&
+          change.kind === "upgrade" &&
+          (mandate === "upi" || mandate === "emandate")
+        ) {
+          if (!data.origin) {
+            throw new Error("Plan upgrades need a return URL. Refresh the page and try again.");
+          }
+          const { startUpiSubscriptionMigration } =
+            await import("@/lib/billing/upi-migration.server");
+          const started = await startUpiSubscriptionMigration({
+            companyId: data.companyId,
+            userId: context.userId,
+            planCode: data.planCode,
+            interval: change.interval,
+            planPriceId: change.planPriceId,
+            planName: change.planName,
+            currency: change.currency,
+            fromPlanCode: change.currentPlanCode,
+            fromInterval: change.currentInterval === "year" ? "year" : "month",
+            fromAmountMinor: change.currentAmountMinor,
+            toAmountMinor: change.amountMinor,
+            oldProviderSubscriptionId: change.providerSubscriptionId,
+            mandateKind: mandate,
+            periodStartIso: unixToIso(inspected.current_start),
+            periodEndIso: unixToIso(inspected.current_end) ?? change.periodEnd,
+            chargeAtUnix: inspected.charge_at,
+            origin: data.origin,
+          });
+          return {
+            kind: "upgrade",
+            provider: "razorpay",
+            applies: "after_payment",
+            effectiveAt: null,
+            targetPlanCode: data.planCode,
+            targetInterval: change.interval,
+            paymentActionUrl: started.checkoutUrl,
+            amountDueMinor: started.migration.upfrontAddonMinor,
+            alreadyApplied: false,
+            chargedOnFile: false,
+          };
+        }
         throw new Error(
-          "UPI AutoPay and bank e-mandate subscriptions cannot change plan. Cancel this subscription and subscribe to the new plan after it ends.",
+          "UPI AutoPay and bank e-mandate subscriptions cannot change plan in place. Use the upgrade migration flow, or cancel and subscribe again after the period ends.",
         );
       }
 
@@ -767,3 +872,17 @@ export const changeOrganisationPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(parsePlanChange)
   .handler(({ data, context }) => changePlanFor(context, data));
+
+export const getOrganisationUpiMigration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: assertUuid(input?.companyId),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "billing.manage");
+    const { getOpenUpiMigration, migrationCustomerCopy } =
+      await import("@/lib/billing/upi-migration.server");
+    const migration = await getOpenUpiMigration(data.companyId);
+    if (!migration) return { migration: null as null, message: null as string | null };
+    return { migration, message: migrationCustomerCopy(migration.status) };
+  });

@@ -95,20 +95,85 @@ export function razorpaySubscriptionRequest(input: {
   planCode: string;
   startAtUnix: number | null;
   offerId?: string | null;
+  payMethod?: string | null;
+  migrationId?: string | null;
+  replaceSubscriptionId?: string | null;
+  /** One-time addon amount in minor units (not recurring). */
+  upfrontAddonMinor?: number | null;
+  upfrontAddonName?: string | null;
 }): Record<string, unknown> {
-  return {
+  const notes: Record<string, string> = {
+    checkout_id: input.checkoutId,
+    company_id: input.companyId,
+    plan_code: input.planCode,
+  };
+  if (input.payMethod) notes["pay_method"] = input.payMethod;
+  if (input.migrationId) notes["migration_id"] = input.migrationId;
+  if (input.replaceSubscriptionId) notes["replace_sub_id"] = input.replaceSubscriptionId;
+
+  const body: Record<string, unknown> = {
     plan_id: input.planId,
     // Razorpay requires a cycle count; this keeps the mandate open for ten years.
     total_count: input.interval === "year" ? 10 : 120,
     customer_notify: true,
-    notes: {
-      checkout_id: input.checkoutId,
-      company_id: input.companyId,
-      plan_code: input.planCode,
-    },
+    notes,
     ...(input.startAtUnix != null ? { start_at: input.startAtUnix } : {}),
     ...(input.offerId ? { offer_id: input.offerId } : {}),
   };
+
+  const addon = input.upfrontAddonMinor ?? 0;
+  if (addon > 0) {
+    body["addons"] = [
+      {
+        item: {
+          name: input.upfrontAddonName ?? "Plan upgrade difference (one-time)",
+          amount: addon,
+          currency: undefined, // filled by caller when known — see migration helper
+        },
+      },
+    ];
+  }
+  return body;
+}
+
+/** Build a migration subscription create body with currency on the addon item. */
+export function razorpayUpiMigrationSubscriptionRequest(input: {
+  planId: string;
+  interval: "month" | "year";
+  checkoutId: string;
+  companyId: string;
+  planCode: string;
+  currency: string;
+  migrationId: string;
+  replaceSubscriptionId: string;
+  payMethod: "upi" | "emandate";
+  startAtUnix: number | null;
+  upfrontAddonMinor: number;
+}): Record<string, unknown> {
+  const body = razorpaySubscriptionRequest({
+    planId: input.planId,
+    interval: input.interval,
+    checkoutId: input.checkoutId,
+    companyId: input.companyId,
+    planCode: input.planCode,
+    startAtUnix: input.startAtUnix,
+    payMethod: input.payMethod,
+    migrationId: input.migrationId,
+    replaceSubscriptionId: input.replaceSubscriptionId,
+    upfrontAddonMinor: input.upfrontAddonMinor > 0 ? input.upfrontAddonMinor : null,
+  });
+  if (input.upfrontAddonMinor > 0) {
+    body["addons"] = [
+      {
+        item: {
+          name: "Plan upgrade difference (one-time estimate)",
+          amount: input.upfrontAddonMinor,
+          currency: input.currency,
+        },
+      },
+    ];
+  }
+  return body;
 }
 
 /**
@@ -127,6 +192,34 @@ export async function razorpayCancel(
     if (error instanceof RazorpayError && /no billing cycle/i.test(error.message)) {
       await client.request("POST", path, { cancel_at_cycle_end: false });
       return { effectiveAt: new Date().toISOString() };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Immediate cancel — used after a replacement UPI subscription is webhook-confirmed so the old
+ * mandate cannot debit again. Idempotent when already cancelled.
+ */
+export async function razorpayCancelImmediate(
+  client: RazorpayClient,
+  subscriptionId: string,
+): Promise<{ effectiveAt: string; alreadyCancelled: boolean }> {
+  const path = `subscriptions/${encodeURIComponent(subscriptionId)}/cancel`;
+  try {
+    const subscription = await client.request("POST", path, { cancel_at_cycle_end: false });
+    return {
+      effectiveAt:
+        unixToIso(subscription["ended_at"] ?? subscription["current_end"]) ??
+        new Date().toISOString(),
+      alreadyCancelled: false,
+    };
+  } catch (error) {
+    if (
+      error instanceof RazorpayError &&
+      /already.*(cancel|halted|completed|expired)|not.*active|cancelled/i.test(error.message)
+    ) {
+      return { effectiveAt: new Date().toISOString(), alreadyCancelled: true };
     }
     throw error;
   }

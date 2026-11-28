@@ -8,7 +8,7 @@
  * | Free trial         | No until trial ends                 | Immediate on trial plan   |
  * | Upgrade (Stripe)   | Yes — prorated remainder of period  | After payment succeeds    |
  * | Upgrade (Razorpay card) | Immediate update + difference charge | After Razorpay confirms |
- * | Upgrade (Razorpay UPI/e-mandate) | Not supported in-place      | Cancel → resubscribe      |
+ * | Upgrade (Razorpay UPI/e-mandate) | New mandate + optional one-time addon | After new sub webhook; old cancelled |
  * | Downgrade          | No                                  | At period end / renewal   |
  * | Cancel             | No                                  | At period end             |
  * | Renewal            | Yes — full plan price               | Continues                 |
@@ -38,15 +38,15 @@ export function planChangePaymentCopy(
   description: string;
 } {
   if (provider === "razorpay") {
-    // Default copy assumes UPI/e-mandate (most common India path). Preview.changeSupported
-    // overrides the confirm button when an eligible Razorpay card mandate can update now.
+    // Preview.appliesMode distinguishes card (immediate) vs UPI migration (new mandate).
     return {
       titleVerb: kind === "upgrade" ? "Upgrade" : "Downgrade",
       paymentNow: "Depends on payment method",
-      whenStarts: "Card: after Razorpay confirms · UPI/e-mandate: after cancel + resubscribe",
+      whenStarts:
+        "Card: after Razorpay confirms · UPI/e-mandate: after you authorise a new AutoPay mandate",
       button: "Review details",
       description:
-        "Eligible Razorpay cards can upgrade immediately (Razorpay charges the difference). UPI AutoPay and bank e-mandate cannot change plan mid-mandate — cancel at period end, then subscribe to the new plan.",
+        "Eligible Razorpay cards can upgrade in place. UPI AutoPay and bank e-mandate require a new mandate (we cancel the old one only after the new plan is confirmed) so Razorpay never double-debits.",
     };
   }
 
@@ -81,11 +81,11 @@ export function billingChargeRules(
       },
       {
         title: "Upgrade (UPI / e-mandate)",
-        body: "Not supported mid-mandate. Cancel at period end, then subscribe to the new plan.",
+        body: "New AutoPay mandate for the higher plan; optional one-time difference addon. Old mandate cancelled only after the new subscription is webhook-confirmed.",
       },
       {
         title: "Downgrade",
-        body: "Eligible cards schedule at cycle end. UPI/e-mandate require cancel + resubscribe.",
+        body: "Eligible cards schedule at cycle end. UPI/e-mandate require cancel at period end, then subscribe again.",
       },
       {
         title: "Cancel",

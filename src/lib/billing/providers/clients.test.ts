@@ -218,6 +218,42 @@ describe("Razorpay client", () => {
     });
   });
 
+  it("cancels immediately for UPI migration replacement and builds migration subscription body", async () => {
+    const { razorpayCancelImmediate, razorpayUpiMigrationSubscriptionRequest } =
+      await import("./razorpay.server");
+    const { fetch, calls } = mockFetch([{ body: { id: "sub_old", status: "cancelled" } }]);
+    await razorpayCancelImmediate(createRazorpayClient(razorpayEnv, fetch), "sub_old");
+    expect(JSON.parse(String(calls[0]!.init.body))).toEqual({ cancel_at_cycle_end: false });
+
+    const body = razorpayUpiMigrationSubscriptionRequest({
+      planId: "plan_pro",
+      interval: "month",
+      checkoutId: "chk",
+      companyId: "co",
+      planCode: "pro",
+      currency: "INR",
+      migrationId: "mig",
+      replaceSubscriptionId: "sub_old",
+      payMethod: "upi",
+      startAtUnix: null,
+      upfrontAddonMinor: 25000,
+    });
+    expect(body["notes"]).toMatchObject({
+      migration_id: "mig",
+      replace_sub_id: "sub_old",
+      pay_method: "upi",
+    });
+    expect(body["addons"]).toEqual([
+      {
+        item: {
+          name: "Plan upgrade difference (one-time estimate)",
+          amount: 25000,
+          currency: "INR",
+        },
+      },
+    ]);
+  });
+
   it("inspects Razorpay subscription notes for pay_method", async () => {
     const { razorpayInspectSubscription } = await import("./razorpay.server");
     const { fetch } = mockFetch([

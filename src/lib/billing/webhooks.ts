@@ -225,6 +225,22 @@ export async function processStoredEvent(
       results.push(result);
       if (event.kind === "checkout_completed" && result.result === "applied") {
         await rpc(client, "billing_redeem_coupon", { _checkout_id: event.data.checkoutId });
+        if (claimed.provider === "razorpay" && event.data.checkoutId && event.data.subscriptionId) {
+          try {
+            const { onUpiMigrationNewSubscriptionConfirmed } =
+              await import("@/lib/billing/upi-migration.server");
+            await onUpiMigrationNewSubscriptionConfirmed({
+              checkoutId: String(event.data.checkoutId),
+              newSubscriptionId: String(event.data.subscriptionId),
+            });
+          } catch (migrationError) {
+            console.error(
+              "UPI migration post-checkout advance failed",
+              migrationError instanceof Error ? migrationError.message : migrationError,
+            );
+            // Keep webhook processed — cancel recovery runs on cron.
+          }
+        }
       }
       if (event.kind === "payment_failed" && result.result === "applied") {
         await notifyPaymentFailed(claimed.provider, event.data.subscriptionId);
@@ -304,6 +320,23 @@ export async function retryDueWebhooks(limit = 20): Promise<{ processed: number;
     } else if (outcome !== "busy") {
       processed += 1;
     }
+  }
+  try {
+    const { recoverDueUpiMigrations } = await import("@/lib/billing/upi-migration.server");
+    const migration = await recoverDueUpiMigrations(limit);
+    processed += migration.processed;
+    failed += migration.failed;
+    if (migration.manual > 0) {
+      console.error(
+        "UPI migration requires manual review",
+        JSON.stringify({ count: migration.manual }),
+      );
+    }
+  } catch (migrationError) {
+    console.error(
+      "UPI migration recovery batch failed",
+      migrationError instanceof Error ? migrationError.message : migrationError,
+    );
   }
   if (failed > 0) {
     console.error(

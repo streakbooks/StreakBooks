@@ -70,4 +70,9 @@ describe("hybrid plan-change dialog copy", () => {
     expect(dialog.button).toBe("Change plan");
     expect(dialog.button.toLowerCase()).not.toContain("stripe");
   });
+
+  it("keeps Got it only when migration is unsupported (changeSupported false)", () => {
+    const copy = planChangePaymentCopy("upgrade", "razorpay");
+    expect(copy.description.toLowerCase()).toMatch(/new mandate|autopay/);
+  });
 });

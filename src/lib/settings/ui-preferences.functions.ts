@@ -146,13 +146,14 @@ export const getBillsListPrefs = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { data: row } = await context.supabase
+    const { data: row, error } = await context.supabase
       .from("user_ui_preferences" as never)
       .select("preference_value" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("user_id" as never, context.userId as never)
       .eq("preference_key" as never, LIST_KEY as never)
       .maybeSingle();
+    if (error) throw new Error(error.message);
     const stored = (row as { preference_value?: Partial<BillsListWorkspacePrefs> } | null)
       ?.preference_value;
     const stripActions = (cols: BillsListColumnId[] | undefined) =>
@@ -178,13 +179,14 @@ export const saveBillsListPrefs = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { data: existing } = await context.supabase
+    const { data: existing, error: readError } = await context.supabase
       .from("user_ui_preferences" as never)
       .select("preference_value" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("user_id" as never, context.userId as never)
       .eq("preference_key" as never, LIST_KEY as never)
       .maybeSingle();
+    if (readError) throw new Error(readError.message);
     const prev = ((existing as { preference_value?: Partial<BillsListWorkspacePrefs> } | null)
       ?.preference_value ?? {}) as Partial<BillsListWorkspacePrefs>;
     const next: BillsListWorkspacePrefs = {
@@ -218,21 +220,23 @@ export const getBillWorkspacePrefs = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const [{ data: row }, { data: configRow, error: configError }] = await Promise.all([
-      context.supabase
-        .from("user_ui_preferences" as never)
-        .select("preference_value" as never)
-        .eq("company_id" as never, data.companyId as never)
-        .eq("user_id" as never, context.userId as never)
-        .eq("preference_key" as never, KEY as never)
-        .maybeSingle(),
-      context.supabase
-        .from("organisation_config" as never)
-        .select("document" as never)
-        .eq("company_id" as never, data.companyId as never)
-        .eq("category" as never, "purchases" as never)
-        .maybeSingle(),
-    ]);
+    const [{ data: row, error: readError }, { data: configRow, error: configError }] =
+      await Promise.all([
+        context.supabase
+          .from("user_ui_preferences" as never)
+          .select("preference_value" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("user_id" as never, context.userId as never)
+          .eq("preference_key" as never, KEY as never)
+          .maybeSingle(),
+        context.supabase
+          .from("organisation_config" as never)
+          .select("document" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("category" as never, "purchases" as never)
+          .maybeSingle(),
+      ]);
+    if (readError) throw new Error(readError.message);
     if (configError) throw new Error(configError.message);
     const purchasesConfig = purchasesConfigSchema.safeParse(
       (configRow as { document?: unknown } | null)?.document ?? {},
@@ -253,13 +257,14 @@ export const saveBillWorkspacePrefs = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { data: existing } = await context.supabase
+    const { data: existing, error: readError } = await context.supabase
       .from("user_ui_preferences" as never)
       .select("preference_value" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("user_id" as never, context.userId as never)
       .eq("preference_key" as never, KEY as never)
       .maybeSingle();
+    if (readError) throw new Error(readError.message);
     const prev = ((existing as { preference_value?: Partial<BillWorkspacePrefs> } | null)
       ?.preference_value ?? {}) as Partial<BillWorkspacePrefs>;
     const next: BillWorkspacePrefs = {

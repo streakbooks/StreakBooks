@@ -782,8 +782,8 @@ export function NewBill({
       if (patch.visibleColumns) setLineVisibleColumns(patch.visibleColumns as LineColumnKey[]);
       try {
         await persistPrefs({ data: { companyId, prefs: patch } });
-      } catch {
-        /* non-blocking preference save */
+      } catch (error) {
+        toast.error("Bill workspace preference could not be saved. " + friendlyAuthError(error));
       }
     },
     [companyId, persistPrefs],
@@ -1621,6 +1621,7 @@ export function NewBill({
 
   return (
     <VoiceFields token={voiceToken}>
+      <QueryErrorState queries={[prefsQ]} title="Could not load bill workspace preferences" />
       <BillWorkspaceLayout
         companyId={companyId}
         contactId={contactId || null}

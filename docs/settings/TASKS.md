@@ -428,3 +428,8 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - [x] Audit filters validate real UTC calendar dates, include PostgreSQL microseconds through the end of the selected day, and sort simultaneous events by ID. The screen explains UTC filters and local display. Current-page CSV uses the same result set.
 - Both focused suites passed (17 tests), changed-file ESLint passed, and an isolated PostgreSQL 17 query included the last microsecond, excluded next-day midnight and ordered equal timestamps consistently. No migration was required.
+
+## 2026-11-28 Bill workspace preference failures (Batch 4)
+
+- [x] A failed read of personal bill list or entry preferences now surfaces a retry action. A save stops before writing if it cannot load the existing preferences. Failed bill-entry preference saves are visible while the bill draft remains usable.
+- Seven focused tests passed, including both read and both save failure paths. Changed-file lint passed. Existing supplier-summary defaults and personal overrides retain their precedence.

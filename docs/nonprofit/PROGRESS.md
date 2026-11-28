@@ -59,7 +59,7 @@ Frontend, backend and database percentages count the working subset that has cod
 
 ## Not verified
 
-- Authenticated browser use.
+- Authenticated browser use. Opening `http://localhost:8082/nonprofit` on 28 November 2026 showed Vite's error page. The dev server could not load Nitro's dev entry through the `node_modules` junction to `D:\StreakBooks\node_modules`. No organisation, form or journal was exercised in the browser.
 - Authenticated use of the built application. The production build completed locally and was not deployed.
 - GitHub Actions.
 - Hosted Supabase.

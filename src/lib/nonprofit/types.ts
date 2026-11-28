@@ -282,6 +282,219 @@ export function mapNonprofitStatement(value: unknown): NonprofitStatement {
   };
 }
 
+export type DonorStatementMoney = {
+  currency_code: string;
+  gross_minor: number;
+  refunded_minor: number;
+  net_minor: number;
+  conditional_minor: number;
+  fee_minor: number;
+  journal_support_minor: number;
+  reconciled: boolean;
+};
+
+export type DonorStatementBreakdown = {
+  currency_code: string;
+  net_minor: number;
+  code: string;
+  name: string;
+};
+
+export type DonorStatement = {
+  statutory_filing: boolean;
+  government_approved: boolean;
+  tax_certificate: boolean;
+  wording: string;
+  period_from: string;
+  as_of: string;
+  statement_kind: string;
+  organisation: {
+    name: string;
+    legal_name: string | null;
+    country_code: string | null;
+    letterhead: string | null;
+    email: string | null;
+    phone: string | null;
+    logo_url: string | null;
+  };
+  donor: {
+    donor_id: string;
+    display_name: string;
+    consent_status: string;
+    email: string | null;
+    anonymous: boolean;
+  } | null;
+  currencies: DonorStatementMoney[];
+  funds: DonorStatementBreakdown[];
+  campaigns: DonorStatementBreakdown[];
+  pledges: {
+    pledge_number: string;
+    pledged_on: string;
+    currency_code: string;
+    amount_minor: number;
+    collected_minor: number;
+    impaired_minor: number;
+    outstanding_minor: number;
+    status: string;
+    fund_code: string;
+  }[];
+  receipts: {
+    receipt_number: string;
+    issued_on: string;
+    amount_minor: number;
+    currency_code: string;
+    donation_number: string;
+    wording: string;
+  }[];
+  donors: { donor_id: string; display_name: string; currency_code: string; net_minor: number }[];
+  services_not_recognised: number;
+  delivery_status: string;
+  run_id: string | null;
+  history: {
+    id: string;
+    donor_id: string | null;
+    period_from: string;
+    as_of: string;
+    statement_kind: string;
+    delivery_status: string;
+  }[];
+};
+
+const DONOR_STATEMENT_WORDING =
+  "This donor statement lists contributions, refunds, receipts and outstanding pledges for the selected dates. It is not a government filing and it is not a tax certificate.";
+
+function nullableText(value: unknown): string | null {
+  return typeof value === "string" && value.trim() !== "" ? value : null;
+}
+
+export function mapNonprofitDonorStatement(value: unknown): DonorStatement {
+  const organisation = pick(value, "organisation");
+  const donor = pick(value, "donor");
+  const currencies = pick(value, "currencies");
+  const funds = pick(value, "funds");
+  const campaigns = pick(value, "campaigns");
+  const pledges = pick(value, "pledges");
+  const receipts = pick(value, "receipts");
+  const donors = pick(value, "donors");
+  const history = pick(value, "history");
+  const delivery = pick(value, "delivery_status") ?? pick(value, "email_delivery");
+  return {
+    statutory_filing: pick(value, "statutory_filing") === true,
+    government_approved: pick(value, "government_approved") === true,
+    tax_certificate: pick(value, "tax_certificate") === true,
+    wording: textOf(pick(value, "wording"), DONOR_STATEMENT_WORDING),
+    period_from: textOf(pick(value, "period_from"), ""),
+    as_of: textOf(pick(value, "as_of"), ""),
+    statement_kind: textOf(pick(value, "statement_kind"), "donor"),
+    organisation: {
+      name: textOf(pick(organisation, "name"), "Organisation"),
+      legal_name: nullableText(pick(organisation, "legal_name")),
+      country_code: nullableText(pick(organisation, "country_code")),
+      letterhead: nullableText(pick(organisation, "letterhead")),
+      email: nullableText(pick(organisation, "email")),
+      phone: nullableText(pick(organisation, "phone")),
+      logo_url: nullableText(pick(organisation, "logo_url")),
+    },
+    donor:
+      donor === null || donor === undefined
+        ? null
+        : {
+            donor_id: textOf(pick(donor, "donor_id"), ""),
+            display_name: textOf(pick(donor, "display_name"), ""),
+            consent_status: textOf(pick(donor, "consent_status"), "unknown"),
+            email: nullableText(pick(donor, "email")),
+            anonymous: pick(donor, "anonymous") === true,
+          },
+    currencies: Array.isArray(currencies)
+      ? currencies.map((row) => ({
+          currency_code: textOf(pick(row, "currency_code"), ""),
+          gross_minor: minorOf(pick(row, "gross_minor")),
+          refunded_minor: minorOf(pick(row, "refunded_minor")),
+          net_minor: minorOf(pick(row, "net_minor")),
+          conditional_minor: minorOf(pick(row, "conditional_minor")),
+          fee_minor: minorOf(pick(row, "fee_minor")),
+          journal_support_minor: minorOf(pick(row, "journal_support_minor")),
+          reconciled: pick(row, "reconciled") === true,
+        }))
+      : [],
+    funds: Array.isArray(funds)
+      ? funds.map((row) => ({
+          currency_code: textOf(pick(row, "currency_code"), ""),
+          net_minor: minorOf(pick(row, "net_minor")),
+          code: textOf(pick(row, "code"), ""),
+          name: textOf(pick(row, "name"), ""),
+        }))
+      : [],
+    campaigns: Array.isArray(campaigns)
+      ? campaigns.map((row) => ({
+          currency_code: textOf(pick(row, "currency_code"), ""),
+          net_minor: minorOf(pick(row, "net_minor")),
+          code: textOf(pick(row, "campaign_id"), ""),
+          name: textOf(pick(row, "name"), "Unassigned"),
+        }))
+      : [],
+    pledges: Array.isArray(pledges)
+      ? pledges.map((row) => ({
+          pledge_number: textOf(pick(row, "pledge_number"), ""),
+          pledged_on: textOf(pick(row, "pledged_on"), ""),
+          currency_code: textOf(pick(row, "currency_code"), ""),
+          amount_minor: minorOf(pick(row, "amount_minor")),
+          collected_minor: minorOf(pick(row, "collected_minor")),
+          impaired_minor: minorOf(pick(row, "impaired_minor")),
+          outstanding_minor: minorOf(pick(row, "outstanding_minor")),
+          status: textOf(pick(row, "status"), ""),
+          fund_code: textOf(pick(row, "fund_code"), ""),
+        }))
+      : [],
+    receipts: Array.isArray(receipts)
+      ? receipts.map((row) => ({
+          receipt_number: textOf(pick(row, "receipt_number"), ""),
+          issued_on: textOf(pick(row, "issued_on"), ""),
+          amount_minor: minorOf(pick(row, "amount_minor")),
+          currency_code: textOf(pick(row, "currency_code"), ""),
+          donation_number: textOf(pick(row, "donation_number"), ""),
+          wording: textOf(pick(row, "wording"), ""),
+        }))
+      : [],
+    donors: Array.isArray(donors)
+      ? donors.map((row) => ({
+          donor_id: textOf(pick(row, "donor_id"), ""),
+          display_name: textOf(pick(row, "display_name"), ""),
+          currency_code: textOf(pick(row, "currency_code"), ""),
+          net_minor: minorOf(pick(row, "net_minor")),
+        }))
+      : [],
+    services_not_recognised: minorOf(pick(value, "services_not_recognised")),
+    delivery_status: textOf(delivery, "not_configured"),
+    run_id: nullableText(pick(value, "run_id")),
+    history: Array.isArray(history)
+      ? history.map((row) => ({
+          id: textOf(pick(row, "id"), ""),
+          donor_id: nullableText(pick(row, "donor_id")),
+          period_from: textOf(pick(row, "period_from"), ""),
+          as_of: textOf(pick(row, "as_of"), ""),
+          statement_kind: textOf(pick(row, "statement_kind"), ""),
+          delivery_status: textOf(pick(row, "delivery_status"), ""),
+        }))
+      : [],
+  };
+}
+
+export type PortalDonorStatement = {
+  company_id: string;
+  donor_id: string;
+  statement: DonorStatement;
+};
+
+export function mapPortalDonorStatements(value: unknown): PortalDonorStatement[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((entry) => ({
+    company_id: textOf(pick(entry, "company_id"), ""),
+    donor_id: textOf(pick(entry, "donor_id"), ""),
+    statement: mapNonprofitDonorStatement(pick(entry, "statement")),
+  }));
+}
+
 export function mapPortal(value: unknown): PortalEntry[] {
   if (!Array.isArray(value)) return [];
   return value.map((entry) => {

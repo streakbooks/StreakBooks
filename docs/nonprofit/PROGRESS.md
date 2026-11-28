@@ -76,7 +76,7 @@ Frontend, backend and database percentages count the working subset that has cod
 | Supabase objects | `nonprofit_funds`, donations and disbursements exist. Submit, movement, request and decide functions exist. `post_journal` remains. 33 nonprofit tables have row-level security. 17 distinct `nonprofit.*` permissions. Anonymous execute is absent. |
 | Hosted activity | One settings row is enabled, gateway is not configured, and there are no funds, donations or nonprofit journals. No live rows were inserted during this check. |
 | Vercel production | not verified |
-| Outstanding product work | recurring charges, public donation pages, live gateways, statutory filing, exports and full portals. The historical statement function is local in `20261128250000` and is not hosted. |
+| Outstanding product work | recurring charges, public donation pages, live gateways, statutory filing and full portals. Donor statements generate from posted gifts and download as CSV, Excel and PDF. Email stays unsent until Resend is configured and consent is granted. Migrations `20261128250000` and `20261128260000` are local until a coordinated hosted apply. |
 | Current blocker | authenticated browser workflow needs a sign-in; the module is not production ready |
 
 ## Scenario coverage in the PostgreSQL suite
@@ -89,4 +89,4 @@ Also covered later the same day: disbursement segregation, a posted disbursement
 
 Also covered later the same day: a historical fund statement for a quiet period, the split-donation day, an interfund transfer, a restriction release, the identity of opening plus activity to closing, an inverted period, cross-tenant denial, portal denial, and a viewer reading the report without beneficiary records.
 
-Not covered by that suite: recurring charges. The statement is a management report, not a statutory filing, PDF, or spreadsheet.
+Not covered by that suite: recurring charges. Donor statements reconcile recognised gifts to contribution revenue. The fund statement remains a management report, not a statutory filing.

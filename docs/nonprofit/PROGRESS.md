@@ -72,8 +72,8 @@ Frontend, backend and database percentages count the working subset that has cod
 | --- | --- |
 | Branch | `feature/nonprofit-management` |
 | Worktree | `D:\StreakBooks-Cursor-Nonprofit` |
-| Commit | recorded after the foundation commit |
-| Pull request | not opened in this document revision |
+| Commit | `78a75df32294a486f254091a93bab56429f6d385` |
+| Pull request | opened after this note is pushed |
 | GitHub CI | not run |
 | Merge | not merged |
 | Latest observed `origin/main` | `0f6d5a86ce0648a30aa8ef13842d1fb268f581b6` at isolation; re-check before push |

@@ -999,6 +999,11 @@ export const MODULE_SETTINGS_COVERAGE: readonly ModuleSettingsCoverage[] = [
     status: "partial",
     expected: "Property, owner, agreement and settlement policies",
   },
+  {
+    moduleId: "nonprofit",
+    status: "partial",
+    expected: "Fund, donation, grant and portal configuration inside Nonprofit settings",
+  },
   { moduleId: "hr", status: "partial", expected: "Organisation, leave and workforce policy" },
   {
     moduleId: "contacts",

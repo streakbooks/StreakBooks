@@ -22,7 +22,7 @@ Customer and broker portals, construction contracts, escrow, financing, tax pack
 
 ## Database
 
-Migrations `20261128232000` through `20261128233000`. Hosted application is blocked until backup evidence exists for Supabase project `qugoaaizclvkzesptovm`. The latest authorisation does not replace that backup check.
+Migrations `20261128232000` through `20261128280000`. Hosted application is blocked until backup evidence exists for Supabase project `qugoaaizclvkzesptovm`. The latest authorisation does not replace that backup check.
 
 ```powershell
 npm.cmd run test:realestate:postgres

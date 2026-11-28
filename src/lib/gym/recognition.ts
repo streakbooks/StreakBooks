@@ -15,7 +15,8 @@ function positive(amount: number, label: string): number {
 /** Split an amount across equal parts. The final part absorbs the remainder. */
 export function splitMinor(amountMinor: number, parts: number): number[] {
   const amount = positive(amountMinor, "Amount");
-  if (!Number.isSafeInteger(parts) || parts <= 0) throw new Error("Parts must be a positive integer");
+  if (!Number.isSafeInteger(parts) || parts <= 0)
+    throw new Error("Parts must be a positive integer");
   const base = Math.floor(amount / parts);
   let assigned = 0;
   return Array.from({ length: parts }, (_, index) => {
@@ -29,7 +30,11 @@ export function splitMinor(amountMinor: number, parts: number): number[] {
  * Monthly recognition on each contract anniversary, starting on the service start date.
  * A $1,200 annual fee becomes twelve $100 lines when it divides evenly.
  */
-export function monthlyRecognition(amountMinor: number, startsOn: string, months: number): RecognitionLine[] {
+export function monthlyRecognition(
+  amountMinor: number,
+  startsOn: string,
+  months: number,
+): RecognitionLine[] {
   return splitMinor(amountMinor, months).map((amount, index) => ({
     recogniseOn: addMonths(startsOn, index),
     amountMinor: amount,
@@ -37,7 +42,11 @@ export function monthlyRecognition(amountMinor: number, startsOn: string, months
 }
 
 /** Daily recognition across the inclusive service window. */
-export function dailyRecognition(amountMinor: number, startsOn: string, endsOn: string): RecognitionLine[] {
+export function dailyRecognition(
+  amountMinor: number,
+  startsOn: string,
+  endsOn: string,
+): RecognitionLine[] {
   const days = daysBetween(startsOn, endsOn) + 1;
   if (days <= 0) throw new Error("Service end is before the start");
   return splitMinor(amountMinor, days).map((amount, index) => ({

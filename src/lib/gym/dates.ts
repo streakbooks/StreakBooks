@@ -27,7 +27,9 @@ export function addMonths(iso: string, months: number): string {
   if (!Number.isSafeInteger(months)) throw new Error("Months must be a whole number");
   const { year, month, day } = parseIsoDate(iso);
   const target = new Date(Date.UTC(year, month - 1 + months, 1));
-  const last = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  const last = new Date(
+    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+  ).getUTCDate();
   return formatIsoDate(target.getUTCFullYear(), target.getUTCMonth() + 1, Math.min(day, last));
 }
 

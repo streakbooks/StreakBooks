@@ -38,7 +38,11 @@ describe("gym membership accounting", () => {
   it("puts the rounding remainder on the final recognition line", () => {
     const lines = monthlyRecognition(100, "2026-01-31", 3);
     expect(lines.map((line) => line.amountMinor)).toEqual([33, 33, 34]);
-    expect(lines.map((line) => line.recogniseOn)).toEqual(["2026-01-31", "2026-02-28", "2026-03-31"]);
+    expect(lines.map((line) => line.recogniseOn)).toEqual([
+      "2026-01-31",
+      "2026-02-28",
+      "2026-03-31",
+    ]);
   });
 
   it("invoices deferred membership separately from cash and earned revenue", () => {
@@ -70,7 +74,9 @@ describe("gym membership accounting", () => {
       taxMinor: taxFromBps(55_000, 1000),
       joiningFeePolicy: "immediate",
     });
-    expect(invoice.lines.find((row) => row.account === "joining_fee_revenue")?.creditMinor).toBe(5_000);
+    expect(invoice.lines.find((row) => row.account === "joining_fee_revenue")?.creditMinor).toBe(
+      5_000,
+    );
     expect(invoice.lines.find((row) => row.account === "tax_liability")?.creditMinor).toBe(5_500);
     expect(invoice.earnedMinor).toBe(5_000);
   });
@@ -87,7 +93,10 @@ describe("gym membership accounting", () => {
     expect(sale.earnedMinor).toBe(0);
     const first = consumeSessions({ remaining: 3, liabilityMinor: 30_000 }, 1);
     expect(first).toMatchObject({ remaining: 2, liabilityMinor: 20_000, recognisedMinor: 10_000 });
-    const last = consumeSessions({ remaining: first.remaining, liabilityMinor: first.liabilityMinor }, 2);
+    const last = consumeSessions(
+      { remaining: first.remaining, liabilityMinor: first.liabilityMinor },
+      2,
+    );
     expect(last.liabilityMinor).toBe(0);
     expect(planSessionConsumption(last.recognisedMinor).earnedMinor).toBe(20_000);
     expect(() => consumeSessions(last, 1)).toThrow(/Not enough sessions/);
@@ -113,7 +122,9 @@ describe("gym membership accounting", () => {
 
 describe("gym commercial calculations", () => {
   it("prices tax from the configured rate and reprices the remaining obligation", () => {
-    expect(priceContract({ membershipMinor: 120_000, joiningFeeMinor: 0, taxBps: 0 }).totalMinor).toBe(120_000);
+    expect(
+      priceContract({ membershipMinor: 120_000, joiningFeeMinor: 0, taxBps: 0 }).totalMinor,
+    ).toBe(120_000);
     expect(repriceRemaining(60_000, 120_000, 180_000)).toBe(90_000);
   });
 
@@ -150,21 +161,21 @@ describe("gym commercial calculations", () => {
   it("refuses a churn story when the cohort is too small", () => {
     expect(churnInsight(2, 1).available).toBe(false);
     expect(churnInsight(10, 2).figure).toBe(0.2);
-    expect(deferredExceptionInsight(1).explanation).toMatch(/not.*earned|before treating it as earned/i);
+    expect(deferredExceptionInsight(1).explanation).toMatch(
+      /not.*earned|before treating it as earned/i,
+    );
   });
 
   it("detects trainer conflicts and class overflow", () => {
     expect(
-      findConflict(
-        { startsAt: "2026-03-01T10:00:00.000Z", endsAt: "2026-03-01T11:00:00.000Z" },
-        [{ startsAt: "2026-03-01T10:30:00.000Z", endsAt: "2026-03-01T11:30:00.000Z" }],
-      ),
+      findConflict({ startsAt: "2026-03-01T10:00:00.000Z", endsAt: "2026-03-01T11:00:00.000Z" }, [
+        { startsAt: "2026-03-01T10:30:00.000Z", endsAt: "2026-03-01T11:30:00.000Z" },
+      ]),
     ).not.toBeNull();
     expect(
-      findConflict(
-        { startsAt: "2026-03-01T11:00:00.000Z", endsAt: "2026-03-01T12:00:00.000Z" },
-        [{ startsAt: "2026-03-01T10:00:00.000Z", endsAt: "2026-03-01T11:00:00.000Z" }],
-      ),
+      findConflict({ startsAt: "2026-03-01T11:00:00.000Z", endsAt: "2026-03-01T12:00:00.000Z" }, [
+        { startsAt: "2026-03-01T10:00:00.000Z", endsAt: "2026-03-01T11:00:00.000Z" },
+      ]),
     ).toBeNull();
     expect(classCapacity({ capacity: 2, registered: 2 })).toEqual({ remaining: 0, waitlist: true });
   });
@@ -185,9 +196,9 @@ describe("gym commercial calculations", () => {
 
   it("clamps month-end anniversaries", () => {
     expect(addMonths("2026-01-31", 1)).toBe("2026-02-28");
-    expect(dailyRecognition(300, "2026-01-01", "2026-01-03").map((line) => line.amountMinor)).toEqual([
-      100, 100, 100,
-    ]);
+    expect(
+      dailyRecognition(300, "2026-01-01", "2026-01-03").map((line) => line.amountMinor),
+    ).toEqual([100, 100, 100]);
     expect(sessionRecognition(100, 3)).toEqual([33, 33, 34]);
   });
 });

@@ -10,7 +10,11 @@ export type RecurringMembership = {
  * Retention of the opening cohort. New members in the period are removed from the closing count.
  * Returns null when the opening cohort is empty so the dashboard does not invent a rate.
  */
-export function retentionRate(openingActive: number, closingActive: number, newInPeriod: number): number | null {
+export function retentionRate(
+  openingActive: number,
+  closingActive: number,
+  newInPeriod: number,
+): number | null {
   for (const [label, value] of [
     ["Opening", openingActive],
     ["Closing", closingActive],
@@ -23,7 +27,11 @@ export function retentionRate(openingActive: number, closingActive: number, newI
   return retained / openingActive;
 }
 
-export function churnRate(openingActive: number, closingActive: number, newInPeriod: number): number | null {
+export function churnRate(
+  openingActive: number,
+  closingActive: number,
+  newInPeriod: number,
+): number | null {
   const retention = retentionRate(openingActive, closingActive, newInPeriod);
   return retention === null ? null : 1 - retention;
 }

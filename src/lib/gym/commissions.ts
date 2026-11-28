@@ -4,16 +4,20 @@ export type CommissionRule =
   | { kind: "tiered"; tiers: readonly { upToMinor: number | null; bps: number }[] };
 
 function bpsOf(amountMinor: number, bps: number): number {
-  if (!Number.isSafeInteger(amountMinor) || amountMinor < 0) throw new Error("Commission basis is invalid");
-  if (!Number.isSafeInteger(bps) || bps < 0 || bps > 10000) throw new Error("Commission rate is invalid");
+  if (!Number.isSafeInteger(amountMinor) || amountMinor < 0)
+    throw new Error("Commission basis is invalid");
+  if (!Number.isSafeInteger(bps) || bps < 0 || bps > 10000)
+    throw new Error("Commission rate is invalid");
   const product = amountMinor * bps;
-  if (!Number.isSafeInteger(product)) throw new Error("Commission is outside the safe integer range");
+  if (!Number.isSafeInteger(product))
+    throw new Error("Commission is outside the safe integer range");
   return Math.floor(product / 10000);
 }
 
 /** Flat tier: the rate is the first tier whose ceiling covers the basis. A null ceiling is open-ended. */
 export function commissionMinor(basisMinor: number, rule: CommissionRule): number {
-  if (!Number.isSafeInteger(basisMinor) || basisMinor < 0) throw new Error("Commission basis is invalid");
+  if (!Number.isSafeInteger(basisMinor) || basisMinor < 0)
+    throw new Error("Commission basis is invalid");
   if (rule.kind === "fixed") {
     if (!Number.isSafeInteger(rule.amountMinor) || rule.amountMinor < 0) {
       throw new Error("Fixed commission is invalid");

@@ -14,7 +14,9 @@ export type BillingInterval = (typeof BILLING_INTERVALS)[number];
 
 function minor(amount: number, label: string, allowZero = false): number {
   if (!Number.isSafeInteger(amount) || amount < 0 || (!allowZero && amount === 0)) {
-    throw new Error(`${label} must be a ${allowZero ? "non-negative" : "positive"} minor-unit integer`);
+    throw new Error(
+      `${label} must be a ${allowZero ? "non-negative" : "positive"} minor-unit integer`,
+    );
   }
   return amount;
 }
@@ -26,7 +28,8 @@ export function taxFromBps(netMinor: number, bps: number): number {
     throw new Error("Tax basis points must be between 0 and 10000");
   }
   const product = netMinor * bps;
-  if (!Number.isSafeInteger(product)) throw new Error("Tax calculation is outside the safe integer range");
+  if (!Number.isSafeInteger(product))
+    throw new Error("Tax calculation is outside the safe integer range");
   return Math.floor((product + 5000) / 10000);
 }
 
@@ -46,7 +49,8 @@ export function priceContract(input: {
   const joiningFeeMinor = minor(input.joiningFeeMinor, "Joining fee", true);
   const taxMinor = taxFromBps(membershipMinor + joiningFeeMinor, input.taxBps);
   const totalMinor = membershipMinor + joiningFeeMinor + taxMinor;
-  if (!Number.isSafeInteger(totalMinor)) throw new Error("Contract total is outside the safe integer range");
+  if (!Number.isSafeInteger(totalMinor))
+    throw new Error("Contract total is outside the safe integer range");
   return { membershipMinor, joiningFeeMinor, taxMinor, totalMinor };
 }
 
@@ -73,7 +77,8 @@ export function monthlyRunRate(
               : null;
   if (interval === "week") {
     const annual = priceMinor * 52;
-    if (!Number.isSafeInteger(annual)) throw new Error("Weekly price is outside the safe integer range");
+    if (!Number.isSafeInteger(annual))
+      throw new Error("Weekly price is outside the safe integer range");
     return { monthlyMinor: Math.floor(annual / 12), residualMinor: annual % 12 };
   }
   if (divisor === null) return null;
@@ -81,11 +86,16 @@ export function monthlyRunRate(
 }
 
 /** Remaining unrecognised value restated at a new price. The difference is the contract modification. */
-export function repriceRemaining(unrecognisedMinor: number, oldPriceMinor: number, newPriceMinor: number): number {
+export function repriceRemaining(
+  unrecognisedMinor: number,
+  oldPriceMinor: number,
+  newPriceMinor: number,
+): number {
   minor(unrecognisedMinor, "Unrecognised balance", true);
   minor(oldPriceMinor, "Old price");
   minor(newPriceMinor, "New price");
   const product = unrecognisedMinor * newPriceMinor;
-  if (!Number.isSafeInteger(product)) throw new Error("Repricing is outside the safe integer range");
+  if (!Number.isSafeInteger(product))
+    throw new Error("Repricing is outside the safe integer range");
   return Math.floor(product / oldPriceMinor);
 }

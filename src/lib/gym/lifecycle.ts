@@ -62,6 +62,9 @@ export function assertMemberTransition(current: MemberStatus, next: MemberStatus
   assertTransition(current, next, MEMBER_TRANSITIONS, "Member");
 }
 
-export function assertMembershipTransition(current: MembershipStatus, next: MembershipStatus): void {
+export function assertMembershipTransition(
+  current: MembershipStatus,
+  next: MembershipStatus,
+): void {
   assertTransition(current, next, MEMBERSHIP_TRANSITIONS, "Membership");
 }

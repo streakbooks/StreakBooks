@@ -94,7 +94,9 @@ function pick(source: { [key: string]: unknown } | null, key: string): unknown {
 }
 
 function cell(value: unknown): GymCell {
-  return typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? value : null;
+  return typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+    ? value
+    : null;
 }
 
 function record(value: unknown): GymRecord {

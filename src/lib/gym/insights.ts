@@ -16,7 +16,8 @@ export function churnInsight(openingActive: number, cancelled: number): Insight 
   if (!Number.isSafeInteger(openingActive) || openingActive < 0) {
     throw new Error("Opening membership count is invalid");
   }
-  if (!Number.isSafeInteger(cancelled) || cancelled < 0) throw new Error("Cancellation count is invalid");
+  if (!Number.isSafeInteger(cancelled) || cancelled < 0)
+    throw new Error("Cancellation count is invalid");
   if (openingActive < MINIMUM_COHORT) {
     return {
       available: false,

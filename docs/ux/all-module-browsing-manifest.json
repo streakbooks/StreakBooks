@@ -12,8 +12,8 @@
   },
   "invariant": "Every top-level sidebar item and every authenticated route file must appear exactly once in this manifest. New ones require an explicit coverage entry. Inventory inclusion is not implementation verification.",
   "counts": {
-    "sidebarModules": 31,
-    "authenticatedRouteFiles": 171,
+    "sidebarModules": 32,
+    "authenticatedRouteFiles": 173,
     "supportingRouteFiles": 15,
     "publicRouteFiles": 1
   },
@@ -316,6 +316,22 @@
       "routeFiles": [
         "nonprofit/$section.tsx",
         "nonprofit/index.tsx"
+      ],
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "remaining": [
+        "Verify native navigation, deep links, refresh, Back/Forward and contextual return",
+        "Verify real actions, permissions, accessibility and accounting integrity where applicable",
+        "Run authenticated browser, unit and coverage acceptance suites"
+      ],
+      "tests": "NOT RUN"
+    },
+    {
+      "label": "Real Estate",
+      "href": "/real-estate",
+      "routeFiles": [
+        "real-estate/$section.tsx",
+        "real-estate/index.tsx"
       ],
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,

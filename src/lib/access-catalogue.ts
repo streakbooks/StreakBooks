@@ -943,6 +943,78 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     ],
   },
   {
+    id: "real-estate",
+    label: "Real Estate",
+    description: "Property development inventory, sales collections and project costs.",
+    items: [
+      {
+        permission: "realestate.view",
+        label: "View Real Estate",
+        detail: "Open the development dashboard, inventory and registers.",
+      },
+      {
+        permission: "realestate.manage",
+        label: "Manage projects",
+        detail: "Create development projects, phases and structures.",
+      },
+      {
+        permission: "realestate.inventory.manage",
+        label: "Manage property inventory",
+        detail: "Create units, import inventory and change non-sale statuses.",
+      },
+      {
+        permission: "realestate.sales.manage",
+        label: "Manage sales",
+        detail: "Reserve properties, confirm bookings and save payment schedules.",
+      },
+      {
+        permission: "realestate.collections.manage",
+        label: "Manage collections",
+        detail: "Record customer deposits against a sale.",
+      },
+      {
+        permission: "realestate.post",
+        label: "Post real estate journals",
+        detail: "Post deposits, revenue, commissions and operating costs through the ledger.",
+      },
+      {
+        permission: "realestate.approve",
+        label: "Approve real estate work",
+        detail: "Approve commissions, budgets and revenue recognition.",
+      },
+      {
+        permission: "realestate.reverse",
+        label: "Reverse real estate postings",
+        detail: "Refund a deposit or reverse a recognition.",
+      },
+      {
+        permission: "realestate.commissions.manage",
+        label: "Manage commissions",
+        detail: "Keep brokers, rules and commission suggestions.",
+      },
+      {
+        permission: "realestate.costs.manage",
+        label: "Manage development costs",
+        detail: "Record classified project costs. Capitalisable costs are not posted automatically.",
+      },
+      {
+        permission: "realestate.budgets.manage",
+        label: "Manage project budgets",
+        detail: "Save draft project budgets.",
+      },
+      {
+        permission: "realestate.export",
+        label: "Export real estate registers",
+        detail: "Use real estate registers that are visible to read-only roles.",
+      },
+      {
+        permission: "realestate.admin",
+        label: "Administer Real Estate",
+        detail: "Activate the module, choose the recognition policy and map ledger accounts.",
+      },
+    ],
+  },
+  {
     id: "assistance",
     label: "Assistance",
     description: "In-product guidance. Suggestions never post by themselves.",

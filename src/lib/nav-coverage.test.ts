@@ -14,6 +14,7 @@ const REQUIRED_MODULES = [
   ["CRM", "/crm"],
   ["Property Management", "/property-management"],
   ["Nonprofit", "/nonprofit"],
+  ["Real Estate", "/real-estate"],
   ["HR", "/hr"],
   ["Products & Services", "/products-services"],
   ["Files", "/files"],

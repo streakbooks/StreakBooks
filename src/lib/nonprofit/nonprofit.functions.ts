@@ -13,7 +13,7 @@ import {
 } from "@/lib/nonprofit/types";
 
 export const NONPROFIT_MIGRATION =
-  "Nonprofit Management needs database updates 20261128220000, 20261128221000 and 20261128233000.";
+  "Nonprofit Management needs database updates 20261128220000, 20261128221000, 20261128233000 and 20261128240000.";
 
 async function posted(
   supabase: Parameters<typeof assertCompanyMember>[0],
@@ -381,5 +381,51 @@ export const grantNonprofitPortal = createServerFn({ method: "POST" })
     return posted(context.supabase, "nonprofit_grant_portal", {
       _company_id: data.companyId,
       _payload: data.payload,
+    });
+  });
+
+export const requestNonprofitDisbursement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (input: { companyId: string; beneficiaryId: string; fundId: string; amountMinor: number }) => ({
+      companyId: companyIdOf(input),
+      beneficiaryId: input.beneficiaryId,
+      fundId: input.fundId,
+      amountMinor: input.amountMinor,
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.beneficiaries.view");
+    await assertCompanyPermission(context.supabase, data.companyId, "nonprofit.manage");
+    return posted(context.supabase, "nonprofit_request_disbursement", {
+      _company_id: data.companyId,
+      _payload: {
+        beneficiary_id: data.beneficiaryId,
+        fund_id: data.fundId,
+        amount_minor: data.amountMinor,
+      },
+    });
+  });
+
+export const decideNonprofitDisbursement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (input: { companyId: string; disbursementId: string; decision: string; on: string }) => ({
+      companyId: companyIdOf(input),
+      disbursementId: input.disbursementId,
+      decision: input.decision,
+      on: input.on,
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.disbursements.approve");
+    if (data.decision === "posted") {
+      await assertCompanyPermission(context.supabase, data.companyId, "nonprofit.post");
+    }
+    return posted(context.supabase, "nonprofit_decide_disbursement", {
+      _company_id: data.companyId,
+      _disbursement_id: data.disbursementId,
+      _decision: data.decision,
+      _on: data.on,
     });
   });

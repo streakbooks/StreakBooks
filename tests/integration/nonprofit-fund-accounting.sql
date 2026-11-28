@@ -16,6 +16,8 @@ DECLARE
   pledge_id UUID;
   expense JSONB;
   journal UUID;
+  beneficiary_id UUID;
+  disbursement JSONB;
   restricted_credits BIGINT;
   liability_credits BIGINT;
 BEGIN
@@ -274,6 +276,45 @@ BEGIN
     IF SQLERRM !~* 'Allocation exceeds' THEN RAISE; END IF;
   END;
 
+  PERFORM public.nonprofit_upsert_settings(c, jsonb_build_object(
+    'enabled', true, 'accounting_framework', 'configurable', 'country_code', 'US',
+    'enforce_segregation', true,
+    'account_map', (SELECT account_map FROM public.nonprofit_settings WHERE company_id = c)
+  ));
+  beneficiary_id := (public.nonprofit_create_record(c, 'beneficiary', '{"display_name":"Eligible Person","eligibility_status":"eligible"}'::jsonb)->>'id')::UUID;
+  disbursement := public.nonprofit_request_disbursement(c, jsonb_build_object('beneficiary_id', beneficiary_id, 'fund_id', gen, 'amount_minor', 100));
+  PERFORM public.test_assert((disbursement->>'status') = 'draft', 'eligible disbursement waits for a different approver');
+  BEGIN
+    PERFORM public.nonprofit_decide_disbursement(c, (disbursement->>'id')::UUID, 'posted', '2026-11-19');
+    RAISE EXCEPTION 'FAIL: requester approved their own disbursement';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM !~* 'cannot approve' THEN RAISE; END IF;
+  END;
+  PERFORM public.nonprofit_upsert_settings(c, jsonb_build_object(
+    'enabled', true, 'accounting_framework', 'configurable', 'country_code', 'US',
+    'enforce_segregation', false,
+    'account_map', (SELECT account_map FROM public.nonprofit_settings WHERE company_id = c)
+  ));
+  PERFORM public.nonprofit_decide_disbursement(c, (disbursement->>'id')::UUID, 'posted', '2026-11-19');
+  PERFORM public.test_assert((SELECT status = 'posted' AND journal_id IS NOT NULL FROM public.nonprofit_disbursements WHERE id = (disbursement->>'id')::UUID), 'approved disbursement posts once');
+  BEGIN
+    PERFORM public.nonprofit_decide_disbursement(c, (disbursement->>'id')::UUID, 'posted', '2026-11-19');
+    RAISE EXCEPTION 'FAIL: posted disbursement was approved again';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM !~* 'not awaiting' THEN RAISE; END IF;
+  END;
+  PERFORM public.test_assert((public.nonprofit_request_disbursement(c, jsonb_build_object(
+    'beneficiary_id', (public.nonprofit_create_record(c, 'beneficiary', '{"display_name":"Ineligible Person","eligibility_status":"ineligible"}'::jsonb)->>'id')::UUID,
+    'fund_id', gen, 'amount_minor', 50
+  ))->>'status') = 'rejected', 'ineligible beneficiary disbursement is rejected without a journal');
+  BEGIN
+    PERFORM public.nonprofit_decide_disbursement(c, (public.nonprofit_request_disbursement(c, jsonb_build_object('beneficiary_id', beneficiary_id, 'fund_id', gen, 'amount_minor', 999999999))->>'id')::UUID, 'posted', '2026-11-19');
+    RAISE EXCEPTION 'FAIL: disbursement above spendable was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM !~* 'Fund does not have' THEN RAISE; END IF;
+  END;
+  PERFORM public.test_assert(public.nonprofit_workspace(c)->'disbursements' IS NOT NULL, 'authorised user receives disbursement records');
+
   PERFORM public.test_assert((
     SELECT SUM(debit_minor) = SUM(credit_minor) AND SUM(debit_minor) > 0
     FROM public.journal_lines WHERE company_id = c
@@ -341,6 +382,10 @@ SELECT set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-0000000
 SELECT public.test_assert(
   (SELECT count(*) FROM public.nonprofit_beneficiaries WHERE company_id = '20000000-0000-4000-8000-000000000001') = 0,
   'beneficiary records stay hidden without beneficiaries.view'
+);
+SELECT public.test_assert(
+  (SELECT count(*) FROM public.nonprofit_disbursements WHERE company_id = '20000000-0000-4000-8000-000000000001') = 0,
+  'disbursement records stay hidden without beneficiaries.view'
 );
 SELECT set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000002"}', false);
 SELECT public.test_assert(

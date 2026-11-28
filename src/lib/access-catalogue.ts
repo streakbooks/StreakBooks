@@ -851,6 +851,98 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     ],
   },
   {
+    id: "nonprofit",
+    label: "Nonprofit Management",
+    description: "Funds, donations, grants and restricted-resource controls.",
+    items: [
+      {
+        permission: "nonprofit.view",
+        label: "View Nonprofit Management",
+        detail: "Open dashboards, funds and registers.",
+      },
+      {
+        permission: "nonprofit.manage",
+        label: "Manage nonprofit records",
+        detail: "Create campaigns, programmes and operational records.",
+      },
+      {
+        permission: "nonprofit.post",
+        label: "Post nonprofit journals",
+        detail: "Post donations, grants and fund movements through the ledger.",
+      },
+      {
+        permission: "nonprofit.approve",
+        label: "Approve nonprofit work",
+        detail: "Approve items that are waiting for a second person.",
+      },
+      {
+        permission: "nonprofit.reverse",
+        label: "Reverse nonprofit postings",
+        detail: "Refund a posted donation or chargeback.",
+      },
+      {
+        permission: "nonprofit.export",
+        label: "Export nonprofit reports",
+        detail: "Download fund and donation reports.",
+      },
+      {
+        permission: "nonprofit.funds.manage",
+        label: "Manage funds",
+        detail: "Create, open and close funds.",
+      },
+      {
+        permission: "nonprofit.grants.approve",
+        label: "Approve grants",
+        detail: "Record awards and confirm grant conditions.",
+      },
+      {
+        permission: "nonprofit.restrictions.release",
+        label: "Release restrictions",
+        detail: "Reclassify restricted resources when the purpose is met.",
+      },
+      {
+        permission: "nonprofit.allocations.manage",
+        label: "Allocate expenses",
+        detail: "Split functional expenses without exceeding the original amount.",
+      },
+      {
+        permission: "nonprofit.disbursements.approve",
+        label: "Approve disbursements",
+        detail: "Authorise assistance payments.",
+      },
+      {
+        permission: "nonprofit.compliance.manage",
+        label: "Manage compliance reminders",
+        detail: "Keep registration and filing reminders. This does not submit a return.",
+      },
+      {
+        permission: "nonprofit.admin",
+        label: "Administer Nonprofit Management",
+        detail: "Activate the module and map ledger accounts.",
+      },
+      {
+        permission: "nonprofit.donors.manage",
+        label: "Manage donors",
+        detail: "Create donor records and communication preferences.",
+      },
+      {
+        permission: "nonprofit.donations.manage",
+        label: "Manage donations",
+        detail: "Record donations, pledges and receipts.",
+      },
+      {
+        permission: "nonprofit.beneficiaries.view",
+        label: "View beneficiaries",
+        detail: "Open confidential beneficiary records.",
+      },
+      {
+        permission: "nonprofit.portal.manage",
+        label: "Manage portals",
+        detail: "Grant donor, volunteer, member and grantor portal access.",
+      },
+    ],
+  },
+  {
     id: "assistance",
     label: "Assistance",
     description: "In-product guidance. Suggestions never post by themselves.",

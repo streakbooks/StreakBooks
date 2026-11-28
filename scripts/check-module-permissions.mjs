@@ -22,6 +22,7 @@ const MODULE_NAMESPACES = {
   hr: "hr",
   crm: "crm",
   "property-management": "property",
+  nonprofit: "nonprofit",
   expenses: "expenses",
   payroll: "payroll",
   billing: "billing",

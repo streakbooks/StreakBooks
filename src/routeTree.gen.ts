@@ -99,6 +99,8 @@ import { Route as AuthenticatedHrSectionRouteImport } from './routes/_authentica
 import { Route as AuthenticatedInviteTokenRouteImport } from './routes/_authenticated/invite.$token'
 import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated/messages/index'
 import { Route as AuthenticatedMessagesSettingsRouteImport } from './routes/_authenticated/messages/settings'
+import { Route as AuthenticatedNonprofitIndexRouteImport } from './routes/_authenticated/nonprofit/index'
+import { Route as AuthenticatedNonprofitSectionRouteImport } from './routes/_authenticated/nonprofit/$section'
 import { Route as AuthenticatedPayrollIndexRouteImport } from './routes/_authenticated/payroll/index'
 import { Route as AuthenticatedPayrollReportsRouteImport } from './routes/_authenticated/payroll/reports'
 import { Route as AuthenticatedPayrollSalaryStructuresRouteImport } from './routes/_authenticated/payroll/salary-structures'
@@ -717,6 +719,18 @@ const AuthenticatedMessagesSettingsRoute =
   AuthenticatedMessagesSettingsRouteImport.update({
     id: '/messages/settings',
     path: '/messages/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNonprofitIndexRoute =
+  AuthenticatedNonprofitIndexRouteImport.update({
+    id: '/nonprofit/',
+    path: '/nonprofit/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNonprofitSectionRoute =
+  AuthenticatedNonprofitSectionRouteImport.update({
+    id: '/nonprofit/$section',
+    path: '/nonprofit/$section',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPayrollIndexRoute =
@@ -1469,6 +1483,7 @@ export interface FileRoutesByFullPath {
   '/hr/$section': typeof AuthenticatedHrSectionRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/messages/settings': typeof AuthenticatedMessagesSettingsRoute
+  '/nonprofit/$section': typeof AuthenticatedNonprofitSectionRoute
   '/payroll/reports': typeof AuthenticatedPayrollReportsRoute
   '/payroll/salary-structures': typeof AuthenticatedPayrollSalaryStructuresRoute
   '/payroll/settings': typeof AuthenticatedPayrollSettingsRoute
@@ -1518,6 +1533,7 @@ export interface FileRoutesByFullPath {
   '/fixed-assets/': typeof AuthenticatedFixedAssetsIndexRoute
   '/hr/': typeof AuthenticatedHrIndexRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/nonprofit/': typeof AuthenticatedNonprofitIndexRoute
   '/payroll/': typeof AuthenticatedPayrollIndexRoute
   '/platform/': typeof AuthenticatedPlatformIndexRoute
   '/pos/': typeof AuthenticatedPosIndexRoute
@@ -1667,6 +1683,7 @@ export interface FileRoutesByTo {
   '/hr/$section': typeof AuthenticatedHrSectionRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/messages/settings': typeof AuthenticatedMessagesSettingsRoute
+  '/nonprofit/$section': typeof AuthenticatedNonprofitSectionRoute
   '/payroll/reports': typeof AuthenticatedPayrollReportsRoute
   '/payroll/salary-structures': typeof AuthenticatedPayrollSalaryStructuresRoute
   '/payroll/settings': typeof AuthenticatedPayrollSettingsRoute
@@ -1716,6 +1733,7 @@ export interface FileRoutesByTo {
   '/fixed-assets': typeof AuthenticatedFixedAssetsIndexRoute
   '/hr': typeof AuthenticatedHrIndexRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
+  '/nonprofit': typeof AuthenticatedNonprofitIndexRoute
   '/payroll': typeof AuthenticatedPayrollIndexRoute
   '/platform': typeof AuthenticatedPlatformIndexRoute
   '/pos': typeof AuthenticatedPosIndexRoute
@@ -1872,6 +1890,7 @@ export interface FileRoutesById {
   '/_authenticated/hr/$section': typeof AuthenticatedHrSectionRoute
   '/_authenticated/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/_authenticated/messages/settings': typeof AuthenticatedMessagesSettingsRoute
+  '/_authenticated/nonprofit/$section': typeof AuthenticatedNonprofitSectionRoute
   '/_authenticated/payroll/reports': typeof AuthenticatedPayrollReportsRoute
   '/_authenticated/payroll/salary-structures': typeof AuthenticatedPayrollSalaryStructuresRoute
   '/_authenticated/payroll/settings': typeof AuthenticatedPayrollSettingsRoute
@@ -1921,6 +1940,7 @@ export interface FileRoutesById {
   '/_authenticated/fixed-assets/': typeof AuthenticatedFixedAssetsIndexRoute
   '/_authenticated/hr/': typeof AuthenticatedHrIndexRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/_authenticated/nonprofit/': typeof AuthenticatedNonprofitIndexRoute
   '/_authenticated/payroll/': typeof AuthenticatedPayrollIndexRoute
   '/_authenticated/platform/': typeof AuthenticatedPlatformIndexRoute
   '/_authenticated/pos/': typeof AuthenticatedPosIndexRoute
@@ -2080,6 +2100,7 @@ export interface FileRouteTypes {
     | '/hr/$section'
     | '/invite/$token'
     | '/messages/settings'
+    | '/nonprofit/$section'
     | '/payroll/reports'
     | '/payroll/salary-structures'
     | '/payroll/settings'
@@ -2129,6 +2150,7 @@ export interface FileRouteTypes {
     | '/fixed-assets/'
     | '/hr/'
     | '/messages/'
+    | '/nonprofit/'
     | '/payroll/'
     | '/platform/'
     | '/pos/'
@@ -2278,6 +2300,7 @@ export interface FileRouteTypes {
     | '/hr/$section'
     | '/invite/$token'
     | '/messages/settings'
+    | '/nonprofit/$section'
     | '/payroll/reports'
     | '/payroll/salary-structures'
     | '/payroll/settings'
@@ -2327,6 +2350,7 @@ export interface FileRouteTypes {
     | '/fixed-assets'
     | '/hr'
     | '/messages'
+    | '/nonprofit'
     | '/payroll'
     | '/platform'
     | '/pos'
@@ -2482,6 +2506,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hr/$section'
     | '/_authenticated/invite/$token'
     | '/_authenticated/messages/settings'
+    | '/_authenticated/nonprofit/$section'
     | '/_authenticated/payroll/reports'
     | '/_authenticated/payroll/salary-structures'
     | '/_authenticated/payroll/settings'
@@ -2531,6 +2556,7 @@ export interface FileRouteTypes {
     | '/_authenticated/fixed-assets/'
     | '/_authenticated/hr/'
     | '/_authenticated/messages/'
+    | '/_authenticated/nonprofit/'
     | '/_authenticated/payroll/'
     | '/_authenticated/platform/'
     | '/_authenticated/pos/'
@@ -3263,6 +3289,20 @@ declare module '@tanstack/react-router' {
       path: '/messages/settings'
       fullPath: '/messages/settings'
       preLoaderRoute: typeof AuthenticatedMessagesSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/nonprofit/': {
+      id: '/_authenticated/nonprofit/'
+      path: '/nonprofit'
+      fullPath: '/nonprofit/'
+      preLoaderRoute: typeof AuthenticatedNonprofitIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/nonprofit/$section': {
+      id: '/_authenticated/nonprofit/$section'
+      path: '/nonprofit/$section'
+      fullPath: '/nonprofit/$section'
+      preLoaderRoute: typeof AuthenticatedNonprofitSectionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/payroll/': {
@@ -4538,6 +4578,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHrSectionRoute: typeof AuthenticatedHrSectionRoute
   AuthenticatedInviteTokenRoute: typeof AuthenticatedInviteTokenRoute
   AuthenticatedMessagesSettingsRoute: typeof AuthenticatedMessagesSettingsRoute
+  AuthenticatedNonprofitSectionRoute: typeof AuthenticatedNonprofitSectionRoute
   AuthenticatedPosRegistersRoute: typeof AuthenticatedPosRegistersRoute
   AuthenticatedProductsServicesNewRoute: typeof AuthenticatedProductsServicesNewRoute
   AuthenticatedPropertyManagementSectionRoute: typeof AuthenticatedPropertyManagementSectionRoute
@@ -4552,6 +4593,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFixedAssetsIndexRoute: typeof AuthenticatedFixedAssetsIndexRoute
   AuthenticatedHrIndexRoute: typeof AuthenticatedHrIndexRoute
   AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
+  AuthenticatedNonprofitIndexRoute: typeof AuthenticatedNonprofitIndexRoute
   AuthenticatedPosIndexRoute: typeof AuthenticatedPosIndexRoute
   AuthenticatedProductsServicesIndexRoute: typeof AuthenticatedProductsServicesIndexRoute
   AuthenticatedPropertyManagementIndexRoute: typeof AuthenticatedPropertyManagementIndexRoute
@@ -4613,6 +4655,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHrSectionRoute: AuthenticatedHrSectionRoute,
   AuthenticatedInviteTokenRoute: AuthenticatedInviteTokenRoute,
   AuthenticatedMessagesSettingsRoute: AuthenticatedMessagesSettingsRoute,
+  AuthenticatedNonprofitSectionRoute: AuthenticatedNonprofitSectionRoute,
   AuthenticatedPosRegistersRoute: AuthenticatedPosRegistersRoute,
   AuthenticatedProductsServicesNewRoute: AuthenticatedProductsServicesNewRoute,
   AuthenticatedPropertyManagementSectionRoute:
@@ -4629,6 +4672,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFixedAssetsIndexRoute: AuthenticatedFixedAssetsIndexRoute,
   AuthenticatedHrIndexRoute: AuthenticatedHrIndexRoute,
   AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
+  AuthenticatedNonprofitIndexRoute: AuthenticatedNonprofitIndexRoute,
   AuthenticatedPosIndexRoute: AuthenticatedPosIndexRoute,
   AuthenticatedProductsServicesIndexRoute:
     AuthenticatedProductsServicesIndexRoute,

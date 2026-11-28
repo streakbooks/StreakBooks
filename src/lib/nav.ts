@@ -14,6 +14,7 @@ import {
   Briefcase,
   Building2,
   HeartHandshake,
+  LandPlot,
   Handshake,
   Percent,
   FolderOpen,
@@ -115,6 +116,13 @@ export const navItems: NavItem[] = [
     icon: HeartHandshake,
     group: "records",
     description: "Funds, donations, grants and programme accounting",
+  },
+  {
+    label: "Real Estate",
+    to: "/real-estate",
+    icon: LandPlot,
+    group: "records",
+    description: "Development inventory, sales, collections and project costs",
   },
   {
     label: "Contacts",

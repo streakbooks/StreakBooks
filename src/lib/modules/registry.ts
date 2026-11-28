@@ -221,6 +221,21 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
       "Fund tags post through the central ledger. Not production-ready: payment gateways, statutory filing and full portals remain inactive.",
   },
   {
+    id: "real-estate",
+    label: "Real Estate",
+    description: "Development inventory, property sales, collections and project costs",
+    path: "/real-estate",
+    group: "records",
+    inSidebar: true,
+    pageKind: "dashboard",
+    viewModes: ["list", "mobile-card"],
+    screenRoot: "src/screens/real-estate",
+    experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
+    premiumStatus: "in-progress",
+    notes:
+      "Foundation posts deposits, revenue, commissions and operating costs through post_journal. Portals, construction contracts, escrow and statutory packs are not built.",
+  },
+  {
     id: "hr",
     label: "HR",
     description: "Workforce, leave, attendance and employee lifecycle",

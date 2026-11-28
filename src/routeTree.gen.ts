@@ -122,6 +122,8 @@ import { Route as AuthenticatedPurchasesRequisitionsRouteImport } from './routes
 import { Route as AuthenticatedPurchasesSettingsRouteImport } from './routes/_authenticated/purchases/settings'
 import { Route as AuthenticatedPurchasesStatementsRouteImport } from './routes/_authenticated/purchases/statements'
 import { Route as AuthenticatedPurchasesSuppliersRouteImport } from './routes/_authenticated/purchases/suppliers'
+import { Route as AuthenticatedRealEstateIndexRouteImport } from './routes/_authenticated/real-estate/index'
+import { Route as AuthenticatedRealEstateSectionRouteImport } from './routes/_authenticated/real-estate/$section'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports/index'
 import { Route as AuthenticatedReportsReportIdRouteImport } from './routes/_authenticated/reports/$reportId'
 import { Route as AuthenticatedSalesIndexRouteImport } from './routes/_authenticated/sales/index'
@@ -858,6 +860,18 @@ const AuthenticatedPurchasesSuppliersRoute =
     path: '/suppliers',
     getParentRoute: () => AuthenticatedPurchasesRouteRoute,
   } as any)
+const AuthenticatedRealEstateIndexRoute =
+  AuthenticatedRealEstateIndexRouteImport.update({
+    id: '/real-estate/',
+    path: '/real-estate/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRealEstateSectionRoute =
+  AuthenticatedRealEstateSectionRouteImport.update({
+    id: '/real-estate/$section',
+    path: '/real-estate/$section',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsIndexRoute =
   AuthenticatedReportsIndexRouteImport.update({
     id: '/reports/',
@@ -1499,6 +1513,7 @@ export interface FileRoutesByFullPath {
   '/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
   '/purchases/statements': typeof AuthenticatedPurchasesStatementsRoute
   '/purchases/suppliers': typeof AuthenticatedPurchasesSuppliersRoute
+  '/real-estate/$section': typeof AuthenticatedRealEstateSectionRoute
   '/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
   '/sales/customers': typeof AuthenticatedSalesCustomersRoute
   '/sales/reminders': typeof AuthenticatedSalesRemindersRoute
@@ -1540,6 +1555,7 @@ export interface FileRoutesByFullPath {
   '/products-services/': typeof AuthenticatedProductsServicesIndexRoute
   '/property-management/': typeof AuthenticatedPropertyManagementIndexRoute
   '/purchases/': typeof AuthenticatedPurchasesIndexRoute
+  '/real-estate/': typeof AuthenticatedRealEstateIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
   '/sales/': typeof AuthenticatedSalesIndexRoute
   '/portal/app/': typeof PortalAppIndexRoute
@@ -1699,6 +1715,7 @@ export interface FileRoutesByTo {
   '/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
   '/purchases/statements': typeof AuthenticatedPurchasesStatementsRoute
   '/purchases/suppliers': typeof AuthenticatedPurchasesSuppliersRoute
+  '/real-estate/$section': typeof AuthenticatedRealEstateSectionRoute
   '/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
   '/sales/customers': typeof AuthenticatedSalesCustomersRoute
   '/sales/reminders': typeof AuthenticatedSalesRemindersRoute
@@ -1740,6 +1757,7 @@ export interface FileRoutesByTo {
   '/products-services': typeof AuthenticatedProductsServicesIndexRoute
   '/property-management': typeof AuthenticatedPropertyManagementIndexRoute
   '/purchases': typeof AuthenticatedPurchasesIndexRoute
+  '/real-estate': typeof AuthenticatedRealEstateIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
   '/sales': typeof AuthenticatedSalesIndexRoute
   '/portal/app': typeof PortalAppIndexRoute
@@ -1906,6 +1924,7 @@ export interface FileRoutesById {
   '/_authenticated/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
   '/_authenticated/purchases/statements': typeof AuthenticatedPurchasesStatementsRoute
   '/_authenticated/purchases/suppliers': typeof AuthenticatedPurchasesSuppliersRoute
+  '/_authenticated/real-estate/$section': typeof AuthenticatedRealEstateSectionRoute
   '/_authenticated/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
   '/_authenticated/sales/customers': typeof AuthenticatedSalesCustomersRoute
   '/_authenticated/sales/reminders': typeof AuthenticatedSalesRemindersRoute
@@ -1947,6 +1966,7 @@ export interface FileRoutesById {
   '/_authenticated/products-services/': typeof AuthenticatedProductsServicesIndexRoute
   '/_authenticated/property-management/': typeof AuthenticatedPropertyManagementIndexRoute
   '/_authenticated/purchases/': typeof AuthenticatedPurchasesIndexRoute
+  '/_authenticated/real-estate/': typeof AuthenticatedRealEstateIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
   '/_authenticated/sales/': typeof AuthenticatedSalesIndexRoute
   '/portal/app/': typeof PortalAppIndexRoute
@@ -2116,6 +2136,7 @@ export interface FileRouteTypes {
     | '/purchases/settings'
     | '/purchases/statements'
     | '/purchases/suppliers'
+    | '/real-estate/$section'
     | '/reports/$reportId'
     | '/sales/customers'
     | '/sales/reminders'
@@ -2157,6 +2178,7 @@ export interface FileRouteTypes {
     | '/products-services/'
     | '/property-management/'
     | '/purchases/'
+    | '/real-estate/'
     | '/reports/'
     | '/sales/'
     | '/portal/app/'
@@ -2316,6 +2338,7 @@ export interface FileRouteTypes {
     | '/purchases/settings'
     | '/purchases/statements'
     | '/purchases/suppliers'
+    | '/real-estate/$section'
     | '/reports/$reportId'
     | '/sales/customers'
     | '/sales/reminders'
@@ -2357,6 +2380,7 @@ export interface FileRouteTypes {
     | '/products-services'
     | '/property-management'
     | '/purchases'
+    | '/real-estate'
     | '/reports'
     | '/sales'
     | '/portal/app'
@@ -2522,6 +2546,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchases/settings'
     | '/_authenticated/purchases/statements'
     | '/_authenticated/purchases/suppliers'
+    | '/_authenticated/real-estate/$section'
     | '/_authenticated/reports/$reportId'
     | '/_authenticated/sales/customers'
     | '/_authenticated/sales/reminders'
@@ -2563,6 +2588,7 @@ export interface FileRouteTypes {
     | '/_authenticated/products-services/'
     | '/_authenticated/property-management/'
     | '/_authenticated/purchases/'
+    | '/_authenticated/real-estate/'
     | '/_authenticated/reports/'
     | '/_authenticated/sales/'
     | '/portal/app/'
@@ -3451,6 +3477,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/purchases/suppliers'
       preLoaderRoute: typeof AuthenticatedPurchasesSuppliersRouteImport
       parentRoute: typeof AuthenticatedPurchasesRouteRoute
+    }
+    '/_authenticated/real-estate/': {
+      id: '/_authenticated/real-estate/'
+      path: '/real-estate'
+      fullPath: '/real-estate/'
+      preLoaderRoute: typeof AuthenticatedRealEstateIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/real-estate/$section': {
+      id: '/_authenticated/real-estate/$section'
+      path: '/real-estate/$section'
+      fullPath: '/real-estate/$section'
+      preLoaderRoute: typeof AuthenticatedRealEstateSectionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports/': {
       id: '/_authenticated/reports/'
@@ -4582,6 +4622,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPosRegistersRoute: typeof AuthenticatedPosRegistersRoute
   AuthenticatedProductsServicesNewRoute: typeof AuthenticatedProductsServicesNewRoute
   AuthenticatedPropertyManagementSectionRoute: typeof AuthenticatedPropertyManagementSectionRoute
+  AuthenticatedRealEstateSectionRoute: typeof AuthenticatedRealEstateSectionRoute
   AuthenticatedReportsReportIdRoute: typeof AuthenticatedReportsReportIdRoute
   AuthenticatedAdvisorsPortalIndexRoute: typeof AuthenticatedAdvisorsPortalIndexRoute
   AuthenticatedAppStoreIndexRoute: typeof AuthenticatedAppStoreIndexRoute
@@ -4597,6 +4638,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPosIndexRoute: typeof AuthenticatedPosIndexRoute
   AuthenticatedProductsServicesIndexRoute: typeof AuthenticatedProductsServicesIndexRoute
   AuthenticatedPropertyManagementIndexRoute: typeof AuthenticatedPropertyManagementIndexRoute
+  AuthenticatedRealEstateIndexRoute: typeof AuthenticatedRealEstateIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
   AuthenticatedAppStoreAppsAppCodeRoute: typeof AuthenticatedAppStoreAppsAppCodeRoute
   AuthenticatedCrmLeadsLeadIdRoute: typeof AuthenticatedCrmLeadsLeadIdRoute
@@ -4660,6 +4702,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProductsServicesNewRoute: AuthenticatedProductsServicesNewRoute,
   AuthenticatedPropertyManagementSectionRoute:
     AuthenticatedPropertyManagementSectionRoute,
+  AuthenticatedRealEstateSectionRoute: AuthenticatedRealEstateSectionRoute,
   AuthenticatedReportsReportIdRoute: AuthenticatedReportsReportIdRoute,
   AuthenticatedAdvisorsPortalIndexRoute: AuthenticatedAdvisorsPortalIndexRoute,
   AuthenticatedAppStoreIndexRoute: AuthenticatedAppStoreIndexRoute,
@@ -4678,6 +4721,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedProductsServicesIndexRoute,
   AuthenticatedPropertyManagementIndexRoute:
     AuthenticatedPropertyManagementIndexRoute,
+  AuthenticatedRealEstateIndexRoute: AuthenticatedRealEstateIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
   AuthenticatedAppStoreAppsAppCodeRoute: AuthenticatedAppStoreAppsAppCodeRoute,
   AuthenticatedCrmLeadsLeadIdRoute: AuthenticatedCrmLeadsLeadIdRoute,

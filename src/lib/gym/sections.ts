@@ -171,9 +171,3 @@ export function gymSection(key: GymSectionKey): (typeof GYM_SECTIONS)[number] {
   if (!found) throw new Error(`Unknown Gym section: ${key}`);
   return found;
 }
-
-export const GYM_SUBNAV = GYM_SECTIONS.map((section) => ({
-  to: section.path,
-  label: section.label,
-  ...("exact" in section && section.exact ? { exact: true as const } : {}),
-}));

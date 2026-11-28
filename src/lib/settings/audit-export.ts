@@ -1,3 +1,16 @@
+import { assertReportDate } from "@/lib/reports/date-validation";
+
+/** Date filters cover complete UTC days at PostgreSQL timestamp precision. */
+export function settingsAuditDateRange(from?: string, to?: string) {
+  const start = from ? assertReportDate(from, "From date") : null;
+  const end = to ? assertReportDate(to, "To date") : null;
+  if (start && end && start > end) throw new Error("From date must be on or before to date.");
+  return {
+    fromTimestamp: start ? start + "T00:00:00Z" : null,
+    toTimestamp: end ? end + "T23:59:59.999999Z" : null,
+  };
+}
+
 /** Audit export uses only the rows already returned for the authorised company. */
 export type SettingsAuditExportRow = {
   created_at: string;

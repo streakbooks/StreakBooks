@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
+import { settingsAuditDateRange } from "./audit-export";
 import type { CompanyRole } from "@/lib/company-constants";
 import { normaliseAdjustments, type AccessAdjustment } from "@/lib/access-catalogue";
 import { normalizeCurrencySelection } from "@/lib/settings/currency-selection";
@@ -507,8 +508,7 @@ export const listCompanyAuditEvents = createServerFn({ method: "GET" })
       offset: Math.max(0, Number(input.offset) || 0),
       action: (input.action ?? "").trim().slice(0, 80),
       entityType: (input.entityType ?? "").trim().slice(0, 80),
-      fromDate: (input.fromDate ?? "").slice(0, 10),
-      toDate: (input.toDate ?? "").slice(0, 10),
+      ...settingsAuditDateRange(input.fromDate, input.toDate),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -518,11 +518,12 @@ export const listCompanyAuditEvents = createServerFn({ method: "GET" })
       .select("id, action, entity_type, entity_id, details, actor_user_id, created_at" as never)
       .eq("company_id" as never, data.companyId as never)
       .order("created_at" as never, { ascending: false })
+      .order("id" as never, { ascending: false })
       .range(data.offset, data.offset + data.limit - 1);
     if (data.action) q = q.ilike("action" as never, `%${data.action}%` as never);
     if (data.entityType) q = q.eq("entity_type" as never, data.entityType as never);
-    if (data.fromDate) q = q.gte("created_at" as never, `${data.fromDate}T00:00:00.000Z` as never);
-    if (data.toDate) q = q.lte("created_at" as never, `${data.toDate}T23:59:59.999Z` as never);
+    if (data.fromTimestamp) q = q.gte("created_at" as never, data.fromTimestamp as never);
+    if (data.toTimestamp) q = q.lte("created_at" as never, data.toTimestamp as never);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return (

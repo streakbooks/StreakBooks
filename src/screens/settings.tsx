@@ -1665,8 +1665,7 @@ export function SettingsForCompany({
                       <CardHeader>
                         <CardTitle className="text-base">Audit history</CardTitle>
                         <CardDescription>
-                          Append-only financial and administrative actions. Filter to reduce noise
-                          from journal.posted / demo.seed bursts. Secrets are stripped server-side.
+                          Date filters use UTC. Event times are shown in your local time zone.
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">

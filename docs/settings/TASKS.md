@@ -423,3 +423,8 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - [x] Enforce the organisation MFA requirement on new portal invitations. Staff can require MFA on individual invitations when optional. Six isolated database scenarios verify the stored membership flag and expiration, including organisations without a settings row. Existing memberships are outside this change.
 - [x] Reject invalid invitation lifetimes before saving. The portal form enforces the 1–90 whole-day range and disables account selectors for read-only users. The Settings Centre now remounts company-specific drafts when switching company.
 - Portal unit tests: 28 passed. Local network-isolated workflow PostgreSQL suite passed with migration, emergency invitation suspension and reapplication. Migration history: 392 unique versions, eight checks passed. Hosted application, real authenticator enrollment and full portal settings acceptance remain pending.
+
+## 2026-11-28 Audit history date boundaries (Batch 8)
+
+- [x] Audit filters validate real UTC calendar dates, include PostgreSQL microseconds through the end of the selected day, and sort simultaneous events by ID. The screen explains UTC filters and local display. Current-page CSV uses the same result set.
+- Both focused suites passed (17 tests), changed-file ESLint passed, and an isolated PostgreSQL 17 query included the last microsecond, excluded next-day midnight and ordered equal timestamps consistently. No migration was required.

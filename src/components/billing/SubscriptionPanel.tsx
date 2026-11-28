@@ -32,10 +32,12 @@ import {
 } from "@/lib/billing/billing.functions";
 import type { CheckoutBillingInput, PayMethodId } from "@/lib/billing/checkout-payload";
 import {
+  abandonOrganisationUpiMigration,
   changeOrganisationPlan,
   getOrganisationUpiMigration,
   openBillingPortal,
   previewOrganisationPlanChange,
+  resumeOrganisationUpiMigration,
   reverseScheduledPlanChange,
   syncOrganisationSubscription,
   type PlanChangePreview,
@@ -150,6 +152,8 @@ export function SubscriptionPanel({
   const startCheckout = useServerFn(createBillingCheckout);
   const changePlan = useServerFn(changeOrganisationPlan);
   const fetchUpiMigration = useServerFn(getOrganisationUpiMigration);
+  const resumeUpiMigrationFn = useServerFn(resumeOrganisationUpiMigration);
+  const abandonUpiMigrationFn = useServerFn(abandonOrganisationUpiMigration);
   const previewPlanChange = useServerFn(previewOrganisationPlanChange);
   const reversePlanChange = useServerFn(reverseScheduledPlanChange);
   const openPortal = useServerFn(openBillingPortal);
@@ -532,6 +536,33 @@ export function SubscriptionPanel({
       toast.error(friendlyAuthError(error));
     },
   });
+  const resumeUpiMigration = useMutation({
+    mutationFn: () =>
+      resumeUpiMigrationFn({
+        data: { companyId, origin: window.location.origin },
+      }),
+    onSuccess: (result) => {
+      toast.message("Resuming UPI AutoPay mandate authorisation…");
+      window.location.assign(result.checkoutUrl);
+    },
+    onError: (error) => {
+      toast.error(friendlyAuthError(error));
+      void upiMigration.refetch();
+    },
+  });
+  const abandonUpiMigration = useMutation({
+    mutationFn: () => abandonUpiMigrationFn({ data: { companyId } }),
+    onSuccess: () => {
+      toast.success("Upgrade cancelled. Your current plan is unchanged — you can retry anytime.");
+      setPlanSwitchPending(null);
+      void upiMigration.refetch();
+      void overview.refetch();
+    },
+    onError: (error) => {
+      toast.error(friendlyAuthError(error));
+      void upiMigration.refetch();
+    },
+  });
   const reverseScheduled = useMutation({
     mutationFn: () => reversePlanChange({ data: { companyId } }),
     onSuccess: (result) => {
@@ -651,12 +682,44 @@ export function SubscriptionPanel({
         <Alert className="mb-4">
           <Info className="h-4 w-4" />
           <AlertTitle>UPI plan upgrade in progress</AlertTitle>
-          <AlertDescription>
-            {upiMigration.data.message}
+          <AlertDescription className="space-y-3">
+            <p>{upiMigration.data.message}</p>
             {upiMigration.data.migration.status === "requires_manual_review" ? (
-              <span className="mt-1 block text-xs">
+              <span className="block text-xs">
                 Reference: {upiMigration.data.migration.id.slice(0, 8)}…
               </span>
+            ) : null}
+            {upiMigration.data.canResume || upiMigration.data.canAbandon ? (
+              <div className="flex flex-wrap gap-2">
+                {upiMigration.data.canResume ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={resumeUpiMigration.isPending || abandonUpiMigration.isPending}
+                    onClick={() => resumeUpiMigration.mutate()}
+                  >
+                    {resumeUpiMigration.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 size-3.5 animate-spin" aria-hidden />
+                        Opening Razorpay…
+                      </>
+                    ) : (
+                      "Resume mandate authorisation"
+                    )}
+                  </Button>
+                ) : null}
+                {upiMigration.data.canAbandon ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={resumeUpiMigration.isPending || abandonUpiMigration.isPending}
+                    onClick={() => abandonUpiMigration.mutate()}
+                  >
+                    {abandonUpiMigration.isPending ? "Cancelling…" : "Cancel upgrade"}
+                  </Button>
+                ) : null}
+              </div>
             ) : null}
           </AlertDescription>
         </Alert>

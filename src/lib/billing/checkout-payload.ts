@@ -259,3 +259,33 @@ export function trialEndUnixOrNull(trialEndsAt: string | null, now: Date): numbe
   if (end < minimum) return null;
   return Math.floor(end / 1000);
 }
+
+/**
+ * Trial end for a **customer paid checkout**.
+ *
+ * Organisations start on a no-card signup trial (`provider = 'none'`). Forwarding
+ * that remaining `trial_ends_at` into Stripe `trial_end` / Razorpay `start_at`
+ * made a normal purchase stay `trialing` until the old date — customers saw
+ * "Trial" after paying. Paid checkout therefore does **not** defer the first
+ * charge for no-card trials.
+ *
+ * Pass `deferFirstCharge: true` only for an explicit policy path that must keep
+ * a provider-side trial (admin tooling). Legitimate no-card trials before
+ * checkout are unchanged.
+ */
+export function trialEndUnixForPaidCheckout(input: {
+  trialEndsAt: string | null;
+  existingProvider: string | null | undefined;
+  deferFirstCharge?: boolean;
+  now?: Date;
+}): number | null {
+  const now = input.now ?? new Date();
+  if (input.deferFirstCharge) {
+    return trialEndUnixOrNull(input.trialEndsAt, now);
+  }
+  const provider = (input.existingProvider ?? "none").toLowerCase();
+  if (provider === "none" || provider === "") {
+    return null;
+  }
+  return trialEndUnixOrNull(input.trialEndsAt, now);
+}

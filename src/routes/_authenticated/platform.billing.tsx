@@ -12,6 +12,8 @@ import { BillingAnalyticsAdmin } from "@/components/platform/billing/BillingAnal
 import { CountryPricingAdmin } from "@/components/platform/billing/CountryPricingAdmin";
 import { CouponsAdmin } from "@/components/platform/billing/CouponsAdmin";
 import { FinanceAdmin } from "@/components/platform/billing/FinanceAdmin";
+import { SubscriptionAccessAdmin } from "@/components/platform/billing/SubscriptionAccessAdmin";
+import { TrialManagementAdmin } from "@/components/platform/billing/TrialManagementAdmin";
 import { FirmPartnerTiersAdmin } from "@/components/platform/billing/FirmPartnerTiersAdmin";
 import { LegalDocumentsAdmin } from "@/components/platform/billing/LegalDocumentsAdmin";
 import { PartnerProgramAdmin } from "@/components/platform/billing/PartnerProgramAdmin";
@@ -94,6 +96,8 @@ function PlatformBillingPage() {
       <PaymentOperationsAdmin canEdit={editor} isOwner={owner} />
       {editor ? <RazorpayStandardCheckout /> : null}
       <FinanceAdmin canEdit={editor} isOwner={owner} />
+      <TrialManagementAdmin canEdit={editor} />
+      <SubscriptionAccessAdmin canEdit={editor} />
       <CouponsAdmin canEdit={editor} />
       <PartnerProgramAdmin canEdit={editor} isOwner={owner} />
       <FirmPartnerTiersAdmin canEdit={editor} />

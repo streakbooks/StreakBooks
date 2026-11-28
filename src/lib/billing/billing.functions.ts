@@ -13,7 +13,7 @@ import {
   razorpayPlanBody,
   razorpaySubscriptionBody,
   stripeCheckoutBody,
-  trialEndUnixOrNull,
+  trialEndUnixForPaidCheckout,
   type CheckoutBilling,
   type CheckoutBillingInput,
   type PayMethodId,
@@ -732,6 +732,7 @@ export const createCheckoutFor = createServerOnlyFn(
         payMethod: method.id,
         price: priced.checkout,
         trialEndsAt: existing?.trial_ends_at ?? null,
+        existingProvider: existing?.provider ?? "none",
         offerCode: priced.quote.offerCode,
       });
     }
@@ -768,7 +769,10 @@ export const createCheckoutFor = createServerOnlyFn(
       promoDurationMonths: priced.quote.promoDurationMonths,
       successUrl: subscriptionSuccessUrl(data.origin),
       cancelUrl: `${data.origin}/settings?section=subscription&checkout=cancel`,
-      trialEndUnix: trialEndUnixOrNull(sub?.trial_ends_at ?? null, new Date()),
+      trialEndUnix: trialEndUnixForPaidCheckout({
+        trialEndsAt: sub?.trial_ends_at ?? null,
+        existingProvider: sub?.provider ?? "none",
+      }),
       billing: data.billing,
       payMethod: method.id,
     };
@@ -817,6 +821,7 @@ async function openPriceBookCheckout(input: {
   payMethod: PayMethodId;
   price: CheckoutPrice;
   trialEndsAt: string | null;
+  existingProvider: string | null;
   offerCode: string | null;
 }): Promise<{ url: string; provider: "stripe" | "razorpay"; checkoutId: string }> {
   const { ensureProviderPrice, ensureStripeTaxRate } =
@@ -858,7 +863,10 @@ async function openPriceBookCheckout(input: {
     .single();
   if (insertError) throw new Error(insertError.message);
   const checkoutId = (inserted as { id: string }).id;
-  const trialEndUnix = trialEndUnixOrNull(input.trialEndsAt, new Date());
+  const trialEndUnix = trialEndUnixForPaidCheckout({
+    trialEndsAt: input.trialEndsAt,
+    existingProvider: input.existingProvider,
+  });
   let providerCouponId: string | null = null;
   if (input.offerCode) {
     const { data: reserved, error: reserveError } = await input.supabase.rpc(

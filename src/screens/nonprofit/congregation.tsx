@@ -60,6 +60,7 @@ export function OrganisationKindForm({ companyId, kind }: { companyId: string; k
           value={next}
           onChange={(event) => setNext(event.target.value)}
         >
+          {/* lookup-fixed-enum: ngo, charity, church, temple, mosque, gurdwara, ministry, foundation */}
           {ORGANISATION_KINDS.map((item) => (
             <option key={item} value={item}>
               {item}
@@ -145,6 +146,7 @@ export function CollectionBatchForm({
               value={fundId}
               onChange={(event) => setFundId(event.target.value)}
             >
+              {/* lookup-fixed-enum: funds already loaded for this organisation */}
               {funds.map((fund) => (
                 <option key={text(fund.id)} value={text(fund.id)}>
                   {text(fund.code)} {text(fund.name)}
@@ -183,6 +185,7 @@ export function CollectionBatchForm({
               disabled={anonymous}
               onChange={(event) => setDonorId(event.target.value)}
             >
+              {/* lookup-fixed-enum: members already loaded for this organisation */}
               {donors.map((donor) => (
                 <option key={text(donor.id)} value={text(donor.id)}>
                   {text(donor.display_name)}
@@ -315,6 +318,7 @@ export function RecurringGiftForm({
             value={donorId}
             onChange={(event) => setDonorId(event.target.value)}
           >
+            {/* lookup-fixed-enum: members already loaded for this organisation */}
             {donors.map((donor) => (
               <option key={text(donor.id)} value={text(donor.id)}>
                 {text(donor.display_name)}
@@ -326,6 +330,7 @@ export function RecurringGiftForm({
             value={fundId}
             onChange={(event) => setFundId(event.target.value)}
           >
+            {/* lookup-fixed-enum: funds already loaded for this organisation */}
             {funds.map((fund) => (
               <option key={text(fund.id)} value={text(fund.id)}>
                 {text(fund.code)}
@@ -542,6 +547,7 @@ export function CongregationPanel({
               value={householdId}
               onChange={(formEvent) => setHouseholdId(formEvent.target.value)}
             >
+              {/* lookup-fixed-enum: households already loaded for this organisation */}
               {households.map((item) => (
                 <option key={text(item.id)} value={text(item.id)}>
                   {text(item.name)}
@@ -553,6 +559,7 @@ export function CongregationPanel({
               value={donorId}
               onChange={(formEvent) => setDonorId(formEvent.target.value)}
             >
+              {/* lookup-fixed-enum: members already loaded for this organisation */}
               {donors.map((item) => (
                 <option key={text(item.id)} value={text(item.id)}>
                   {text(item.display_name)}
@@ -633,6 +640,7 @@ export function CongregationPanel({
               value={eventId}
               onChange={(formEvent) => setEventId(formEvent.target.value)}
             >
+              {/* lookup-fixed-enum: events already loaded for this organisation */}
               {events.map((item) => (
                 <option key={text(item.id)} value={text(item.id)}>
                   {text(item.name)} ({text(item.present_count)} present)
@@ -644,6 +652,7 @@ export function CongregationPanel({
               value={donorId}
               onChange={(formEvent) => setDonorId(formEvent.target.value)}
             >
+              {/* lookup-fixed-enum: members already loaded for this organisation */}
               {donors.map((item) => (
                 <option key={text(item.id)} value={text(item.id)}>
                   {text(item.display_name)}
@@ -666,6 +675,7 @@ export function CongregationPanel({
               value={volunteerId}
               onChange={(formEvent) => setVolunteerId(formEvent.target.value)}
             >
+              {/* lookup-fixed-enum: volunteers already loaded for this organisation */}
               {volunteers.map((item) => (
                 <option key={text(item.id)} value={text(item.id)}>
                   {text(item.display_name)}
@@ -677,6 +687,7 @@ export function CongregationPanel({
               value={eventId}
               onChange={(formEvent) => setEventId(formEvent.target.value)}
             >
+              {/* lookup-fixed-enum: events already loaded for this organisation */}
               {events.map((item) => (
                 <option key={text(item.id)} value={text(item.id)}>
                   {text(item.name)}

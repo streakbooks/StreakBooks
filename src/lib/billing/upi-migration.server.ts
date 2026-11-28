@@ -332,12 +332,16 @@ async function resumeOrReleaseOpenMigration(
     }
   }
 
-  if (timedOut || planChanged) {
+  // Creation never finished (no Razorpay sub / checkout) — safe to release immediately.
+  const neverProvisioned = !open.newProviderSubscriptionId && !open.checkoutId;
+  if (timedOut || planChanged || neverProvisioned) {
     await failAbandonedUpiMigration(
       open.id,
-      timedOut
-        ? "Previous plan migration was abandoned before mandate authorisation completed."
-        : "Previous upgrade target changed before mandate authorisation. Safe to retry.",
+      neverProvisioned
+        ? "Previous plan migration never reached Razorpay checkout. Safe to retry."
+        : timedOut
+          ? "Previous plan migration was abandoned before mandate authorisation completed."
+          : "Previous upgrade target changed before mandate authorisation. Safe to retry.",
     );
     return null;
   }

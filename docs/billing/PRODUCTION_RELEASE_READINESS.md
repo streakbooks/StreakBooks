@@ -9,6 +9,10 @@
 **Verdict for merge:** **Safe to merge after P0 gates below** — code review found **no open P0 blockers** in the PR diff.  
 **Verdict for customer billing / live keys:** **Not ready.** Authenticated staging payment capture (Workflows A/B) and production env/webhook verification remain outstanding. Do **not** enable live payment keys without explicit operator authorisation.
 
+### Follow-on (not in PR #98)
+
+UPI AutoPay / e-mandate mid-cycle upgrades are implemented on branch `feature/razorpay-upi-subscription-migration` as a **new-mandate migration** (Razorpay forbids in-place PATCH for UPI). See `docs/billing/25-razorpay-upi-subscription-migration.md`. Requires migration `20261128120000_billing_upi_subscription_migration.sql` on the target DB before enablement. Keep sandbox-only until verified.
+
 ---
 
 ## 1. Inspection summary

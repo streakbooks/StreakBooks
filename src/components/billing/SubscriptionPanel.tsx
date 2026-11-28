@@ -33,6 +33,7 @@ import {
 import type { CheckoutBillingInput, PayMethodId } from "@/lib/billing/checkout-payload";
 import {
   changeOrganisationPlan,
+  getOrganisationUpiMigration,
   openBillingPortal,
   previewOrganisationPlanChange,
   reverseScheduledPlanChange,
@@ -148,6 +149,7 @@ export function SubscriptionPanel({
   const preview = useServerFn(previewBillingQuote);
   const startCheckout = useServerFn(createBillingCheckout);
   const changePlan = useServerFn(changeOrganisationPlan);
+  const fetchUpiMigration = useServerFn(getOrganisationUpiMigration);
   const previewPlanChange = useServerFn(previewOrganisationPlanChange);
   const reversePlanChange = useServerFn(reverseScheduledPlanChange);
   const openPortal = useServerFn(openBillingPortal);
@@ -158,6 +160,15 @@ export function SubscriptionPanel({
     queryKey: billingKey(companyId),
     queryFn: () => fetchOverview({ data: { companyId } }),
     refetchInterval: activating || planSwitchPending ? 2_500 : false,
+  });
+  const upiMigration = useQuery({
+    queryKey: ["billing-upi-migration", companyId],
+    queryFn: () => fetchUpiMigration({ data: { companyId } }),
+    refetchInterval: (query) => {
+      const status = query.state.data?.migration?.status;
+      if (!status || status === "completed" || status === "failed") return false;
+      return 4_000;
+    },
   });
   const [interval, setInterval] = useState<BillingInterval>(initialInterval ?? "month");
   const [offerCode, setOfferCode] = useState("");
@@ -471,6 +482,16 @@ export function SubscriptionPanel({
         window.location.assign(result.paymentActionUrl);
         return;
       }
+      if (result.paymentActionUrl && result.provider === "razorpay") {
+        setTarget(null);
+        setPlanSwitchPending(result.targetPlanCode);
+        toast.message(
+          "Opening Razorpay so you can authorise a new UPI AutoPay mandate. Your current plan stays active until that succeeds.",
+        );
+        void upiMigration.refetch();
+        window.location.assign(result.paymentActionUrl);
+        return;
+      }
       setTarget(null);
       if (result.applies === "period_end") {
         toast.success(
@@ -486,6 +507,7 @@ export function SubscriptionPanel({
           toast.message(
             "Upgrade submitted to Razorpay. Your plan updates after Razorpay confirms payment — not from this screen alone.",
           );
+          void upiMigration.refetch();
         } else {
           toast.success(
             result.chargedOnFile
@@ -622,6 +644,20 @@ export function SubscriptionPanel({
                 . This page updates automatically when Stripe confirms the charge.
               </>
             )}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {upiMigration.data?.migration && upiMigration.data.message ? (
+        <Alert className="mb-4">
+          <Info className="h-4 w-4" />
+          <AlertTitle>UPI plan upgrade in progress</AlertTitle>
+          <AlertDescription>
+            {upiMigration.data.message}
+            {upiMigration.data.migration.status === "requires_manual_review" ? (
+              <span className="mt-1 block text-xs">
+                Reference: {upiMigration.data.migration.id.slice(0, 8)}…
+              </span>
+            ) : null}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -949,6 +985,16 @@ export function SubscriptionPanel({
                             {switchPreview.paymentRequired ? " and payment" : ""}.
                           </li>
                         ) : null}
+                        {switchPreview.appliesMode === "migration" ? (
+                          <li>
+                            You will authorise a <strong>new</strong> UPI AutoPay / e-mandate for
+                            the higher plan. Your current plan stays active until Razorpay confirms
+                            that mandate. We cancel the old mandate only after that confirmation.
+                            Any amount due today is a <strong>StreakBooks estimate</strong>{" "}
+                            (optional one-time addon) — Razorpay’s charged amount is authoritative
+                            and may differ. If due today is ₹0, no upfront addon is sent.
+                          </li>
+                        ) : null}
                         {switchPreview.nextRenewalAt ? (
                           <li>
                             Your next billing date stays{" "}
@@ -984,15 +1030,19 @@ export function SubscriptionPanel({
                     onClick={() => planChange.mutate(target.code)}
                   >
                     {planChange.isPending
-                      ? switchPreview?.paymentRequired && lockedProvider === "stripe"
-                        ? "Opening Stripe…"
-                        : lockedProvider === "razorpay"
-                          ? "Updating with Razorpay…"
-                          : "Confirming…"
+                      ? switchPreview?.appliesMode === "migration"
+                        ? "Starting UPI upgrade…"
+                        : switchPreview?.paymentRequired && lockedProvider === "stripe"
+                          ? "Opening Stripe…"
+                          : lockedProvider === "razorpay"
+                            ? "Updating with Razorpay…"
+                            : "Confirming…"
                       : switchPreview?.kind === "upgrade"
-                        ? switchPreview.paymentRequired && lockedProvider === "stripe"
-                          ? "Confirm and pay"
-                          : "Change plan"
+                        ? switchPreview.appliesMode === "migration"
+                          ? "Authorise new UPI mandate"
+                          : switchPreview.paymentRequired && lockedProvider === "stripe"
+                            ? "Confirm and pay"
+                            : "Change plan"
                         : switchCopy.button}
                   </Button>
                 )}

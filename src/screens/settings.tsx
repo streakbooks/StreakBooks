@@ -131,6 +131,8 @@ const LEGACY_TAB_BY_SECTION: Partial<Record<SettingsCategory, string>> = {
 };
 
 const CONFIG_SECTIONS: SettingsCategory[] = [
+  "nonprofit",
+  "pos",
   "sales",
   "purchases",
   "banking",

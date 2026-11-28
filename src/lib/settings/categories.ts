@@ -9,6 +9,7 @@ export const SETTINGS_CATEGORIES = [
   "purchases",
   "banking",
   "pos",
+  "nonprofit",
   "dimensions",
   "tax",
   "products",

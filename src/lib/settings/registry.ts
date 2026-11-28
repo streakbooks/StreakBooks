@@ -107,6 +107,15 @@ export const categoryMeta: CategoryMeta[] = [
     availability: "partial",
   },
   {
+    id: "nonprofit",
+    label: "Nonprofit fund accounting",
+    description:
+      "Manage the accounting framework, country and ledger accounts for nonprofit transactions.",
+    synonyms: ["fund accounting", "donations", "grants", "restricted funds"],
+    moduleLinks: [{ label: "Fund accounting setup", to: "/nonprofit/settings" }],
+    availability: "partial",
+  },
+  {
     id: "pos",
     label: "Point of Sale",
     description:

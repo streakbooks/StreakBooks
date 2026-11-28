@@ -37,6 +37,7 @@ export type NonprofitRecord = {
 };
 
 export type NonprofitSettings = {
+  version: number;
   enabled: boolean;
   accounting_framework: string;
   country_code: string;
@@ -167,6 +168,7 @@ export function mapNonprofitWorkspace(value: unknown): NonprofitWorkspace {
   const beneficiaries = pick(value, "beneficiaries");
   return {
     settings: {
+      version: Number(pick(settings, "version") ?? 0),
       enabled: pick(settings, "enabled") === true,
       accounting_framework: typeof framework === "string" ? framework : "configurable",
       country_code: typeof country === "string" ? country : "",

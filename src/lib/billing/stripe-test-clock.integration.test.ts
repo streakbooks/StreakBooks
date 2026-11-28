@@ -221,7 +221,7 @@ describe.runIf(enabled)("Stripe Test Clock lifecycle (live test-mode API)", () =
       expect(subscriptionId).toMatch(/^sub_/);
       expect(["active", "trialing"]).toContain(String(sub["status"]));
 
-      // 3. Preview prorated upgrade
+      // 3. Preview prorated upgrade (pin proration_date for confirm alignment)
       const preview = await stripePreviewPlanChange(
         stripe,
         subscriptionId,
@@ -230,17 +230,39 @@ describe.runIf(enabled)("Stripe Test Clock lifecycle (live test-mode API)", () =
       );
       expect(preview.amountDueMinor).toBeGreaterThan(0);
       expect(preview.currency).toBe("USD");
+      expect(preview.prorationDateUnix).toBeGreaterThan(0);
+      const periodEndBefore = preview.periodEndUnix;
 
       // 2 + 4. Upgrade + payment path (always_invoice / pending_if_incomplete)
+      const upgradeKey = stripePlanChangeIdempotencyKey(
+        "clock-co",
+        prices.monthlyPro,
+        "upgrade",
+        preview.prorationDateUnix,
+      );
       const upgrade = await stripeChangePrice(
         stripe,
         subscriptionId,
         prices.monthlyPro,
         "upgrade",
-        stripePlanChangeIdempotencyKey("clock-co", prices.monthlyPro, "upgrade"),
+        upgradeKey,
+        { prorationDateUnix: preview.prorationDateUnix },
       );
       expect(upgrade.alreadyOnPrice).toBe(false);
       expect(upgrade.invoiceId || upgrade.amountDueMinor >= 0).toBeTruthy();
+
+      // Idempotent retry with the same preview window must not create a second upgrade request.
+      const upgradeRetry = await stripeChangePrice(
+        stripe,
+        subscriptionId,
+        prices.monthlyPro,
+        "upgrade",
+        upgradeKey,
+        { prorationDateUnix: preview.prorationDateUnix },
+      );
+      expect(upgradeRetry.invoiceId === upgrade.invoiceId || upgradeRetry.alreadyOnPrice).toBe(
+        true,
+      );
 
       // Pay open invoice with default PM if needed
       if (upgrade.invoiceId && upgrade.amountDueMinor > 0) {
@@ -256,6 +278,10 @@ describe.runIf(enabled)("Stripe Test Clock lifecycle (live test-mode API)", () =
         `subscriptions/${encodeURIComponent(subscriptionId)}`,
       );
       expect(String(afterUpgrade["status"])).toBe("active");
+      if (periodEndBefore != null && typeof afterUpgrade["current_period_end"] === "number") {
+        // Same-interval upgrade preserves the billing anchor / renewal date.
+        expect(afterUpgrade["current_period_end"]).toBe(periodEndBefore);
+      }
       const items = afterUpgrade["items"] as { data?: Array<{ price?: { id?: string } | string }> };
       const priceAfter =
         typeof items?.data?.[0]?.price === "string"
@@ -264,6 +290,23 @@ describe.runIf(enabled)("Stripe Test Clock lifecycle (live test-mode API)", () =
             ? items.data[0].price.id
             : null;
       expect(priceAfter).toBe(prices.monthlyPro);
+
+      // Zero-charge: confirming the same price again is a no-op (no new invoice due).
+      const zeroCharge = await stripeChangePrice(
+        stripe,
+        subscriptionId,
+        prices.monthlyPro,
+        "upgrade",
+        stripePlanChangeIdempotencyKey(
+          "clock-co",
+          prices.monthlyPro,
+          "upgrade",
+          preview.prorationDateUnix + 120,
+        ),
+      );
+      expect(zeroCharge.alreadyOnPrice).toBe(true);
+      expect(zeroCharge.amountDueMinor).toBe(0);
+      expect(zeroCharge.paymentActionUrl).toBeNull();
 
       // 6. Switch monthly → annual (treat as upgrade when yearly monthly-equivalent higher)
       const toAnnual = await stripeChangePrice(
@@ -445,10 +488,15 @@ describe("Stripe lifecycle policy contracts (always run)", () => {
     expect(planChangePaymentCopy("downgrade").paymentNow.toLowerCase()).toMatch(/no charge/);
   });
 
-  it("builds unique plan-change idempotency keys", () => {
-    const a = stripePlanChangeIdempotencyKey("co-1", "price-1", "upgrade");
-    const b = stripePlanChangeIdempotencyKey("co-1", "price-1", "upgrade");
-    expect(a).not.toBe(b);
+  it("reuses plan-change idempotency keys for the same preview window", () => {
+    const t = 1_700_000_000;
+    const a = stripePlanChangeIdempotencyKey("co-1", "price_pro_month", "upgrade", t);
+    const b = stripePlanChangeIdempotencyKey("co-1", "price_pro_month", "upgrade", t + 15);
+    const c = stripePlanChangeIdempotencyKey("co-1", "price_pro_month", "upgrade", t + 120);
+    const other = stripePlanChangeIdempotencyKey("co-1", "price_biz_year", "upgrade", t);
+    expect(a).toBe(b);
+    expect(a).not.toBe(c);
+    expect(a).not.toBe(other);
   });
 
   it("exposes stripePreviewPlanChange for proration preview", () => {

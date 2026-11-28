@@ -88,18 +88,26 @@ test("checkout provider refresh preserves drafts and invalid entries cannot hand
 }) => {
   await page.goto("/?flow=checkout");
   await page.getByRole("textbox", { name: "First name", exact: true }).fill("Alex");
-  const card = page.getByRole("radio", { name: /Cards, wallets/ });
+  // India fixture: Razorpay-backed "Card"; international catalogue still uses "Cards, wallets…".
+  // Prefer value= so Card detail copy mentioning "UPI AutoPay" cannot match the UPI radio.
+  const card = page.getByRole("radio", { name: /^(Card|Cards, wallets)\b/ });
   await card.click();
   await page.getByRole("button", { name: "Rerender checkout" }).click();
   await expect(card).toBeChecked();
   await expect(page.getByRole("textbox", { name: "First name", exact: true })).toHaveValue("Alex");
-  await page.getByRole("radio", { name: /UPI AutoPay/ }).click();
-  await page.getByRole("button", { name: "Disable Razorpay fixture" }).click();
-  await expect(card).toBeChecked();
   await page.getByRole("button", { name: /Continue to (payment|Stripe|Razorpay)/i }).click();
   await expect(
     page.getByRole("alert").filter({ hasText: /Enter a billing email|required|invalid/i }),
   ).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("Checkout handoffs: 0");
+  await page.locator('[role="radio"][value="upi"]').click();
+  await page.getByRole("button", { name: "Disable Razorpay fixture" }).click();
+  // India methods are all Razorpay — disabling the fixture leaves no handoff target.
+  await expect(
+    page.locator('[role="radio"][value="card"], [role="radio"][value="upi"]'),
+  ).toHaveCount(0);
+  await expect(page.getByText(/No payment processor is configured/i)).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Continue to /i })).toBeDisabled();
   await expect(page.getByRole("status")).toContainText("Checkout handoffs: 0");
 });
 for (const mode of ["light", "dark"]) {

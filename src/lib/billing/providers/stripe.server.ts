@@ -166,16 +166,28 @@ export function stripePlanChangeCancelUrl(origin: string): string {
 }
 
 /** Fresh key each attempt so Stripe never rejects parameter changes (common retry failure). */
+/**
+ * Stable Stripe Idempotency-Key for plan changes within a preview window.
+ * Double-clicks / retries with the same proration_date reuse one Stripe request.
+ * Uses the full price id (Stripe allows long Idempotency-Key values).
+ */
 export function stripePlanChangeIdempotencyKey(
   companyId: string,
   planPriceId: string,
   kind: "upgrade" | "downgrade",
+  prorationDateUnix?: number | null,
 ): string {
-  const nonce =
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  return `sb-plan-${kind}-${companyId.slice(0, 8)}-${planPriceId.slice(0, 8)}-${nonce}`;
+  const windowSeconds =
+    typeof prorationDateUnix === "number" &&
+    Number.isFinite(prorationDateUnix) &&
+    prorationDateUnix > 0
+      ? Math.floor(prorationDateUnix)
+      : Math.floor(Date.now() / 1000);
+  // Bucket to 60s so a confirm a few seconds after preview still matches.
+  const bucket = Math.floor(windowSeconds / 60);
+  const company = companyId.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 36);
+  const price = planPriceId.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64);
+  return `sb-plan-${kind}-${company}-${price}-${bucket}`;
 }
 
 function firstSubscriptionItem(subscription: Record<string, unknown>): {
@@ -309,6 +321,7 @@ export async function stripeChangePrice(
   priceId: string,
   kind: "upgrade" | "downgrade",
   idempotencyKey: string,
+  options?: { prorationDateUnix?: number | null },
 ): Promise<StripePlanChangeResult> {
   const subscription = await client.request(
     "GET",
@@ -356,6 +369,17 @@ export async function stripeChangePrice(
     // Keep current entitlements until the prorated invoice is paid (Stripe recommended).
     body.set("proration_behavior", "always_invoice");
     body.set("payment_behavior", "pending_if_incomplete");
+    // Same proration_date as invoice preview so due-today matches the confirmation UI.
+    if (
+      typeof options?.prorationDateUnix === "number" &&
+      Number.isFinite(options.prorationDateUnix) &&
+      options.prorationDateUnix > 0
+    ) {
+      body.set("proration_date", String(Math.floor(options.prorationDateUnix)));
+    }
+    if (!intervalChanged) {
+      body.set("billing_cycle_anchor", "unchanged");
+    }
   } else {
     // Netflix-style same-interval: new price on next invoice; no credit/charge today.
     body.set("proration_behavior", "none");
@@ -406,18 +430,37 @@ export type StripePlanPreview = {
   currency: string;
   creditMinor: number;
   chargeMinor: number;
+  taxMinor: number;
+  prorationDateUnix: number;
+  periodEndUnix: number | null;
   lines: { description: string; amountMinor: number }[];
 };
 
+function stripePreviewTaxMinor(preview: Record<string, unknown>): number {
+  const tax = Number(preview["tax"] ?? 0);
+  if (Number.isFinite(tax) && tax !== 0) return Math.abs(Math.round(tax));
+  const totals = preview["total_tax_amounts"];
+  if (Array.isArray(totals)) {
+    const sum = totals.reduce((acc, row) => {
+      if (!row || typeof row !== "object") return acc;
+      const amount = Number((row as { amount?: unknown }).amount ?? 0);
+      return acc + (Number.isFinite(amount) ? amount : 0);
+    }, 0);
+    if (sum !== 0) return Math.abs(Math.round(sum));
+  }
+  return 0;
+}
+
 /**
  * Preview prorated charge/credit before confirming a plan or interval change (Xero-style).
- * Does not mutate the subscription.
+ * Does not mutate the subscription. Pins proration_date for later confirm alignment.
  */
 export async function stripePreviewPlanChange(
   client: StripeClient,
   subscriptionId: string,
   priceId: string,
   kind: "upgrade" | "downgrade",
+  options?: { prorationDateUnix?: number },
 ): Promise<StripePlanPreview> {
   const subscription = await client.request(
     "GET",
@@ -435,6 +478,15 @@ export async function stripePreviewPlanChange(
         : null;
   if (!customer) throw new Error("Stripe subscription has no customer.");
 
+  const prorationDateUnix =
+    typeof options?.prorationDateUnix === "number" && Number.isFinite(options.prorationDateUnix)
+      ? Math.floor(options.prorationDateUnix)
+      : Math.floor(Date.now() / 1000);
+  const periodEndUnix =
+    typeof subscription["current_period_end"] === "number"
+      ? subscription["current_period_end"]
+      : null;
+
   const params = new URLSearchParams();
   params.set("customer", customer);
   params.set("subscription", subscriptionId);
@@ -444,6 +496,9 @@ export async function stripePreviewPlanChange(
     "subscription_details[proration_behavior]",
     kind === "upgrade" ? "create_prorations" : "none",
   );
+  if (kind === "upgrade") {
+    params.set("subscription_details[proration_date]", String(prorationDateUnix));
+  }
 
   let preview: Record<string, unknown>;
   try {
@@ -456,6 +511,9 @@ export async function stripePreviewPlanChange(
     query.set("subscription_items[0][id]", item.id);
     query.set("subscription_items[0][price]", priceId);
     query.set("subscription_proration_behavior", kind === "upgrade" ? "create_prorations" : "none");
+    if (kind === "upgrade") {
+      query.set("subscription_proration_date", String(prorationDateUnix));
+    }
     preview = await client.request("GET", `invoices/upcoming?${query.toString()}`);
   }
 
@@ -474,6 +532,9 @@ export async function stripePreviewPlanChange(
     currency,
     creditMinor: Math.abs(creditMinor),
     chargeMinor,
+    taxMinor: stripePreviewTaxMinor(preview),
+    prorationDateUnix,
+    periodEndUnix,
     lines,
   };
 }

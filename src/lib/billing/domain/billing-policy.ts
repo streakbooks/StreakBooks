@@ -7,7 +7,8 @@
  * | First subscribe    | Yes — hosted Checkout               | After payment / trial     |
  * | Free trial         | No until trial ends                 | Immediate on trial plan   |
  * | Upgrade (Stripe)   | Yes — prorated remainder of period  | After payment succeeds    |
- * | Upgrade (Razorpay) | No mid-cycle charge                 | At next renewal           |
+ * | Upgrade (Razorpay card) | Immediate update + difference charge | After Razorpay confirms |
+ * | Upgrade (Razorpay UPI/e-mandate) | Not supported in-place      | Cancel → resubscribe      |
  * | Downgrade          | No                                  | At period end / renewal   |
  * | Cancel             | No                                  | At period end             |
  * | Renewal            | Yes — full plan price               | Continues                 |
@@ -37,15 +38,15 @@ export function planChangePaymentCopy(
   description: string;
 } {
   if (provider === "razorpay") {
-    // India Razorpay checkouts use UPI AutoPay / e-mandate — Razorpay does not allow
-    // mid-mandate plan updates. Customers cancel at period end, then subscribe again.
+    // Default copy assumes UPI/e-mandate (most common India path). Preview.changeSupported
+    // overrides the confirm button when an eligible Razorpay card mandate can update now.
     return {
       titleVerb: kind === "upgrade" ? "Upgrade" : "Downgrade",
-      paymentNow: "Not available on UPI AutoPay",
-      whenStarts: "After you cancel and subscribe again",
-      button: "Got it",
+      paymentNow: "Depends on payment method",
+      whenStarts: "Card: after Razorpay confirms · UPI/e-mandate: after cancel + resubscribe",
+      button: "Review details",
       description:
-        "UPI AutoPay and bank e-mandate subscriptions cannot change plan on Razorpay. Keep your current plan until the period ends, cancel at renewal if you want to leave, then subscribe to the new plan. Your current mandate is not charged for this dialog.",
+        "Eligible Razorpay cards can upgrade immediately (Razorpay charges the difference). UPI AutoPay and bank e-mandate cannot change plan mid-mandate — cancel at period end, then subscribe to the new plan.",
     };
   }
 
@@ -54,9 +55,9 @@ export function planChangePaymentCopy(
       titleVerb: "Upgrade",
       paymentNow: "Yes — prorated difference on Stripe",
       whenStarts: "After payment succeeds",
-      button: "Continue to Stripe",
+      button: "Confirm upgrade",
       description:
-        "Like Xero and Netflix: you pay the prorated difference for the rest of this billing period now. Your new plan starts only after that payment succeeds. If a card is already on file, Stripe may charge it and skip the pay page when no further action is needed.",
+        "Like QuickBooks and Xero: you pay the prorated difference for the rest of this billing period now. Your new plan starts only after that payment succeeds. If a card is already on file, Stripe may charge it and skip the pay page when no further action is needed.",
     };
   }
   return {
@@ -75,20 +76,24 @@ export function billingChargeRules(
   if (provider === "razorpay") {
     return [
       {
-        title: "Upgrade / downgrade",
-        body: "UPI AutoPay and e-mandate cannot change plan mid-mandate. Cancel at period end, then subscribe to the new plan.",
+        title: "Upgrade (card)",
+        body: "Eligible Razorpay cards update immediately. Razorpay charges or refunds the prorated difference; entitlements follow webhook confirmation.",
+      },
+      {
+        title: "Upgrade (UPI / e-mandate)",
+        body: "Not supported mid-mandate. Cancel at period end, then subscribe to the new plan.",
+      },
+      {
+        title: "Downgrade",
+        body: "Eligible cards schedule at cycle end. UPI/e-mandate require cancel + resubscribe.",
       },
       {
         title: "Cancel",
         body: "No charge today. Access continues until renewal, then the mandate ends.",
       },
       {
-        title: "Monthly ↔ annual",
-        body: "Same as plan changes — start a new subscription after the current mandate ends.",
-      },
-      {
         title: "First subscribe / trial",
-        body: "Checkout for the plan price, or a free trial period first. Trial is separate from upgrades.",
+        body: "Checkout for the plan price, or a free trial period first. Prefer card if you need mid-cycle upgrades later.",
       },
     ];
   }
@@ -119,7 +124,7 @@ export function billingChargeRules(
 export const BILLING_CHARGE_RULES: { title: string; body: string }[] = [
   {
     title: "Upgrade",
-    body: "Stripe charges a prorated difference now; Razorpay applies the new plan at renewal.",
+    body: "Stripe charges a prorated difference now. Razorpay cards may update immediately; UPI/e-mandate require cancel + resubscribe.",
   },
   {
     title: "Downgrade",
@@ -127,7 +132,7 @@ export const BILLING_CHARGE_RULES: { title: string; body: string }[] = [
   },
   {
     title: "Monthly ↔ annual",
-    body: "Higher effective monthly charges may be due now on Stripe; Razorpay schedules at renewal.",
+    body: "Higher effective monthly charges may be due now on Stripe; Razorpay card schedules or charges by mandate rules.",
   },
   {
     title: "First subscribe / trial",

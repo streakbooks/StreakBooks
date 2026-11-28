@@ -4,7 +4,7 @@ import { planChangePaymentCopy } from "@/lib/billing/domain/billing-policy";
 import { lockedSubscriptionProvider } from "@/lib/billing/provider-resolution";
 
 /**
- * Contract for the Standard→Pro dialog when company_subscriptions.provider = razorpay.
+ * Contract for the Standard→Pro dialog when company_subscriptions.provider is locked.
  * Mirrors SubscriptionPanel button/due-now selection without mounting React.
  */
 function planChangeDialogCopy(input: {
@@ -18,8 +18,10 @@ function planChangeDialogCopy(input: {
   const copy = planChangePaymentCopy(input.kind, locked);
   const button = !input.changeSupported
     ? "Got it"
-    : input.paymentRequired && locked === "stripe"
-      ? "Continue to Stripe"
+    : input.kind === "upgrade"
+      ? input.paymentRequired && locked === "stripe"
+        ? "Confirm and pay"
+        : "Change plan"
       : copy.button;
   const dueNow = input.paymentRequired
     ? formatMinor(100, input.currency)
@@ -43,7 +45,7 @@ describe("hybrid plan-change dialog copy", () => {
     expect(dialog.dueNow).not.toMatch(/£/);
   });
 
-  it("keeps Continue to Stripe only when Stripe requires payment now", () => {
+  it("uses Confirm and pay for Stripe upgrades that require payment", () => {
     const dialog = planChangeDialogCopy({
       provider: "stripe",
       paymentRequired: true,
@@ -51,7 +53,21 @@ describe("hybrid plan-change dialog copy", () => {
       currency: "GBP",
       kind: "upgrade",
     });
-    expect(dialog.button).toBe("Continue to Stripe");
+    expect(dialog.button).toBe("Confirm and pay");
+    expect(dialog.button.toLowerCase()).not.toContain("razorpay");
     expect(dialog.dueNow).toMatch(/£/);
+  });
+
+  it("uses Change plan for eligible Razorpay card upgrades", () => {
+    const dialog = planChangeDialogCopy({
+      provider: "razorpay",
+      paymentRequired: true,
+      changeSupported: true,
+      currency: "INR",
+      kind: "upgrade",
+    });
+    expect(dialog.locked).toBe("razorpay");
+    expect(dialog.button).toBe("Change plan");
+    expect(dialog.button.toLowerCase()).not.toContain("stripe");
   });
 });

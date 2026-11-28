@@ -1,14 +1,14 @@
-import { bankingConfigSchema } from "@/lib/settings/registry";
-
 export const SUPPORTED_BANK_IMPORT_FORMATS = ["csv", "ofx", "qif"] as const;
 export type SupportedBankImportFormat = (typeof SUPPORTED_BANK_IMPORT_FORMATS)[number];
 
 export function enabledBankImportFormats(document: unknown): SupportedBankImportFormat[] {
-  const parsed = bankingConfigSchema.safeParse(document ?? {});
-  if (!parsed.success) return [...SUPPORTED_BANK_IMPORT_FORMATS];
-  return SUPPORTED_BANK_IMPORT_FORMATS.filter((format) =>
-    parsed.data.import_formats.includes(format),
-  );
+  if (document == null) return [...SUPPORTED_BANK_IMPORT_FORMATS];
+  if (typeof document !== "object" || Array.isArray(document)) return [];
+  if (!("import_formats" in document)) return [...SUPPORTED_BANK_IMPORT_FORMATS];
+  const formats = document.import_formats;
+  return Array.isArray(formats)
+    ? SUPPORTED_BANK_IMPORT_FORMATS.filter((format) => formats.includes(format))
+    : [];
 }
 
 export function bankImportFormatForFilename(filename: string): SupportedBankImportFormat | null {

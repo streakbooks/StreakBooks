@@ -14,6 +14,7 @@ import { chunk, fetchAllPages } from "@/lib/banking/fetch-all";
 import { isMissingSchema } from "@/lib/banking/rpc";
 import { loadBankAccount, type AnyClient } from "@/lib/banking/server-helpers";
 import { validateBankImportRows, type ImportRowInput } from "@/lib/banking/import-validation";
+import { bankImportFormatForFilename, enabledBankImportFormats } from "./import-format-preference";
 
 const INSERT_CHUNK = 500;
 
@@ -176,6 +177,25 @@ export const importBankStatement = createServerFn({ method: "POST" })
     const supabase = context.supabase as AnyClient;
     await assertCompanyPermission(supabase, data.companyId, "banking.import");
     await loadBankAccount(supabase, data.companyId, data.bankAccountId);
+
+    const config = await supabase
+      .from("organisation_config" as never)
+      .select("document" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("category" as never, "banking" as never)
+      .maybeSingle();
+    if (config.error) throw new Error(config.error.message);
+    const format = bankImportFormatForFilename(data.filename);
+    if (
+      !format ||
+      !enabledBankImportFormats((config.data as { document: unknown } | null)?.document).includes(
+        format,
+      )
+    ) {
+      throw new Error(
+        "This statement format is unavailable in the organisation's Banking settings.",
+      );
+    }
 
     // 1. Import record first, so a failure half-way leaves an auditable "partial" import.
     const { data: imp, error: impErr } = await supabase

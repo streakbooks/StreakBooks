@@ -2,6 +2,10 @@ import { reportQueryUsesAccountingDefaults } from "@/lib/settings/report-default
 import { useEffect, useMemo, useState } from "react";
 import { useBlocker } from "@tanstack/react-router";
 import { SettingsDestinationLink } from "./ModuleSettingsLinks";
+import {
+  SUPPORTED_BANK_IMPORT_FORMATS,
+  bankImportFormatLabel,
+} from "@/lib/banking/import-format-preference";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -382,6 +386,41 @@ export function SettingsCategoryConfigPanel({
                             </p>
                           ) : null}
                         </div>
+                      );
+                    }
+                    if (category === "banking" && key === "import_formats") {
+                      const selected = Array.isArray(value) ? value : [];
+                      return (
+                        <fieldset
+                          key={key}
+                          disabled={fieldDisabled}
+                          className="space-y-2 rounded-lg border p-4"
+                        >
+                          <legend className="px-1 text-sm font-medium">{field.label}</legend>
+                          <p className="text-xs text-muted-foreground">
+                            Select the statement files your organisation accepts. Clear all to turn
+                            off file imports.
+                          </p>
+                          {SUPPORTED_BANK_IMPORT_FORMATS.map((format) => (
+                            <label key={format} className="flex items-center gap-2 text-sm">
+                              <input
+                                type="checkbox"
+                                checked={selected.includes(format)}
+                                onChange={(event) =>
+                                  updateField(
+                                    key,
+                                    SUPPORTED_BANK_IMPORT_FORMATS.filter((item) =>
+                                      item === format
+                                        ? event.target.checked
+                                        : selected.includes(item),
+                                    ),
+                                  )
+                                }
+                              />
+                              {bankImportFormatLabel([format])}
+                            </label>
+                          ))}
+                        </fieldset>
                       );
                     }
                     if (Array.isArray(value)) {

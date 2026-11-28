@@ -110,7 +110,7 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - [x] Final documentation artifacts — `REVIEW_GUIDE.md`, `coverage-matrix.md`, refreshed `05-TEST-REPORT.md`, and `defect-register.md` are present. The defect register explicitly states that its review is self-review, not an independent external audit.
 - [x] Validation remediation — formatted the existing linted TS/TSX/MJS tree without weakening lint rules; aligned the browsing inventory guard with public Advisor storefront routes as well as authenticated modules. Full lint and browsing inventory checks now pass locally.
 - [ ] Final deliverables — complete all remaining implementation batches and their verification; then update this task list and final report.
-- [ ] Delivery — implementation commits are on `feat/settings-module-overhaul`; draft PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) is open, and its latest commit/checks are tracked there. Merge remains pending because Settings batches 3–9 and authenticated browser verification are incomplete. Vercel reports that the private organisation repository cannot deploy on its current Hobby plan. Hosted Supabase remains untouched; do not run blind migration sync.
+- [x] Initial delivery — PR [#92](https://github.com/streakbooks/StreakBooks/pull/92) merged into canonical main at 0f6d5a86 after all eight repository quality jobs passed. Remaining implementation and authenticated acceptance continue in follow-up PRs.
 
 ## 2026-11-26 continuation
 
@@ -433,3 +433,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 
 - [x] A failed read of personal bill list or entry preferences now surfaces a retry action. A save stops before writing if it cannot load the existing preferences. Failed bill-entry preference saves are visible while the bill draft remains usable.
 - Seven focused tests passed, including both read and both save failure paths. Changed-file lint passed. Existing supplier-summary defaults and personal overrides retain their precedence.
+
+## 2026-11-28 Banking statement format settings (Batch 5)
+
+- [x] Select CSV/TXT, OFX/QFX and QIF independently. An empty selection disables file imports. Unrecognised values in older settings cannot enable extra formats.
+- The import handler reads the current company preference after checking banking.import and account access, before writing an import record. This covers a policy change after preview. The format identifies the parser used by the client and is not a content scanner.
+- Focused tests: 21 passed; changed-file ESLint passed. No migration required.

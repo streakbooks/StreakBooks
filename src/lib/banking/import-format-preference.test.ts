@@ -10,11 +10,9 @@ describe("bank import format preference", () => {
   it("defaults to all formats handled by the current importer and filters unavailable formats", () => {
     expect(enabledBankImportFormats(null)).toEqual(["csv", "ofx", "qif"]);
     expect(enabledBankImportFormats({ import_formats: ["ofx", "mt940"] })).toEqual(["ofx"]);
-    expect(enabledBankImportFormats({ import_formats: ["ofx", "unknown"] })).toEqual([
-      "csv",
-      "ofx",
-      "qif",
-    ]);
+    expect(enabledBankImportFormats({ import_formats: ["ofx", "unknown"] })).toEqual(["ofx"]);
+    expect(enabledBankImportFormats({ import_formats: "csv" })).toEqual([]);
+    expect(enabledBankImportFormats({ import_formats: [] })).toEqual([]);
     expect(enabledBankImportFormats({ import_formats: ["mt940", "camt"] })).toEqual([]);
   });
 

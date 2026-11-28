@@ -169,7 +169,7 @@ describe("Settings capability coverage registry", () => {
       SETTING_CAPABILITY_REGISTRY.find((setting) => setting.key === "banking.import_formats"),
     ).toMatchObject({
       moduleId: "banking",
-      permission: expect.stringContaining("banking.feeds.manage"),
+      permission: expect.stringContaining("banking.import"),
       persistence: expect.stringContaining("organisation_config.banking"),
       audit: expect.stringContaining("settings_change_log"),
       consumer: expect.stringContaining("file types"),

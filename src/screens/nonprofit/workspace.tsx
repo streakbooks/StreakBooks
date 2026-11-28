@@ -26,15 +26,20 @@ import {
   createNonprofitPledge,
   createNonprofitRecord,
   decideNonprofitDisbursement,
+  deliverNonprofitDonorStatement,
+  getNonprofitDonorStatement,
   getNonprofitPortal,
   getNonprofitStatement,
   getNonprofitWorkspace,
+  getMyNonprofitDonorStatement,
   grantNonprofitPortal,
   impairNonprofitPledge,
   postNonprofitExpense,
   postNonprofitMovement,
   receiveNonprofitGrant,
   recogniseNonprofitGrant,
+  recordNonprofitDonorStatement,
+  recordNonprofitDonorStatements,
   releaseNonprofitRestriction,
   requestNonprofitDisbursement,
   satisfyNonprofitGrant,
@@ -44,8 +49,20 @@ import {
 } from "@/lib/nonprofit/nonprofit.functions";
 import { isNpSectionKey, npSection, type NpSectionKey } from "@/lib/nonprofit/sections";
 import { donationAllocations } from "@/lib/nonprofit/donation-entry";
+import {
+  donorStatementCsv,
+  donorStatementExcel,
+  donorStatementPdf,
+  statementPeriod,
+  type StatementPreset,
+} from "@/lib/nonprofit/donor-statement";
 import { explainFundUtilisation } from "@/lib/nonprofit/insights";
-import type { NonprofitRecord, NonprofitSettings, NonprofitWorkspace } from "@/lib/nonprofit/types";
+import type {
+  DonorStatement,
+  NonprofitRecord,
+  NonprofitSettings,
+  NonprofitWorkspace,
+} from "@/lib/nonprofit/types";
 import type { Permission } from "@/lib/permissions";
 import { toast } from "sonner";
 
@@ -197,7 +214,14 @@ function SectionBody({
     );
   }
   if (sectionKey === "funds") return <FundForm companyId={companyId} funds={funds} />;
-  if (sectionKey === "donors") return <DonorForm companyId={companyId} donors={donors} />;
+  if (sectionKey === "donors") {
+    return (
+      <div className="grid gap-4">
+        <DonorForm companyId={companyId} donors={donors} />
+        <DonorStatementPanel companyId={companyId} currency={currency} donors={donors} />
+      </div>
+    );
+  }
   if (sectionKey === "donations") {
     return (
       <DonationForm
@@ -444,6 +468,292 @@ function FundForm({ companyId, funds }: { companyId: string; funds: Row[] }) {
       <Table rows={funds} columns={["code", "name", "restriction", "status", "spendable_minor"]} />
     </div>
   );
+}
+
+function safeStatementPeriod(
+  preset: StatementPreset,
+  anchor: string,
+  customFrom: string,
+  customAsOf: string,
+): { from: string; asOf: string } | null {
+  try {
+    return statementPeriod(
+      preset,
+      preset === "custom" ? customFrom : anchor,
+      preset === "custom" ? { from: customFrom, asOf: customAsOf } : undefined,
+    );
+  } catch {
+    return null;
+  }
+}
+
+function DonorStatementPanel({
+  companyId,
+  currency,
+  donors,
+}: {
+  companyId: string;
+  currency: string;
+  donors: Row[];
+}) {
+  const { can } = useCan();
+  const preview = useServerFn(getNonprofitDonorStatement);
+  const recordOne = useServerFn(recordNonprofitDonorStatement);
+  const recordMany = useServerFn(recordNonprofitDonorStatements);
+  const deliver = useServerFn(deliverNonprofitDonorStatement);
+  const [preset, setPreset] = useState<StatementPreset>("month");
+  const [anchor, setAnchor] = useState(isoDate(new Date()));
+  const [customFrom, setCustomFrom] = useState(isoDate(new Date()));
+  const [customAsOf, setCustomAsOf] = useState(isoDate(new Date()));
+  const [donorId, setDonorId] = useState("");
+  const period = safeStatementPeriod(preset, anchor, customFrom, customAsOf);
+  const periodReady = period !== null && period.from <= period.asOf;
+  const from = period?.from ?? "";
+  const asOf = period?.asOf ?? "";
+  const statement = useQuery({
+    queryKey: ["nonprofit-donor-statement", companyId, from, asOf, donorId],
+    queryFn: () => preview({ data: { companyId, from, asOf, donorId: donorId || null } }),
+    enabled: periodReady,
+    retry: false,
+  });
+  const record = useMutation({
+    mutationFn: () => recordOne({ data: { companyId, from, asOf, donorId: donorId || null } }),
+    onSuccess: async () => {
+      toast.success("Donor statement stored");
+      await statement.refetch();
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+  const bulk = useMutation({
+    mutationFn: () => recordMany({ data: { companyId, from, asOf } }),
+    onSuccess: (result) => {
+      toast.success(`Stored ${result.generated} donor statements. Email was not sent.`);
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+  const email = useMutation({
+    mutationFn: () =>
+      deliver({
+        data: { companyId, from, asOf, donorId },
+      }),
+    onSuccess: (result) => {
+      if (result.delivery_status === "sent") toast.success("Donor statement emailed");
+      else if (result.delivery_status === "withheld") {
+        toast.error("Email needs a granted consent and a donor address");
+      } else toast.error("Email delivery is not configured, so nothing was sent");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+  const data = statement.data;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Donor statements</CardTitle>
+        <CardDescription>
+          Recognised gifts are tied to contribution revenue. This is not a tax certificate, and
+          email is sent only when delivery is configured and the donor has granted consent.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3">
+        <div className="flex flex-wrap gap-2">
+          {(["month", "quarter", "year", "custom"] as const).map((item) => (
+            <Button
+              key={item}
+              type="button"
+              size="sm"
+              variant={preset === item ? "default" : "outline"}
+              onClick={() => setPreset(item)}
+            >
+              {item}
+            </Button>
+          ))}
+        </div>
+        <form className="grid gap-3 md:grid-cols-2" onSubmit={(event) => event.preventDefault()}>
+          <Field label={preset === "custom" ? "From" : "Anchor date"}>
+            <Input
+              type="date"
+              value={preset === "custom" ? customFrom : anchor}
+              onChange={(event) =>
+                preset === "custom"
+                  ? setCustomFrom(event.target.value)
+                  : setAnchor(event.target.value)
+              }
+              required
+            />
+          </Field>
+          {preset === "custom" ? (
+            <Field label="As of">
+              <Input
+                type="date"
+                value={customAsOf}
+                onChange={(event) => setCustomAsOf(event.target.value)}
+                required
+              />
+            </Field>
+          ) : (
+            <Field label="Donor">
+              <SelectRows
+                rows={donors}
+                value={donorId}
+                onChange={setDonorId}
+                labelKey="display_name"
+                allowEmpty
+              />
+            </Field>
+          )}
+          {preset === "custom" ? (
+            <Field label="Donor">
+              <SelectRows
+                rows={donors}
+                value={donorId}
+                onChange={setDonorId}
+                labelKey="display_name"
+                allowEmpty
+              />
+            </Field>
+          ) : null}
+        </form>
+        <p className="text-sm text-muted-foreground">
+          {from && asOf ? `${from} to ${asOf}. ` : "Enter a valid date. "}
+          Amounts use {currency} where the gift currency matches.
+        </p>
+        <QueryErrorState queries={[statement]} title="Could not load the donor statement" />
+        {statement.isPending && periodReady ? <LoadingState /> : null}
+        {data ? <DonorStatementBody statement={data} currency={currency} /> : null}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!data}
+            onClick={() => data && downloadStatement(data, "csv")}
+          >
+            Download CSV
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!data}
+            onClick={() => data && downloadStatement(data, "excel")}
+          >
+            Download Excel
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!data}
+            onClick={() => data && downloadStatement(data, "pdf")}
+          >
+            Download PDF
+          </Button>
+          {can("nonprofit.export") ? (
+            <>
+              <Button type="button" onClick={() => record.mutate()} disabled={record.isPending}>
+                Store statement
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => bulk.mutate()}
+                disabled={bulk.isPending}
+              >
+                Store one for each donor
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!donorId || email.isPending}
+                onClick={() => email.mutate()}
+              >
+                Email this donor
+              </Button>
+            </>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DonorStatementBody({
+  statement,
+  currency,
+}: {
+  statement: DonorStatement;
+  currency: string;
+}) {
+  return (
+    <div className="grid gap-2 text-sm">
+      {statement.organisation.logo_url ? (
+        <img src={statement.organisation.logo_url} alt="" className="h-10 w-auto" />
+      ) : null}
+      <p className="font-medium">{statement.organisation.name}</p>
+      <p>{statement.donor?.display_name ?? "All donors"}</p>
+      <p>{statement.wording}</p>
+      {statement.currencies.length === 0 ? (
+        <p className="text-muted-foreground">No recognised gifts in this period.</p>
+      ) : (
+        statement.currencies.map((row) => (
+          <p key={row.currency_code}>
+            {row.currency_code} net {fromMinorUnits(row.net_minor, row.currency_code || currency)}{" "}
+            {row.reconciled ? "reconciled to the journal" : "does not reconcile"}
+          </p>
+        ))
+      )}
+      {statement.receipts.length > 0 ? (
+        <p>
+          {statement.receipts.length} receipt{statement.receipts.length === 1 ? "" : "s"} in this
+          period.
+        </p>
+      ) : null}
+      {statement.pledges.some((pledge) => pledge.outstanding_minor > 0) ? (
+        <p>
+          Outstanding pledges{" "}
+          {statement.pledges
+            .filter((pledge) => pledge.outstanding_minor > 0)
+            .map(
+              (pledge) =>
+                `${pledge.pledge_number} ${fromMinorUnits(pledge.outstanding_minor, pledge.currency_code || currency)}`,
+            )
+            .join(", ")}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function downloadStatement(statement: DonorStatement, kind: "csv" | "excel" | "pdf") {
+  const exportable = {
+    organisationName: statement.organisation.name,
+    donorName: statement.donor?.display_name ?? "All donors",
+    periodFrom: statement.period_from,
+    asOf: statement.as_of,
+    wording: statement.wording,
+    lines: statement.currencies.flatMap((row) => [
+      { label: "Net recognised gifts", currency: row.currency_code, amountMinor: row.net_minor },
+      { label: "Refunded gifts", currency: row.currency_code, amountMinor: row.refunded_minor },
+      {
+        label: "Journal contribution revenue",
+        currency: row.currency_code,
+        amountMinor: row.journal_support_minor,
+      },
+    ]),
+  };
+  const file =
+    kind === "csv"
+      ? donorStatementCsv(exportable)
+      : kind === "excel"
+        ? donorStatementExcel(exportable)
+        : donorStatementPdf(exportable);
+  const blob = new Blob([file], {
+    type:
+      kind === "pdf" ? "application/pdf" : kind === "csv" ? "text/csv" : "application/vnd.ms-excel",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `donor-statement-${statement.period_from}.${kind === "excel" ? "xls" : kind}`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function DonorForm({ companyId, donors }: { companyId: string; donors: Row[] }) {
@@ -1679,6 +1989,20 @@ function PortalPanel({ companyId, donors }: { companyId: string; donors: Row[] }
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
   const mine = portal.data ?? [];
+  const fetchOwnStatement = useServerFn(getMyNonprofitDonorStatement);
+  const today = isoDate(new Date());
+  const [statementFrom, setStatementFrom] = useState(`${today.slice(0, 4)}-01-01`);
+  const [statementAsOf, setStatementAsOf] = useState(today);
+  const ownStatementReady =
+    /^\d{4}-\d{2}-\d{2}$/.test(statementFrom) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(statementAsOf) &&
+    statementFrom <= statementAsOf;
+  const ownStatement = useQuery({
+    queryKey: ["my-donor-statement", statementFrom, statementAsOf],
+    queryFn: () => fetchOwnStatement({ data: { from: statementFrom, asOf: statementAsOf } }),
+    enabled: ownStatementReady,
+    retry: false,
+  });
   return (
     <div className="grid gap-4">
       <Card>
@@ -1704,6 +2028,51 @@ function PortalPanel({ companyId, donors }: { companyId: string; donors: Row[] }
                 rows={rows(entry.donations)}
                 columns={["donation_number", "amount_minor", "status", "donated_on"]}
               />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Your donor statement</CardTitle>
+          <CardDescription>
+            A portal donor sees only their own gifts. Staff without a portal link see nothing here.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <form className="grid gap-3 md:grid-cols-2" onSubmit={(event) => event.preventDefault()}>
+            <Field label="From">
+              <Input
+                type="date"
+                value={statementFrom}
+                onChange={(event) => setStatementFrom(event.target.value)}
+              />
+            </Field>
+            <Field label="As of">
+              <Input
+                type="date"
+                value={statementAsOf}
+                onChange={(event) => setStatementAsOf(event.target.value)}
+              />
+            </Field>
+          </form>
+          <QueryErrorState queries={[ownStatement]} title="Could not load your donor statement" />
+          {ownStatement.isPending && ownStatementReady ? <LoadingState /> : null}
+          {ownStatement.data?.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No donor portal statement for this sign-in.
+            </p>
+          ) : null}
+          {ownStatement.data?.map((entry) => (
+            <div key={entry.donor_id} className="grid gap-2">
+              <DonorStatementBody statement={entry.statement} currency="USD" />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => downloadStatement(entry.statement, "pdf")}
+              >
+                Download PDF
+              </Button>
             </div>
           ))}
         </CardContent>

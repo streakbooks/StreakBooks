@@ -22,6 +22,9 @@ DECLARE
   liability_credits BIGINT;
   statement JSONB;
   line JSONB;
+  donor_statement JSONB;
+  currency JSONB;
+  recorded JSONB;
 BEGIN
   PERFORM public.nonprofit_upsert_settings(c, jsonb_build_object(
     'enabled', true,
@@ -401,6 +404,54 @@ BEGIN
     = (statement->'totals'->>'closing_net_assets_minor')::BIGINT,
     'organisation statement totals explain the change in net assets'
   );
+
+  donor_statement := public.nonprofit_donor_statement(c, '2026-10-01', '2026-10-31', donor);
+  PERFORM public.test_assert(jsonb_array_length(donor_statement->'currencies') = 0, 'donor statement before gifts has no currency totals');
+  donor_statement := public.nonprofit_donor_statement(c, '2026-11-01', '2026-11-30', donor);
+  PERFORM public.test_assert((donor_statement->>'statutory_filing')::BOOLEAN = false, 'donor statement is not a statutory filing');
+  PERFORM public.test_assert((donor_statement->>'tax_certificate')::BOOLEAN = false, 'donor statement is not a tax certificate');
+  PERFORM public.test_assert((donor_statement->>'government_approved')::BOOLEAN = false, 'donor statement is not government approved');
+  PERFORM public.test_assert(donor_statement->>'wording' ILIKE '%not a tax certificate%', 'donor statement says it is not a tax certificate');
+  PERFORM public.test_assert(NOT (donor_statement ? 'beneficiaries'), 'donor statement does not include beneficiary records');
+  SELECT value INTO currency FROM jsonb_array_elements(donor_statement->'currencies') WHERE value->>'currency_code' = 'USD';
+  PERFORM public.test_assert(
+    (currency->>'net_minor')::BIGINT = 13000
+      AND (currency->>'journal_support_minor')::BIGINT = 13000
+      AND (currency->>'reconciled')::BOOLEAN,
+    'donor USD gifts reconcile to contribution revenue'
+  );
+  SELECT value INTO currency FROM jsonb_array_elements(donor_statement->'currencies') WHERE value->>'currency_code' = 'EUR';
+  PERFORM public.test_assert((currency->>'net_minor')::BIGINT = 8000 AND (currency->>'reconciled')::BOOLEAN, 'donor EUR gifts reconcile to contribution revenue');
+  PERFORM public.test_assert((
+    SELECT (gift_fund->>'net_minor')::BIGINT = 13000
+    FROM jsonb_array_elements(donor_statement->'funds') gift_fund
+    WHERE gift_fund->>'code' = 'GEN' AND gift_fund->>'currency_code' = 'USD'
+  ), 'general fund donor total is net of the refund');
+  PERFORM public.test_assert((
+    SELECT (gift_fund->>'net_minor')::BIGINT = 0
+    FROM jsonb_array_elements(donor_statement->'funds') gift_fund
+    WHERE gift_fund->>'code' = 'RELIEF' AND gift_fund->>'currency_code' = 'USD'
+  ), 'restricted fund donor total is zero after the refund');
+  PERFORM public.test_assert((donor_statement->>'services_not_recognised')::INTEGER >= 1, 'donated services stay off the statement totals');
+  PERFORM public.test_assert((
+    SELECT COALESCE(SUM((gift_pledge->>'outstanding_minor')::BIGINT), 0) = 6800
+      AND COALESCE(SUM((gift_pledge->>'outstanding_minor')::BIGINT) FILTER (WHERE gift_pledge->>'status' = 'conditional'), 0) = 3000
+    FROM jsonb_array_elements(donor_statement->'pledges') gift_pledge
+  ), 'outstanding pledges keep the conditional commitment and the impaired remainder');
+  PERFORM public.test_assert(jsonb_array_length(donor_statement->'receipts') >= 1, 'donation receipt is listed on the donor statement');
+  PERFORM public.test_assert((
+    SELECT (gift->>'net_minor')::BIGINT = 13111
+    FROM jsonb_array_elements(public.nonprofit_donor_statement(c, '2026-11-01', '2026-11-30', NULL)->'currencies') gift
+    WHERE gift->>'currency_code' = 'USD'
+  ), 'consolidated statement adds every donor in the currency');
+  recorded := public.nonprofit_record_donor_statement(c, '2026-11-01', '2026-11-30', donor, 'not_requested');
+  PERFORM public.test_assert(recorded->>'delivery_status' = 'not_requested' AND recorded->>'run_id' IS NOT NULL, 'generating a statement stores an audit run and does not send email');
+  PERFORM public.test_assert((public.nonprofit_record_donor_statements(c, '2026-11-01', '2026-11-30')->>'generated')::INTEGER = 2, 'bulk generation stores one statement for each active donor');
+  PERFORM public.test_assert(
+    jsonb_array_length(public.nonprofit_donor_statement(c, '2026-11-01', '2026-11-30', NULL)->'history') = 3,
+    'each generated statement is stored in the organisation history'
+  );
+
   BEGIN
     PERFORM public.nonprofit_fund_statement(c, '2026-11-30', '2026-11-01');
     RAISE EXCEPTION 'FAIL: inverted statement period was accepted';
@@ -449,6 +500,11 @@ SELECT public.test_raises(
   'do not have access',
   'cross-tenant fund statement is denied'
 );
+SELECT public.test_raises(
+  $sql$SELECT public.nonprofit_donor_statement('20000000-0000-4000-8000-000000000001', '2026-11-01', '2026-11-30', NULL)$sql$,
+  'do not have access',
+  'cross-tenant donor statement is denied'
+);
 
 SELECT set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000003"}', false);
 SELECT public.test_assert(
@@ -469,11 +525,39 @@ SELECT public.test_raises(
   'Missing permission',
   'donor portal user cannot read the fund statement'
 );
+SELECT public.test_assert(
+  (
+    SELECT (currency->>'net_minor')::BIGINT = 111 AND (currency->>'reconciled')::BOOLEAN
+    FROM jsonb_array_elements(
+      (public.nonprofit_my_donor_statement('2026-11-01', '2026-11-30')->0->'statement')->'currencies'
+    ) currency
+    WHERE currency->>'currency_code' = 'USD'
+  ),
+  'portal donor statement shows only that donor and reconciles'
+);
+SELECT public.test_assert(
+  (SELECT count(*) FROM public.nonprofit_statement_runs) = 0,
+  'portal donor cannot read organisation statement history'
+);
+SELECT public.test_raises(
+  $sql$SELECT public.nonprofit_record_donor_statement('20000000-0000-4000-8000-000000000001', '2026-11-01', '2026-11-30', NULL, 'not_requested')$sql$,
+  'Missing permission',
+  'portal donor cannot generate organisation statements'
+);
 SELECT set_config('request.jwt.claims', '{"sub":"10000000-0000-4000-8000-000000000003"}', false);
 SELECT public.test_assert(
   (SELECT (s->>'statutory_filing')::BOOLEAN = false AND NOT (s ? 'beneficiaries')
    FROM (SELECT public.nonprofit_fund_statement('20000000-0000-4000-8000-000000000001', '2026-11-01', '2026-11-01') AS s) statement),
   'a viewer can read the management statement without beneficiary records'
+);
+SELECT public.test_raises(
+  $sql$SELECT public.nonprofit_record_donor_statement('20000000-0000-4000-8000-000000000001', '2026-11-01', '2026-11-30', NULL, 'not_requested')$sql$,
+  'Missing permission',
+  'a viewer without export cannot generate donor statements'
+);
+SELECT public.test_assert(
+  (SELECT count(*) FROM public.nonprofit_statement_runs) = 3,
+  'a viewer can see generated statement history'
 );
 RESET ROLE;
 INSERT INTO public.nonprofit_gateway_events (company_id, gateway, event_id, status)

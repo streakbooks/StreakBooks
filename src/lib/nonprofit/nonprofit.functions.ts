@@ -3,19 +3,24 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { companyIdOf, callRpc } from "@/lib/planning/rpc";
 import type { Permission } from "@/lib/permissions";
+import { donorStatementDelivery, donorStatementText } from "@/lib/nonprofit/donor-statement";
 import {
+  mapNonprofitDonorStatement,
   mapNonprofitResult,
   mapNonprofitStatement,
   mapNonprofitWorkspace,
   mapPortal,
+  mapPortalDonorStatements,
+  type DonorStatement,
   type NonprofitResult,
   type NonprofitStatement,
   type NonprofitWorkspace,
+  type PortalDonorStatement,
   type PortalEntry,
 } from "@/lib/nonprofit/types";
 
 export const NONPROFIT_MIGRATION =
-  "Nonprofit Management needs database updates 20261128220000, 20261128221000, 20261128233000, 20261128240000 and 20261128250000.";
+  "Nonprofit Management needs database updates 20261128220000, 20261128221000, 20261128233000, 20261128240000, 20261128250000 and 20261128260000.";
 
 async function posted(
   supabase: Parameters<typeof assertCompanyMember>[0],
@@ -453,6 +458,185 @@ export const getNonprofitStatement = createServerFn({ method: "GET" })
         context.supabase,
         "nonprofit_fund_statement",
         { _company_id: data.companyId, _from: data.from, _as_of: data.asOf },
+        NONPROFIT_MIGRATION,
+      ),
+    );
+  });
+
+function donorIdOf(value: unknown): string | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value !== "string") throw new Error("Choose a donor or the consolidated statement");
+  return value;
+}
+
+async function donorStatement(
+  supabase: Parameters<typeof assertCompanyMember>[0],
+  companyId: string,
+  from: string,
+  asOf: string,
+  donorId: string | null,
+): Promise<DonorStatement> {
+  return mapNonprofitDonorStatement(
+    await callRpc<unknown>(
+      supabase,
+      "nonprofit_donor_statement",
+      { _company_id: companyId, _from: from, _as_of: asOf, _donor_id: donorId },
+      NONPROFIT_MIGRATION,
+    ),
+  );
+}
+
+export const getNonprofitDonorStatement = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (input: { companyId: string; from: string; asOf: string; donorId: string | null }) => ({
+      companyId: companyIdOf(input),
+      from: statementDate(input.from, "The statement start"),
+      asOf: statementDate(input.asOf, "The statement as-of date"),
+      donorId: donorIdOf(input.donorId),
+    }),
+  )
+  .handler(async ({ data, context }): Promise<DonorStatement> => {
+    await guard(context.supabase, data.companyId, "nonprofit.view");
+    return donorStatement(context.supabase, data.companyId, data.from, data.asOf, data.donorId);
+  });
+
+export const recordNonprofitDonorStatement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (input: { companyId: string; from: string; asOf: string; donorId: string | null }) => ({
+      companyId: companyIdOf(input),
+      from: statementDate(input.from, "The statement start"),
+      asOf: statementDate(input.asOf, "The statement as-of date"),
+      donorId: donorIdOf(input.donorId),
+    }),
+  )
+  .handler(async ({ data, context }): Promise<DonorStatement> => {
+    await guard(context.supabase, data.companyId, "nonprofit.export");
+    return mapNonprofitDonorStatement(
+      await callRpc<unknown>(
+        context.supabase,
+        "nonprofit_record_donor_statement",
+        {
+          _company_id: data.companyId,
+          _from: data.from,
+          _as_of: data.asOf,
+          _donor_id: data.donorId,
+          _delivery_status: "not_requested",
+        },
+        NONPROFIT_MIGRATION,
+      ),
+    );
+  });
+
+export const recordNonprofitDonorStatements = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string; from: string; asOf: string }) => ({
+    companyId: companyIdOf(input),
+    from: statementDate(input.from, "The statement start"),
+    asOf: statementDate(input.asOf, "The statement as-of date"),
+  }))
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.export");
+    const value = await callRpc<unknown>(
+      context.supabase,
+      "nonprofit_record_donor_statements",
+      { _company_id: data.companyId, _from: data.from, _as_of: data.asOf },
+      NONPROFIT_MIGRATION,
+    );
+    const generated =
+      value !== null && typeof value === "object" && "generated" in value
+        ? Number((value as { generated: unknown }).generated)
+        : 0;
+    return {
+      generated: Number.isSafeInteger(generated) ? generated : 0,
+      email_delivery: "not_configured" as const,
+      statutory_filing: false as const,
+      tax_certificate: false as const,
+    };
+  });
+
+export const deliverNonprofitDonorStatement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string; from: string; asOf: string; donorId: string }) => ({
+    companyId: companyIdOf(input),
+    from: statementDate(input.from, "The statement start"),
+    asOf: statementDate(input.asOf, "The statement as-of date"),
+    donorId: donorIdOf(input.donorId),
+  }))
+  .handler(async ({ data, context }): Promise<DonorStatement> => {
+    await guard(context.supabase, data.companyId, "nonprofit.export");
+    if (!data.donorId) throw new Error("Choose one donor before emailing a statement");
+    const preview = await donorStatement(
+      context.supabase,
+      data.companyId,
+      data.from,
+      data.asOf,
+      data.donorId,
+    );
+    const { readEmailConfig, sendViaResend } =
+      await import("@/lib/documents/email-provider.server");
+    const config = readEmailConfig();
+    const decision = donorStatementDelivery({
+      requested: true,
+      emailConfigured: config.configured,
+      consent: preview.donor?.consent_status ?? null,
+      email: preview.donor?.email ?? null,
+      anonymous: preview.donor?.anonymous === true,
+    });
+    let status: "not_configured" | "withheld" | "sent" | "failed" =
+      decision === "withheld" ? "withheld" : "not_configured";
+    const recipient = preview.donor?.email ?? null;
+    if (decision === "ready" && config.configured && recipient && preview.donor) {
+      const lines = preview.currencies.map((row) => ({
+        label: "Net recognised gifts",
+        currency: row.currency_code,
+        amountMinor: row.net_minor,
+      }));
+      const text = donorStatementText({
+        organisationName: preview.organisation.name,
+        donorName: preview.donor.display_name,
+        periodFrom: preview.period_from,
+        asOf: preview.as_of,
+        wording: preview.wording,
+        lines,
+      });
+      const sent = await sendViaResend(config, {
+        to: [recipient],
+        subject: `Donor statement ${preview.period_from} to ${preview.as_of}`,
+        html: `<pre>${text.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</pre>`,
+        text,
+      });
+      status = sent.ok ? "sent" : "failed";
+    }
+    return mapNonprofitDonorStatement(
+      await callRpc<unknown>(
+        context.supabase,
+        "nonprofit_record_donor_statement",
+        {
+          _company_id: data.companyId,
+          _from: data.from,
+          _as_of: data.asOf,
+          _donor_id: data.donorId,
+          _delivery_status: status,
+        },
+        NONPROFIT_MIGRATION,
+      ),
+    );
+  });
+
+export const getMyNonprofitDonorStatement = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { from: string; asOf: string }) => ({
+    from: statementDate(input.from, "The statement start"),
+    asOf: statementDate(input.asOf, "The statement as-of date"),
+  }))
+  .handler(async ({ data, context }): Promise<PortalDonorStatement[]> => {
+    return mapPortalDonorStatements(
+      await callRpc<unknown>(
+        context.supabase,
+        "nonprofit_my_donor_statement",
+        { _from: data.from, _as_of: data.asOf },
         NONPROFIT_MIGRATION,
       ),
     );

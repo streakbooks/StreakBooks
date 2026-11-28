@@ -3,6 +3,7 @@ import { GroupedModuleSubnav } from "@/components/common/GroupedModuleSubnav";
 import { groupedModuleSectionClassName } from "@/lib/navigation/grouped-module-nav";
 import { useCan } from "@/hooks/use-can";
 import { NP_SECTIONS, type NpSectionKey } from "@/lib/nonprofit/sections";
+import { organisationTerms } from "@/lib/nonprofit/terminology";
 import type { Permission } from "@/lib/permissions";
 
 const NP_GROUPS = [
@@ -19,15 +20,26 @@ const NP_GROUPS = [
   { key: "admin", label: "Settings" },
 ] as const;
 
-export function NonprofitSubnav({ current }: { current: NpSectionKey }) {
+export function NonprofitSubnav({
+  current,
+  kind,
+}: {
+  current: NpSectionKey;
+  kind?: string | null;
+}) {
   const { can } = useCan();
+  const terms = organisationTerms(kind);
   const visible = NP_SECTIONS.filter((section) =>
     section.anyOf.some((permission) => can(permission as Permission)),
-  );
+  ).map((section) => ({ ...section, label: terms.sections[section.key] }));
+  const groups = NP_GROUPS.map((group) => ({
+    ...group,
+    label: terms.groups[group.key] ?? group.label,
+  }));
   return (
     <GroupedModuleSubnav
       label="Nonprofit"
-      groups={NP_GROUPS}
+      groups={groups}
       sections={visible}
       current={current}
       overview={

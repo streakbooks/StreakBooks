@@ -4,7 +4,9 @@ import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-compa
 import { companyIdOf, callRpc } from "@/lib/planning/rpc";
 import type { Permission } from "@/lib/permissions";
 import { donorStatementDelivery, donorStatementText } from "@/lib/nonprofit/donor-statement";
+import { ORGANISATION_KINDS } from "@/lib/nonprofit/terminology";
 import {
+  mapHouseholdStatement,
   mapNonprofitDonorStatement,
   mapNonprofitResult,
   mapNonprofitStatement,
@@ -12,6 +14,7 @@ import {
   mapPortal,
   mapPortalDonorStatements,
   type DonorStatement,
+  type HouseholdStatement,
   type NonprofitResult,
   type NonprofitStatement,
   type NonprofitWorkspace,
@@ -20,7 +23,7 @@ import {
 } from "@/lib/nonprofit/types";
 
 export const NONPROFIT_MIGRATION =
-  "Nonprofit Management needs database updates 20261128220000, 20261128221000, 20261128233000, 20261128240000, 20261128250000 and 20261128260000.";
+  "Nonprofit Management needs database updates 20261128220000, 20261128221000, 20261128233000, 20261128240000, 20261128250000, 20261128260000 and 20261128270000.";
 
 async function posted(
   supabase: Parameters<typeof assertCompanyMember>[0],
@@ -640,4 +643,204 @@ export const getMyNonprofitDonorStatement = createServerFn({ method: "GET" })
         NONPROFIT_MIGRATION,
       ),
     );
+  });
+
+const GIVING_KINDS = ["donation", "tithe", "offering", "special_collection"] as const;
+
+function requiredText(value: unknown, label: string): string {
+  if (typeof value !== "string" || value.trim() === "") throw new Error(`${label} is required`);
+  return value.trim();
+}
+
+export const setNonprofitOrganisationKind = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string; kind: string }) => {
+    if (!ORGANISATION_KINDS.some((kind) => kind === input.kind)) {
+      throw new Error("Organisation kind is invalid");
+    }
+    return { companyId: companyIdOf(input), kind: input.kind };
+  })
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.admin");
+    return posted(context.supabase, "nonprofit_set_organisation_kind", {
+      _company_id: data.companyId,
+      _kind: data.kind,
+    });
+  });
+
+export const createNonprofitCongregation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string; name: string; location: string }) => ({
+    companyId: companyIdOf(input),
+    name: requiredText(input.name, "Congregation name"),
+    location: typeof input.location === "string" ? input.location.trim() : "",
+  }))
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.manage");
+    return posted(context.supabase, "nonprofit_create_congregation", {
+      _company_id: data.companyId,
+      _payload: { name: data.name, location: data.location },
+    });
+  });
+
+export const createNonprofitHousehold = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string; name: string; congregationId: string }) => ({
+    companyId: companyIdOf(input),
+    name: requiredText(input.name, "Household name"),
+    congregationId: typeof input.congregationId === "string" ? input.congregationId : "",
+  }))
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.donors.manage");
+    return posted(context.supabase, "nonprofit_create_household", {
+      _company_id: data.companyId,
+      _payload: { name: data.name, congregation_id: data.congregationId },
+    });
+  });
+
+export const addNonprofitHouseholdMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string; householdId: string; donorId: string; role: string }) => {
+    if (input.role !== "head" && input.role !== "adult" && input.role !== "child") {
+      throw new Error("Household role is invalid");
+    }
+    return {
+      companyId: companyIdOf(input),
+      householdId: requiredText(input.householdId, "Household"),
+      donorId: requiredText(input.donorId, "Member"),
+      role: input.role,
+    };
+  })
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.donors.manage");
+    return posted(context.supabase, "nonprofit_add_household_member", {
+      _company_id: data.companyId,
+      _household_id: data.householdId,
+      _donor_id: data.donorId,
+      _role: data.role,
+    });
+  });
+
+export const postNonprofitCollectionBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (input: {
+      companyId: string;
+      fundId: string;
+      congregationId: string;
+      collectedOn: string;
+      givingKind: string;
+      currencyCode: string;
+      idempotencyKey: string;
+      lines: { donorId: string; amountMinor: number; anonymous: boolean }[];
+    }) => {
+      if (!GIVING_KINDS.some((kind) => kind === input.givingKind)) {
+        throw new Error("Giving kind is invalid");
+      }
+      if (!Array.isArray(input.lines) || input.lines.length < 1) {
+        throw new Error("A collection batch needs at least one line");
+      }
+      return {
+        companyId: companyIdOf(input),
+        fundId: requiredText(input.fundId, "Fund"),
+        congregationId: typeof input.congregationId === "string" ? input.congregationId : "",
+        collectedOn: statementDate(input.collectedOn, "Collection date"),
+        givingKind: input.givingKind,
+        currencyCode: requiredText(input.currencyCode, "Currency").toUpperCase(),
+        idempotencyKey: requiredText(input.idempotencyKey, "Idempotency key"),
+        lines: input.lines.map((line) => {
+          if (!Number.isSafeInteger(line.amountMinor) || line.amountMinor <= 0) {
+            throw new Error("Collection line amount is invalid");
+          }
+          return {
+            donor_id: line.anonymous ? "" : requiredText(line.donorId, "Member"),
+            amount_minor: line.amountMinor,
+            anonymous: line.anonymous === true,
+          };
+        }),
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.donations.manage");
+    await assertCompanyPermission(context.supabase, data.companyId, "nonprofit.post");
+    return posted(context.supabase, "nonprofit_post_collection_batch", {
+      _company_id: data.companyId,
+      _payload: {
+        fund_id: data.fundId,
+        congregation_id: data.congregationId,
+        collected_on: data.collectedOn,
+        giving_kind: data.givingKind,
+        currency_code: data.currencyCode,
+        idempotency_key: data.idempotencyKey,
+        lines: data.lines,
+      },
+    });
+  });
+
+export const getNonprofitHouseholdStatement = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string; householdId: string; from: string; asOf: string }) => ({
+    companyId: companyIdOf(input),
+    householdId: requiredText(input.householdId, "Household"),
+    from: statementDate(input.from, "The statement start"),
+    asOf: statementDate(input.asOf, "The statement as-of date"),
+  }))
+  .handler(async ({ data, context }): Promise<HouseholdStatement> => {
+    await guard(context.supabase, data.companyId, "nonprofit.view");
+    return mapHouseholdStatement(
+      await callRpc<unknown>(
+        context.supabase,
+        "nonprofit_household_statement",
+        {
+          _company_id: data.companyId,
+          _household_id: data.householdId,
+          _from: data.from,
+          _as_of: data.asOf,
+        },
+        NONPROFIT_MIGRATION,
+      ),
+    );
+  });
+
+export const recordNonprofitAttendance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (input: { companyId: string; eventId: string; donorId: string; present: boolean }) => ({
+      companyId: companyIdOf(input),
+      eventId: requiredText(input.eventId, "Event"),
+      donorId: requiredText(input.donorId, "Member"),
+      present: input.present === true,
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.manage");
+    return posted(context.supabase, "nonprofit_record_attendance", {
+      _company_id: data.companyId,
+      _event_id: data.eventId,
+      _donor_id: data.donorId,
+      _present: data.present,
+    });
+  });
+
+export const scheduleNonprofitVolunteer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (input: { companyId: string; volunteerId: string; eventId: string; roleName: string }) => ({
+      companyId: companyIdOf(input),
+      volunteerId: requiredText(input.volunteerId, "Volunteer"),
+      eventId: requiredText(input.eventId, "Event"),
+      roleName: requiredText(input.roleName, "Role"),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "nonprofit.manage");
+    return posted(context.supabase, "nonprofit_schedule_volunteer", {
+      _company_id: data.companyId,
+      _payload: {
+        volunteer_id: data.volunteerId,
+        event_id: data.eventId,
+        role_name: data.roleName,
+      },
+    });
   });

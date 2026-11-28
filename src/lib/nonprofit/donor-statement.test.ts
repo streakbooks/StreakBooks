@@ -18,6 +18,10 @@ const statement = {
 
 describe("donor statements", () => {
   it("builds a calendar month, quarter and year from an anchor date", () => {
+    expect(statementPeriod("week", "2026-11-28")).toEqual({
+      from: "2026-11-22",
+      asOf: "2026-11-28",
+    });
     expect(statementPeriod("month", "2026-11-15")).toEqual({
       from: "2026-11-01",
       asOf: "2026-11-30",

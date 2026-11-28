@@ -10,6 +10,7 @@ const SECTION_KEYS = new Set([
   "commissions",
   "development-costs",
   "budgets",
+  "reports",
   "settings",
 ]);
 

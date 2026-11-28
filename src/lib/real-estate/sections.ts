@@ -80,6 +80,13 @@ export const RE_SECTIONS = [
     anyOf: ["realestate.view", "realestate.budgets.manage"] as const,
   },
   {
+    key: "reports",
+    label: "Ledger tie-out",
+    path: `${RE_BASE}/reports`,
+    group: "delivery",
+    anyOf: ["realestate.view"] as const,
+  },
+  {
     key: "settings",
     label: "Settings",
     path: `${RE_BASE}/settings`,

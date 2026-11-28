@@ -179,3 +179,26 @@ export function cell(row: JsonRow, key: string): string {
 export function minor(row: JsonRow, key: string): number {
   return num(row[key]);
 }
+
+export type LedgerTieLine = {
+  source: string;
+  ledgerMinor: number;
+  operationalMinor: number;
+  differenceMinor: number;
+};
+
+export function mapLedgerTie(value: unknown): { tied: boolean; lines: LedgerTieLine[] } {
+  const rawLines = pick(value, "lines");
+  const lines = Array.isArray(rawLines)
+    ? rawLines.map((line) => ({
+        source: text(pick(line, "source"), "unknown"),
+        ledgerMinor: num(pick(line, "ledger_minor")),
+        operationalMinor: num(pick(line, "operational_minor")),
+        differenceMinor: num(pick(line, "difference_minor")),
+      }))
+    : [];
+  return {
+    tied: pick(value, "tied") === true && lines.every((line) => line.differenceMinor === 0),
+    lines,
+  };
+}

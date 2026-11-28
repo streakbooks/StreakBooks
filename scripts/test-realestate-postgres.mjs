@@ -60,6 +60,7 @@ try {
   sql(read("supabase/migrations/20261128232100_real_estate_operations.sql"));
   sql(read("supabase/migrations/20261128232200_real_estate_money.sql"));
   sql(read("supabase/migrations/20261128232300_real_estate_controls.sql"));
+  sql(read("supabase/migrations/20261128233000_real_estate_ledger_tie.sql"));
   sql(read("tests/integration/real-estate-foundation.sql"));
 
   const unit = sql(

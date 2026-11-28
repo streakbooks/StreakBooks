@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { LookupSelect } from "@/components/lookup/LookupSelect";
-import { AccountLookup } from "@/components/lookup/variants";
+import { AccountLookup, ContactLookup } from "@/components/lookup/variants";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { EmptyState, LoadingState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { useCan } from "@/hooks/use-can";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { listContacts } from "@/lib/contacts/contacts.functions";
 import { parseUnitCsv } from "@/lib/real-estate/csv";
 import { buildInstalmentSchedule } from "@/lib/real-estate/instalments";
 import {
@@ -27,6 +28,7 @@ import {
   createRealEstateProject,
   createRealEstateUnit,
   expireRealEstateHolds,
+  getRealEstateLedgerTie,
   importRealEstateUnits,
   placeRealEstateHold,
   postRealEstateCommission,
@@ -34,6 +36,7 @@ import {
   recordRealEstateCost,
   refundRealEstate,
   releaseRealEstateHold,
+  reverseRealEstateRecognition,
   saveRealEstateBudget,
   saveRealEstateCommissionRule,
   saveRealEstatePlan,
@@ -96,6 +99,7 @@ export function RealEstateSection({
     return <Costs companyId={companyId} currency={currency} data={data} />;
   if (sectionKey === "budgets")
     return <Budgets companyId={companyId} currency={currency} data={data} />;
+  if (sectionKey === "reports") return <LedgerTie companyId={companyId} currency={currency} />;
   return <Settings companyId={companyId} data={data} />;
 }
 
@@ -658,6 +662,34 @@ function Sales({
   const [holdId, setHoldId] = useState("");
   const [contactId, setContactId] = useState("");
   const [contract, setContract] = useState("");
+  const fetchContacts = useServerFn(listContacts);
+  const contacts = useQuery({
+    queryKey: ["real-estate-purchasers", companyId],
+    queryFn: () => fetchContacts({ data: { companyId, kind: "customers", limit: 200 } }),
+    enabled: can("realestate.sales.manage"),
+    retry: false,
+  });
+  const purchasers = useMemo(() => {
+    const rows = Array.isArray(contacts.data) ? contacts.data : [];
+    return rows.flatMap((row) => {
+      if (!row || typeof row !== "object") return [];
+      const record = row as {
+        id?: unknown;
+        name?: unknown;
+        is_active?: unknown;
+        company_id?: unknown;
+      };
+      if (typeof record.id !== "string" || typeof record.name !== "string") return [];
+      return [
+        {
+          id: record.id,
+          name: record.name,
+          is_active: record.is_active !== false,
+          company_id: typeof record.company_id === "string" ? record.company_id : companyId,
+        },
+      ];
+    });
+  }, [companyId, contacts.data]);
   const mutation = useMutation({
     mutationFn: async (
       action:
@@ -719,12 +751,20 @@ function Sales({
               )}
             />
           </Field>
-          <Field label="Purchaser contact id">
-            <Input
-              value={contactId}
-              onChange={(event) => setContactId(event.target.value)}
-              required
-            />
+          <Field label="Purchaser">
+            {contacts.isError ? (
+              <QueryErrorState queries={[contacts]} title="Could not load contacts" />
+            ) : (
+              <ContactLookup
+                ariaLabel="Purchaser"
+                companyId={companyId}
+                contacts={purchasers}
+                disabled={contacts.isPending}
+                placeholder="Select a contact"
+                value={contactId}
+                onChange={setContactId}
+              />
+            )}
           </Field>
           <Field label={`Contract (${currency}, blank uses list price)`}>
             <Input
@@ -733,7 +773,7 @@ function Sales({
               inputMode="decimal"
             />
           </Field>
-          <Button type="submit" disabled={mutation.isPending || !holdId}>
+          <Button type="submit" disabled={mutation.isPending || !holdId || !contactId}>
             Confirm booking
           </Button>
         </form>
@@ -998,6 +1038,7 @@ function Collections({
   const collect = useServerFn(collectRealEstate);
   const refund = useServerFn(refundRealEstate);
   const recognise = useServerFn(recogniseRealEstate);
+  const reverse = useServerFn(reverseRealEstateRecognition);
   const refresh = useRefresh(companyId);
   const [saleId, setSaleId] = useState("");
   const [amount, setAmount] = useState("");
@@ -1022,8 +1063,21 @@ function Collections({
   const canPost = can("realestate.collections.manage") && can("realestate.post");
   const canRecognise = can("realestate.post") && can("realestate.approve");
   const mutation = useMutation({
-    mutationFn: async (action: "collect" | "refund" | "recognise") => {
+    mutationFn: async (action: "collect" | "refund" | "recognise" | "reverse") => {
       const idempotency_key = crypto.randomUUID();
+      if (action === "reverse") {
+        return reverse({
+          data: {
+            companyId,
+            payload: {
+              sale_id: saleId,
+              journal_date: receivedOn,
+              fx_rate_to_base: 1,
+              idempotency_key,
+            },
+          },
+        });
+      }
       if (action === "collect" || action === "refund") {
         const payload = {
           sale_id: saleId,
@@ -1065,6 +1119,10 @@ function Collections({
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
+  const recognised = minor(
+    data.sales.find((row) => cell(row, "id") === saleId) ?? {},
+    "recognised_minor",
+  );
   return (
     <div className="grid gap-4">
       <p className="text-sm text-muted-foreground">
@@ -1106,6 +1164,16 @@ function Collections({
               onClick={() => mutation.mutate("refund")}
             >
               Refund liability
+            </Button>
+          ) : null}
+          {can("realestate.reverse") && can("realestate.post") ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={mutation.isPending || !saleId || recognised <= 0}
+              onClick={() => mutation.mutate("reverse")}
+            >
+              Reverse recognition
             </Button>
           ) : null}
         </form>
@@ -1602,6 +1670,61 @@ function Budgets({
                   Approve
                 </Button>
               ) : null,
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+function LedgerTie({ companyId, currency }: { companyId: string; currency: string }) {
+  const fetchTie = useServerFn(getRealEstateLedgerTie);
+  const tie = useQuery({
+    queryKey: ["real-estate-ledger-tie", companyId],
+    queryFn: () => fetchTie({ data: { companyId } }),
+    retry: false,
+  });
+  if (tie.isError) return <QueryErrorState queries={[tie]} title="Could not tie the ledger" />;
+  if (tie.isPending || !tie.data) return <LoadingState />;
+  const labels: { [source: string]: string } = {
+    customer_collections: "Customer collections",
+    customer_refunds: "Customer refunds",
+    revenue_and_cost_of_sales: "Revenue and cost of sales",
+    commissions: "Posted commissions",
+    operating_costs: "Posted operating costs",
+    journal_balance: "Real estate journals (debits versus credits)",
+  };
+  return (
+    <div className="grid gap-3">
+      <p className="text-sm text-muted-foreground">
+        {tie.data.tied
+          ? "These registers match the posted journals. Unposted schedules, suggested commissions and unposted development costs are excluded."
+          : "A difference means the register and the posted journals do not match. Do not treat the register as the ledger until the difference is zero."}
+      </p>
+      <RowTable
+        rows={tie.data.lines.map((line) => ({
+          id: line.source,
+          source: labels[line.source] ?? line.source,
+          ledger: line.ledgerMinor,
+          operational: line.operationalMinor,
+          difference: line.differenceMinor,
+        }))}
+        columns={[
+          { key: "source", label: "Source", render: (row) => cell(row, "source") },
+          {
+            key: "ledger",
+            label: "Ledger",
+            render: (row) => money(minor(row, "ledger"), currency),
+          },
+          {
+            key: "operational",
+            label: "Register",
+            render: (row) => money(minor(row, "operational"), currency),
+          },
+          {
+            key: "difference",
+            label: "Difference",
+            render: (row) => money(minor(row, "difference"), currency),
           },
         ]}
       />

@@ -4,6 +4,7 @@ import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-compa
 import { companyIdOf, callRpc } from "@/lib/planning/rpc";
 import type { Permission } from "@/lib/permissions";
 import {
+  mapLedgerTie,
   mapRealEstateResult,
   mapRealEstateWorkspace,
   type RealEstateResult,
@@ -11,7 +12,7 @@ import {
 } from "@/lib/real-estate/types";
 
 export const REAL_ESTATE_MIGRATION =
-  "Real Estate Management needs database updates 20261128232000 through 20261128232300.";
+  "Real Estate Management needs database updates 20261128232000 through 20261128233000.";
 
 type Supabase = Parameters<typeof assertCompanyMember>[0];
 
@@ -51,6 +52,21 @@ export const getRealEstateWorkspace = createServerFn({ method: "GET" })
       await callRpc<unknown>(
         context.supabase,
         "realestate_workspace",
+        { _company_id: data.companyId },
+        REAL_ESTATE_MIGRATION,
+      ),
+    );
+  });
+
+export const getRealEstateLedgerTie = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .handler(async ({ data, context }) => {
+    await guard(context.supabase, data.companyId, "realestate.view");
+    return mapLedgerTie(
+      await callRpc<unknown>(
+        context.supabase,
+        "realestate_ledger_tie",
         { _company_id: data.companyId },
         REAL_ESTATE_MIGRATION,
       ),

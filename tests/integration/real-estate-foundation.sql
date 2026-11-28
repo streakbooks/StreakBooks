@@ -111,6 +111,7 @@ BEGIN
 
   SELECT COALESCE(SUM(debit_minor), 0), COALESCE(SUM(credit_minor), 0) INTO debits, credits FROM public.journal_lines;
   PERFORM public.test_assert(debits = credits AND debits > 0, 'every journal line set balances');
+  PERFORM public.test_assert((public.realestate_ledger_tie(c)->>'tied')::BOOLEAN, 'registers tie to the posted journals');
 
   broker := (public.realestate_create_broker(c, '{"name":"North Broker","kind":"broker"}'::jsonb)->>'id')::UUID;
   PERFORM public.realestate_save_commission_rule(c, jsonb_build_object(

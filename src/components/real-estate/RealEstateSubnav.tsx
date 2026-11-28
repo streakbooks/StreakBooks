@@ -28,6 +28,7 @@ export function RealEstateSubnav({ current }: { current: ReSectionKey }) {
         visible.some((section) => section.key === "overview") && current !== "overview" ? (
           <Link
             to="/real-estate"
+            search={{ project: "", unit: "", sale: "" }}
             className="inline-flex h-8 items-center rounded-md border border-border px-2.5 text-[0.8125rem] font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-10 motion-reduce:transition-none"
           >
             Overview
@@ -37,7 +38,12 @@ export function RealEstateSubnav({ current }: { current: ReSectionKey }) {
       renderSection={(section, active) => {
         const className = groupedModuleSectionClassName(active);
         return section.key === "overview" ? (
-          <Link to="/real-estate" className={className} aria-current={active ? "page" : undefined}>
+          <Link
+            to="/real-estate"
+            search={{ project: "", unit: "", sale: "" }}
+            className={className}
+            aria-current={active ? "page" : undefined}
+          >
             {section.label}
           </Link>
         ) : (

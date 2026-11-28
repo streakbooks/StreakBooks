@@ -49,16 +49,34 @@ export const getNonprofitWorkspace = createServerFn({ method: "GET" })
 
 export const saveNonprofitSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((input: { companyId: string; payload: Record<string, unknown> }) => ({
-    companyId: companyIdOf(input),
-    payload: input.payload,
-  }))
+  .validator(
+    (input: {
+      companyId: string;
+      expectedVersion: number;
+      enabled: boolean;
+      framework: string;
+      country: string;
+      accountMap: Record<string, string>;
+    }) => ({
+      ...input,
+      companyId: companyIdOf(input),
+    }),
+  )
   .handler(async ({ data, context }) => {
     await guard(context.supabase, data.companyId, "nonprofit.admin");
-    return posted(context.supabase, "nonprofit_upsert_settings", {
-      _company_id: data.companyId,
-      _payload: data.payload,
-    });
+    return callRpc<number>(
+      context.supabase,
+      "nonprofit_save_ledger_setup",
+      {
+        _company_id: data.companyId,
+        _expected_version: data.expectedVersion,
+        _enabled: data.enabled,
+        _framework: data.framework,
+        _country: data.country,
+        _account_map: data.accountMap,
+      },
+      "Nonprofit ledger setup requires database update 20261128222000.",
+    );
   });
 
 export const createNonprofitFund = createServerFn({ method: "POST" })

@@ -61,6 +61,13 @@ describe("Settings Centre category routing and search", () => {
     expect(searchSettings("cash drawer").some((item) => item.id === "pos")).toBe(true);
   });
 
+  it("finds the existing nonprofit setup from a restricted fund search", () => {
+    const nonprofit = searchSettings("restricted funds").find((item) => item.id === "nonprofit");
+    expect(nonprofit?.moduleLinks).toEqual([
+      { label: "Fund accounting setup", to: "/nonprofit/settings" },
+    ]);
+  });
+
   it("never strands users in categories without an editable Settings Centre schema", () => {
     for (const category of [
       "contacts",

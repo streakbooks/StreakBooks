@@ -439,3 +439,9 @@ Ordered work for the Settings module brief. Status reflects repository work, not
 - [x] Select CSV/TXT, OFX/QFX and QIF independently. An empty selection disables file imports. Unrecognised values in older settings cannot enable extra formats.
 - The import handler reads the current company preference after checking banking.import and account access, before writing an import record. This covers a policy change after preview. The format identifies the parser used by the client and is not a content scanner.
 - Focused tests: 21 passed; changed-file ESLint passed. No migration required.
+
+## Nonprofit ledger setup and policy preservation (Batch 9)
+
+- [x] Settings search and navigation open the existing Nonprofit setup. The Point of Sale category also renders its registered destinations.
+- [x] Nonprofit ledger edits require an administrator and the loaded version. A dedicated database function validates tenant-owned, active posting accounts, updates ledger setup fields, and records the before/after values in the same transaction. Segregation, deficit and gateway policies keep their stored values.
+- Local focused suites: 52 tests passed. Isolated PostgreSQL checks cover first save, stale version, policy preservation and rejected mappings. Hosted migration 20261128222000 remains pending backup evidence.

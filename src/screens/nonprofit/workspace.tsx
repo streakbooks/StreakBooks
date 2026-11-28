@@ -230,7 +230,7 @@ function SectionBody({
     return <TransferForm companyId={companyId} currency={currency} funds={funds} />;
   if (sectionKey === "reports") return <ReportTable funds={funds} currency={currency} />;
   if (sectionKey === "settings")
-    return <SettingsForm companyId={companyId} settings={data.settings} />;
+    return <SettingsForm key={companyId} companyId={companyId} settings={data.settings} />;
   if (sectionKey === "campaigns")
     return (
       <RecordForm
@@ -1040,6 +1040,9 @@ function SettingsForm({ companyId, settings }: { companyId: string; settings: No
     queryFn: () => fetchAccounts({ data: { companyId } }),
     retry: false,
   });
+  const { can } = useCan();
+  const canEdit = can("nonprofit.admin");
+  const [expectedVersion, setExpectedVersion] = useState(settings.version);
   const initialMap = settings.account_map;
   const [enabled, setEnabled] = useState(settings.enabled);
   const [framework, setFramework] = useState(settings.accounting_framework || "configurable");
@@ -1054,18 +1057,15 @@ function SettingsForm({ companyId, settings }: { companyId: string; settings: No
       save({
         data: {
           companyId,
-          payload: {
-            enabled,
-            accounting_framework: framework,
-            country_code: country,
-            account_map: map,
-            allow_unrestricted_deficit: false,
-            enforce_segregation: false,
-            gateway_configured: false,
-          },
+          expectedVersion,
+          enabled,
+          framework,
+          country,
+          accountMap: map,
         },
       }),
-    onSuccess: async () => {
+    onSuccess: async (version) => {
+      setExpectedVersion(version);
       toast.success(
         enabled ? "Nonprofit Management activated" : "Nonprofit Management left inactive",
       );
@@ -1080,65 +1080,73 @@ function SettingsForm({ companyId, settings }: { companyId: string; settings: No
       className="grid gap-3"
       onSubmit={(event) => {
         event.preventDefault();
-        mutation.mutate();
+        if (canEdit && settings.version === expectedVersion) mutation.mutate();
       }}
     >
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={enabled}
-          onChange={(event) => setEnabled(event.target.checked)}
-        />
-        Activate Nonprofit Management for this organisation
-      </label>
-      <div className="grid gap-3 md:grid-cols-2">
-        <Field label="Accounting framework">
-          <select
-            className="h-10 rounded-md border bg-background px-2"
-            value={framework}
-            onChange={(event) => setFramework(event.target.value)}
-          >
-            <option value="configurable">Configurable</option>
-            <option value="us_fasb">United States</option>
-            <option value="uk_sorp">United Kingdom</option>
-            <option value="india_ngo">India</option>
-            <option value="au_acnc">Australia</option>
-            <option value="ca_asnpo">Canada</option>
-            <option value="nz_pbe">New Zealand</option>
-          </select>
-        </Field>
-        <Field label="Country code">
-          <Input
-            value={country}
-            onChange={(event) => setCountry(event.target.value.toUpperCase())}
-            maxLength={2}
-            required
+      {expectedVersion !== settings.version && (
+        <p role="alert">Settings have changed. Reload this page before editing.</p>
+      )}
+      <fieldset
+        disabled={!canEdit || mutation.isPending || expectedVersion !== settings.version}
+        className="grid gap-3"
+      >
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(event) => setEnabled(event.target.checked)}
           />
-        </Field>
-      </div>
-      <p className="text-sm text-muted-foreground">
-        Gateway card payments stay off. These mappings are the only accounts the nonprofit journals
-        use.
-      </p>
-      <div className="grid gap-3 md:grid-cols-2">
-        {ACCOUNT_ROLES.map((role) => (
-          <Field key={role} label={role}>
-            <AccountLookup
-              accounts={postable}
-              value={map[role] ?? ""}
-              onChange={(accountId) => setMap((current) => ({ ...current, [role]: accountId }))}
-              companyId={companyId}
-              purpose="posting"
-              placeholder="Not mapped"
-              allowClear
-              ariaLabel={role}
+          Activate Nonprofit Management for this organisation
+        </label>
+        <div className="grid gap-3 md:grid-cols-2">
+          <Field label="Accounting framework">
+            <select
+              className="h-10 rounded-md border bg-background px-2"
+              value={framework}
+              onChange={(event) => setFramework(event.target.value)}
+            >
+              <option value="configurable">Configurable</option>
+              <option value="us_fasb">United States</option>
+              <option value="uk_sorp">United Kingdom</option>
+              <option value="india_ngo">India</option>
+              <option value="au_acnc">Australia</option>
+              <option value="ca_asnpo">Canada</option>
+              <option value="nz_pbe">New Zealand</option>
+            </select>
+          </Field>
+          <Field label="Country code">
+            <Input
+              value={country}
+              onChange={(event) => setCountry(event.target.value.toUpperCase())}
+              maxLength={2}
+              required
             />
           </Field>
-        ))}
-      </div>
-      <Button type="submit" disabled={mutation.isPending}>
-        Save settings
-      </Button>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Gateway card payments stay off. These mappings are the only accounts the nonprofit
+          journals use.
+        </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          {ACCOUNT_ROLES.map((role) => (
+            <Field key={role} label={role}>
+              <AccountLookup
+                accounts={postable}
+                value={map[role] ?? ""}
+                onChange={(accountId) => setMap((current) => ({ ...current, [role]: accountId }))}
+                companyId={companyId}
+                purpose="posting"
+                placeholder="Not mapped"
+                allowClear
+                ariaLabel={role}
+              />
+            </Field>
+          ))}
+        </div>
+        <Button type="submit" disabled={mutation.isPending}>
+          Save settings
+        </Button>
+      </fieldset>
     </form>
   );
 }

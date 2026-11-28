@@ -508,3 +508,5 @@ Fixed the Settings overview company query to read tax regime through the authori
 2026-11-28 — Batch 4 now distinguishes a missing bill preference from a failed read. Both bill screens offer retry; saves preserve existing data after read errors. Seven focused tests passed.
 
 2026-11-28 — PR #92 merged to canonical main at 0f6d5a86 and D:\StreakBooks matched it. Batch 5 adds supported-format checkboxes and a fresh company-scoped policy read before saving bank imports. Current production acceptance and hosted migrations remain pending.
+
+2026-11-28 — Nonprofit ledger settings use an audited, version-checked RPC that preserves independent company policies. The migration and rollback are repository artifacts for local verification. Hosted rollout remains pending.

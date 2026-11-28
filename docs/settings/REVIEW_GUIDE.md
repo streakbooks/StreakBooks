@@ -124,3 +124,7 @@ Open Settings → Portals with a dedicated test organisation. A read-only member
 ### Bank statement formats
 
 In a test organisation, open Settings → Banking and select only OFX/QFX. Save and reload. In Banking → Import, selecting a CSV should show the format is unavailable. Preview an OFX file, turn off OFX in a second tab, then return and submit the preview. Expect rejection before an import history record or statement row is created.
+
+### Nonprofit ledger setup
+
+Search Settings for “restricted funds”, then open Fund accounting setup. Using a test organisation, open setup in two tabs. Save a country or mapping change in the first, then try saving the older draft. The stale save should be rejected and existing segregation, gateway and deficit policies should retain their values. A read-only user should be able to inspect setup without submitting edits. Verify Settings navigation with keyboard and narrow viewport. The save requires migration 20261128222000.

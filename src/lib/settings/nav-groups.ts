@@ -20,7 +20,16 @@ export const SETTINGS_NAV_GROUPS: ReadonlyArray<{
   },
   {
     label: "Banking & operations",
-    ids: ["banking", "pos", "dimensions", "products", "expenses", "fixed_assets", "payroll"],
+    ids: [
+      "banking",
+      "pos",
+      "nonprofit",
+      "dimensions",
+      "products",
+      "expenses",
+      "fixed_assets",
+      "payroll",
+    ],
   },
   { label: "People & access", ids: ["users", "accountant"] },
   { label: "Automation & connections", ids: ["automation", "notifications", "integrations"] },

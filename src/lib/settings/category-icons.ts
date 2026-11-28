@@ -38,6 +38,7 @@ export const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
   purchases: ShoppingCart,
   banking: Landmark,
   pos: Store,
+  nonprofit: Building2,
   dimensions: Layers,
   tax: Wallet,
   products: Package,

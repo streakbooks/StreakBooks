@@ -26,6 +26,7 @@
     "test:platform:postgres": "node scripts/test-platform-postgres.mjs",
     "test:pos:postgres": "node scripts/test-pos-postgres.mjs",
     "test:nonprofit:postgres": "node scripts/test-nonprofit-postgres.mjs",
+    "test:gym:postgres": "node scripts/test-gym-postgres.mjs",
     "check:lookups": "node scripts/check-lookup-architecture.mjs",
     "check:navigation": "node scripts/check-native-navigation.mjs",
     "check:visual-coverage": "node scripts/check-premium-visual-coverage.mjs",

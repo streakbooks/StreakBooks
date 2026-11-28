@@ -6,8 +6,8 @@
   "baseRevision": "48421b1c710f7e4f3dd50e4a496e4fe4c3723ed9",
   "scopeStatement": "No authenticated, support, public, forms, overlays, workflow screens or future module is excluded. An inventory entry is not a test result.",
   "counts": {
-    "sidebarModules": 31,
-    "routeFiles": 208,
+    "sidebarModules": 32,
+    "routeFiles": 210,
     "supportingRoutes": 44
   },
   "moduleAcceptance": [
@@ -321,6 +321,16 @@
       "routeFiles": [
         "_authenticated/nonprofit/$section.tsx",
         "_authenticated/nonprofit/index.tsx"
+      ],
+      "verified": false
+    },
+    {
+      "visualReview": "not_runtime_verified",
+      "label": "Gym & Fitness",
+      "href": "/gym",
+      "routeFiles": [
+        "_authenticated/gym/$section.tsx",
+        "_authenticated/gym/index.tsx"
       ],
       "verified": false
     },

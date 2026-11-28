@@ -14,6 +14,7 @@ import {
   Briefcase,
   Building2,
   HeartHandshake,
+  Dumbbell,
   Handshake,
   Percent,
   FolderOpen,
@@ -115,6 +116,13 @@ export const navItems: NavItem[] = [
     icon: HeartHandshake,
     group: "records",
     description: "Funds, donations, grants and programme accounting",
+  },
+  {
+    label: "Gym & Fitness",
+    to: "/gym",
+    icon: Dumbbell,
+    group: "records",
+    description: "Memberships, scheduling, collections and deferred revenue",
   },
   {
     label: "Contacts",

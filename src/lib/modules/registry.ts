@@ -6,6 +6,7 @@ import { CRM_SUBNAV } from "@/lib/crm/sections";
 import { HR_SUBNAV } from "@/lib/hr/sections";
 import { PM_SUBNAV } from "@/lib/property-management/sections";
 import { NP_SUBNAV } from "@/lib/nonprofit/sections";
+import { GYM_SUBNAV } from "@/lib/gym/sections";
 import {
   DEFAULT_AUTHENTICATED_EXPERIENCE,
   DEFAULT_PUBLIC_EXPERIENCE,
@@ -219,6 +220,23 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     premiumStatus: "in-progress",
     notes:
       "Fund tags post through the central ledger. Not production-ready: payment gateways, statutory filing and full portals remain inactive.",
+  },
+  {
+    id: "gym",
+    label: "Gym & Fitness",
+    description: "Memberships, scheduling, collections and deferred revenue",
+    path: "/gym",
+    group: "records",
+    inSidebar: true,
+    pageKind: "dashboard",
+    subnav: GYM_SUBNAV,
+    viewModes: ["list", "calendar", "mobile-card"],
+    screenRoot: "src/screens/gym",
+    featureFlag: "gym",
+    experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
+    premiumStatus: "in-progress",
+    notes:
+      "Membership journals post through the central ledger. Card acquiring, door hardware and inventory movements are not connected.",
   },
   {
     id: "hr",

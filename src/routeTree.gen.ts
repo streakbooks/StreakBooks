@@ -94,6 +94,8 @@ import { Route as AuthenticatedExpenseManagementSectionRouteImport } from './rou
 import { Route as AuthenticatedFirmInviteTokenRouteImport } from './routes/_authenticated/firm-invite.$token'
 import { Route as AuthenticatedFixedAssetsIndexRouteImport } from './routes/_authenticated/fixed-assets.index'
 import { Route as AuthenticatedFixedAssetsNewRouteImport } from './routes/_authenticated/fixed-assets.new'
+import { Route as AuthenticatedGymIndexRouteImport } from './routes/_authenticated/gym/index'
+import { Route as AuthenticatedGymSectionRouteImport } from './routes/_authenticated/gym/$section'
 import { Route as AuthenticatedHrIndexRouteImport } from './routes/_authenticated/hr/index'
 import { Route as AuthenticatedHrSectionRouteImport } from './routes/_authenticated/hr/$section'
 import { Route as AuthenticatedInviteTokenRouteImport } from './routes/_authenticated/invite.$token'
@@ -693,6 +695,16 @@ const AuthenticatedFixedAssetsNewRoute =
     path: '/fixed-assets/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedGymIndexRoute = AuthenticatedGymIndexRouteImport.update({
+  id: '/gym/',
+  path: '/gym/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGymSectionRoute = AuthenticatedGymSectionRouteImport.update({
+  id: '/gym/$section',
+  path: '/gym/$section',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHrIndexRoute = AuthenticatedHrIndexRouteImport.update({
   id: '/hr/',
   path: '/hr/',
@@ -1480,6 +1492,7 @@ export interface FileRoutesByFullPath {
   '/expense-management/$section': typeof AuthenticatedExpenseManagementSectionRoute
   '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/fixed-assets/new': typeof AuthenticatedFixedAssetsNewRoute
+  '/gym/$section': typeof AuthenticatedGymSectionRoute
   '/hr/$section': typeof AuthenticatedHrSectionRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/messages/settings': typeof AuthenticatedMessagesSettingsRoute
@@ -1531,6 +1544,7 @@ export interface FileRoutesByFullPath {
   '/developer/': typeof AuthenticatedDeveloperIndexRoute
   '/expense-management/': typeof AuthenticatedExpenseManagementIndexRoute
   '/fixed-assets/': typeof AuthenticatedFixedAssetsIndexRoute
+  '/gym/': typeof AuthenticatedGymIndexRoute
   '/hr/': typeof AuthenticatedHrIndexRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
   '/nonprofit/': typeof AuthenticatedNonprofitIndexRoute
@@ -1680,6 +1694,7 @@ export interface FileRoutesByTo {
   '/expense-management/$section': typeof AuthenticatedExpenseManagementSectionRoute
   '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/fixed-assets/new': typeof AuthenticatedFixedAssetsNewRoute
+  '/gym/$section': typeof AuthenticatedGymSectionRoute
   '/hr/$section': typeof AuthenticatedHrSectionRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/messages/settings': typeof AuthenticatedMessagesSettingsRoute
@@ -1731,6 +1746,7 @@ export interface FileRoutesByTo {
   '/developer': typeof AuthenticatedDeveloperIndexRoute
   '/expense-management': typeof AuthenticatedExpenseManagementIndexRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsIndexRoute
+  '/gym': typeof AuthenticatedGymIndexRoute
   '/hr': typeof AuthenticatedHrIndexRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
   '/nonprofit': typeof AuthenticatedNonprofitIndexRoute
@@ -1887,6 +1903,7 @@ export interface FileRoutesById {
   '/_authenticated/expense-management/$section': typeof AuthenticatedExpenseManagementSectionRoute
   '/_authenticated/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/_authenticated/fixed-assets/new': typeof AuthenticatedFixedAssetsNewRoute
+  '/_authenticated/gym/$section': typeof AuthenticatedGymSectionRoute
   '/_authenticated/hr/$section': typeof AuthenticatedHrSectionRoute
   '/_authenticated/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/_authenticated/messages/settings': typeof AuthenticatedMessagesSettingsRoute
@@ -1938,6 +1955,7 @@ export interface FileRoutesById {
   '/_authenticated/developer/': typeof AuthenticatedDeveloperIndexRoute
   '/_authenticated/expense-management/': typeof AuthenticatedExpenseManagementIndexRoute
   '/_authenticated/fixed-assets/': typeof AuthenticatedFixedAssetsIndexRoute
+  '/_authenticated/gym/': typeof AuthenticatedGymIndexRoute
   '/_authenticated/hr/': typeof AuthenticatedHrIndexRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
   '/_authenticated/nonprofit/': typeof AuthenticatedNonprofitIndexRoute
@@ -2097,6 +2115,7 @@ export interface FileRouteTypes {
     | '/expense-management/$section'
     | '/firm-invite/$token'
     | '/fixed-assets/new'
+    | '/gym/$section'
     | '/hr/$section'
     | '/invite/$token'
     | '/messages/settings'
@@ -2148,6 +2167,7 @@ export interface FileRouteTypes {
     | '/developer/'
     | '/expense-management/'
     | '/fixed-assets/'
+    | '/gym/'
     | '/hr/'
     | '/messages/'
     | '/nonprofit/'
@@ -2297,6 +2317,7 @@ export interface FileRouteTypes {
     | '/expense-management/$section'
     | '/firm-invite/$token'
     | '/fixed-assets/new'
+    | '/gym/$section'
     | '/hr/$section'
     | '/invite/$token'
     | '/messages/settings'
@@ -2348,6 +2369,7 @@ export interface FileRouteTypes {
     | '/developer'
     | '/expense-management'
     | '/fixed-assets'
+    | '/gym'
     | '/hr'
     | '/messages'
     | '/nonprofit'
@@ -2503,6 +2525,7 @@ export interface FileRouteTypes {
     | '/_authenticated/expense-management/$section'
     | '/_authenticated/firm-invite/$token'
     | '/_authenticated/fixed-assets/new'
+    | '/_authenticated/gym/$section'
     | '/_authenticated/hr/$section'
     | '/_authenticated/invite/$token'
     | '/_authenticated/messages/settings'
@@ -2554,6 +2577,7 @@ export interface FileRouteTypes {
     | '/_authenticated/developer/'
     | '/_authenticated/expense-management/'
     | '/_authenticated/fixed-assets/'
+    | '/_authenticated/gym/'
     | '/_authenticated/hr/'
     | '/_authenticated/messages/'
     | '/_authenticated/nonprofit/'
@@ -3254,6 +3278,20 @@ declare module '@tanstack/react-router' {
       path: '/fixed-assets/new'
       fullPath: '/fixed-assets/new'
       preLoaderRoute: typeof AuthenticatedFixedAssetsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/gym/': {
+      id: '/_authenticated/gym/'
+      path: '/gym'
+      fullPath: '/gym/'
+      preLoaderRoute: typeof AuthenticatedGymIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/gym/$section': {
+      id: '/_authenticated/gym/$section'
+      path: '/gym/$section'
+      fullPath: '/gym/$section'
+      preLoaderRoute: typeof AuthenticatedGymSectionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hr/': {
@@ -4575,6 +4613,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExpenseManagementSectionRoute: typeof AuthenticatedExpenseManagementSectionRoute
   AuthenticatedFirmInviteTokenRoute: typeof AuthenticatedFirmInviteTokenRoute
   AuthenticatedFixedAssetsNewRoute: typeof AuthenticatedFixedAssetsNewRoute
+  AuthenticatedGymSectionRoute: typeof AuthenticatedGymSectionRoute
   AuthenticatedHrSectionRoute: typeof AuthenticatedHrSectionRoute
   AuthenticatedInviteTokenRoute: typeof AuthenticatedInviteTokenRoute
   AuthenticatedMessagesSettingsRoute: typeof AuthenticatedMessagesSettingsRoute
@@ -4591,6 +4630,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDeveloperIndexRoute: typeof AuthenticatedDeveloperIndexRoute
   AuthenticatedExpenseManagementIndexRoute: typeof AuthenticatedExpenseManagementIndexRoute
   AuthenticatedFixedAssetsIndexRoute: typeof AuthenticatedFixedAssetsIndexRoute
+  AuthenticatedGymIndexRoute: typeof AuthenticatedGymIndexRoute
   AuthenticatedHrIndexRoute: typeof AuthenticatedHrIndexRoute
   AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
   AuthenticatedNonprofitIndexRoute: typeof AuthenticatedNonprofitIndexRoute
@@ -4652,6 +4692,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedExpenseManagementSectionRoute,
   AuthenticatedFirmInviteTokenRoute: AuthenticatedFirmInviteTokenRoute,
   AuthenticatedFixedAssetsNewRoute: AuthenticatedFixedAssetsNewRoute,
+  AuthenticatedGymSectionRoute: AuthenticatedGymSectionRoute,
   AuthenticatedHrSectionRoute: AuthenticatedHrSectionRoute,
   AuthenticatedInviteTokenRoute: AuthenticatedInviteTokenRoute,
   AuthenticatedMessagesSettingsRoute: AuthenticatedMessagesSettingsRoute,
@@ -4670,6 +4711,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExpenseManagementIndexRoute:
     AuthenticatedExpenseManagementIndexRoute,
   AuthenticatedFixedAssetsIndexRoute: AuthenticatedFixedAssetsIndexRoute,
+  AuthenticatedGymIndexRoute: AuthenticatedGymIndexRoute,
   AuthenticatedHrIndexRoute: AuthenticatedHrIndexRoute,
   AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
   AuthenticatedNonprofitIndexRoute: AuthenticatedNonprofitIndexRoute,

@@ -221,6 +221,22 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
       "Fund tags post through the central ledger. Not production-ready: payment gateways, statutory filing and full portals remain inactive.",
   },
   {
+    id: "gym",
+    label: "Gym & Fitness",
+    description: "Memberships, scheduling, collections and deferred revenue",
+    path: "/gym",
+    group: "records",
+    inSidebar: true,
+    pageKind: "dashboard",
+    viewModes: ["list", "calendar", "mobile-card"],
+    screenRoot: "src/screens/gym",
+    featureFlag: "gym",
+    experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
+    premiumStatus: "in-progress",
+    notes:
+      "Membership journals post through the central ledger. Card acquiring, door hardware and inventory movements are not connected.",
+  },
+  {
     id: "hr",
     label: "HR",
     description: "Workforce, leave, attendance and employee lifecycle",

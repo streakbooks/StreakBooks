@@ -16,6 +16,8 @@ export type NonprofitRecord = {
   donated_on: Cell;
   pledge_number: Cell;
   collected_minor: Cell;
+  impaired_minor: Cell;
+  allocated_minor: Cell;
   award_minor: Cell;
   received_minor: Cell;
   recognised_minor: Cell;
@@ -96,6 +98,8 @@ const RECORD_KEYS = [
   "donated_on",
   "pledge_number",
   "collected_minor",
+  "impaired_minor",
+  "allocated_minor",
   "award_minor",
   "received_minor",
   "recognised_minor",
